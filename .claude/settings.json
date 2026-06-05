@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv src/components/layout/Header.tsx src/components/layout/header_temp.tsx)",
+      "Bash(mv src/components/layout/header_temp.tsx src/components/layout/Header.tsx)"
+    ]
+  }
+}
