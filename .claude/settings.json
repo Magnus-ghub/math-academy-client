@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "Bash(mv src/components/layout/Header.tsx src/components/layout/header_temp.tsx)",
-      "Bash(mv src/components/layout/header_temp.tsx src/components/layout/Header.tsx)"
+      "Bash(mv src/components/layout/header_temp.tsx src/components/layout/Header.tsx)",
+      "Bash(ls /Users/nomozof/Desktop/math-academy-api 2>/dev/null && echo \"API folder exists\" || echo \"API folder not found\")",
+      "Read(//Users/nomozof/Desktop/math-academy-api/**)",
+      "Bash(curl -s http://localhost:4000/graphql -X POST -H \"Content-Type: application/json\" -d '{\"query\":\"{ __typename }\"}')",
+      "Bash(curl -s http://localhost:4000/graphql -X POST -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(xargs cat)",
+      "Bash(node -e \"require\\('@apollo/client/link/context'\\); console.log\\('ok'\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -I -X OPTIONS http://localhost:4000/graphql -H 'Origin: http://localhost:3000' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type')"
     ]
   }
 }
