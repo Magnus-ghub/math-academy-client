@@ -1,17 +1,10 @@
-// app/(public)/layout.tsx
-import Header from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+// app/(public)/page.tsx
+import HeroSection from "@/components/home/HeroSection";
 
-export default function PublicLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1">{children}</main>
-      <Footer />
-    </div>
+    <>
+      <HeroSection />
+    </>
   );
 }
