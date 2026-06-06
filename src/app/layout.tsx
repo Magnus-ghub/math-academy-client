@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ApolloClientProvider } from "@/providers/apollo-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -26,7 +27,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {/* Header va Footer bu yerdan olib tashlandi, ular endi guruhli layoutlarda bo'ladi */}
-          {children}
+          <ApolloClientProvider>
+            {children}
+          </ApolloClientProvider>
         </ThemeProvider>
       </body>
     </html>
