@@ -1,20 +1,21 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 const footerLinks = {
-  Platform: [
-    { href: '#features', label: 'Features' },
-    { href: '#plans', label: 'Pricing' },
-    { href: '#how-it-works', label: 'How it works' },
+  'Platforma': [
+    { href: '/#tests', label: 'Testlar' },
+    { href: '/#pricing', label: 'Narxlar' },
+    { href: '/#how-it-works', label: 'Qanday ishlaydi' },
   ],
-  Account: [
-    { href: '/login', label: 'Sign In' },
-    { href: '/register', label: 'Register' },
+  'Kabinet': [
+    { href: '/login', label: 'Kirish' },
     { href: '/dashboard', label: 'Dashboard' },
+    { href: '/dashboard/results', label: 'Natijalarim' },
   ],
-  Support: [
-    { href: 'mailto:support@cdielts.uz', label: 'Contact' },
-    { href: '#', label: 'FAQ' },
-    { href: '#', label: 'Telegram' },
+  'Yordam': [
+    { href: 'mailto:info@saidxonovacademy.uz', label: 'Aloqa' },
+    { href: '/#faq', label: 'FAQ' },
+    { href: 'https://t.me/saidxonovacademy', label: 'Telegram kanal' },
   ],
 };
 
@@ -26,11 +27,17 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <img src="/jamshid_logo.jpg" alt="CD IELTS" className="h-9 w-auto" />
+              <Image
+                src="/logo.jpg"
+                alt="Saidxonov Academy"
+                width={36}
+                height={36}
+                className="rounded-md"
+              />
               <span className="font-bold text-white text-lg">Saidxonov Academy</span>
             </div>
             <p className="text-sm leading-relaxed">
-              The most advanced IELTS mock test platform.
+              O'zbekistondagi eng yaxshi matematika tayyorgarlik markazi.
             </p>
           </div>
 
@@ -55,9 +62,9 @@ export function Footer() {
         </div>
 
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
-          <p>© 2026 Saidxonov Academy. All rights reserved.</p>
+          <p>© 2026 Saidxonov Academy. Barcha huquqlar himoyalangan.</p>
           <p className="text-xs">
-            <span className="text-primary font-semibold">Saidxonov Academy</span> — Math preparation platform
+            <span className="text-primary font-semibold">Saidxonov Academy</span> — Matematika tayyorgarlik platformasi
           </p>
         </div>
       </div>
