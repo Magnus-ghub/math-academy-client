@@ -58,17 +58,17 @@ export default function HeroSection() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-1">10K+</div>
+              <div className="text-3xl font-bold text-primary mb-1">45K+</div>
               <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
                 <Users className="w-3 h-3" />
-                Talabalar
+                Obunachi
               </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-primary mb-1">50K+</div>
+              <div className="text-3xl font-bold text-primary mb-1">35M+</div>
               <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
                 <BookOpen className="w-3 h-3" />
-                Testlar
+                Ko'rishlar
               </div>
             </div>
             <div className="text-center">
