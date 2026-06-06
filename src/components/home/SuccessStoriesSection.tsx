@@ -1,32 +1,44 @@
-import { Star } from "lucide-react";
+import Image from "next/image";
+import { Trophy } from "lucide-react";
 
-const stories = [
+const students = [
   {
+    image: "/images/student1.png",
     name: "Abdulloh Karimov",
-    score: "189/189",
     exam: "DTM",
-    image: "/avatars/student1.jpg",
-    text: "Saidxonov Academy testlari tufayli DTM da to'liq ball to'pladim. Haftalik testlar juda foydali bo'ldi.",
+    score: "189/189",
+    year: "2025",
+    text: "Saidxonov Academy testlari tufayli DTM da to'liq ball to'pladim.",
   },
   {
+    image: "/images/student2.png",
     name: "Malika Yusupova",
-    score: "1480/1600",
     exam: "SAT",
-    image: "/avatars/student2.jpg",
-    text: "SAT testlariga tayyorgarlik jarayonida bu platforma menga juda katta yordam berdi.",
+    score: "1480/1600",
+    year: "2025",
+    text: "SAT ga tayyorgarlik jarayonida bu platforma menga juda katta yordam berdi.",
   },
   {
+    image: "/images/student3.png",
     name: "Jasur Toshmatov",
-    score: "95/100",
     exam: "Milliy Sertifikat",
-    image: "/avatars/student3.jpg",
+    score: "95/100",
+    year: "2025",
     text: "Milliy Sertifikat imtihoniga 2 oy tayyorlandim. Natija ajoyib chiqdi!",
+  },
+  {
+    image: "/images/student4.png",
+    name: "Dilnoza Rahimova",
+    exam: "DTM",
+    score: "185/189",
+    year: "2026",
+    text: "Haftalik guruh testlari juda samarali bo'ldi. Tavsiya qilaman!",
   },
 ];
 
 export default function SuccessStoriesSection() {
   return (
-    <section className="py-20">
+    <section className="py-20 bg-muted/30">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -37,25 +49,36 @@ export default function SuccessStoriesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stories.map((story) => (
-            <div key={story.name} className="bg-muted/30 rounded-2xl p-6 border border-border hover:shadow-md transition-all">
-              <div className="flex items-center gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-accent text-accent" />
-                ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {students.map((student) => (
+            <div
+              key={student.name}
+              className="bg-background rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+            >
+              {/* Sertifikat rasmi */}
+              <div className="relative w-full aspect-3/4 bg-muted">
+                <Image
+                  src={student.image}
+                  alt={`${student.name} sertifikati`}
+                  fill
+                  className="object-cover"
+                />
+                {/* Score badge */}
+                <div className="absolute top-3 right-3 bg-primary text-white px-2 py-1 rounded-lg text-xs font-bold shadow-lg">
+                  {student.score}
+                </div>
               </div>
-              <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-                "{story.text}"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                  {story.name[0]}
+
+              {/* Info */}
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Trophy className="w-4 h-4 text-accent" />
+                  <span className="text-xs font-semibold text-accent">{student.exam} — {student.year}</span>
                 </div>
-                <div>
-                  <p className="font-semibold text-sm">{story.name}</p>
-                  <p className="text-xs text-muted-foreground">{story.exam} — {story.score}</p>
-                </div>
+                <h3 className="font-bold text-sm mb-2">{student.name}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  "{student.text}"
+                </p>
               </div>
             </div>
           ))}

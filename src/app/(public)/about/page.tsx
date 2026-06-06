@@ -2,8 +2,8 @@ import { Trophy, Users, BookOpen, Target } from "lucide-react";
 import Image from "next/image";
 
 const stats = [
-  { label: "Talabalar", value: "5000+", icon: Users },
-  { label: "Testlar", value: "200+", icon: BookOpen },
+  { label: "Talabalar", value: "10K+", icon: Users },
+  { label: "Testlar", value: "50K+", icon: BookOpen },
   { label: "Muvaffaqiyat", value: "95%", icon: Trophy },
   { label: "Yillik tajriba", value: "5+", icon: Target },
 ];
