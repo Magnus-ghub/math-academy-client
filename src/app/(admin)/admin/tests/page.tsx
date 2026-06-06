@@ -1,1 +1,213 @@
-export default function AdminTestsPage() { return <div>Testlar</div> }
+"use client";
+
+import { useState } from "react";
+import { Plus, Search, Clock, FileQuestion, Eye, Pencil, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
+
+const testTypeColors: Record<string, string> = {
+  DTM: "bg-primary/10 text-primary",
+  SAT: "bg-accent/10 text-accent",
+  MILLIY_SERTIFIKAT: "bg-green-100 text-green-700",
+  ATTESTATSIYA: "bg-purple-100 text-purple-700",
+  DTM_GROUP: "bg-primary/20 text-primary",
+  SAT_GROUP: "bg-accent/20 text-accent",
+  MILLIY_GROUP: "bg-green-200 text-green-700",
+  ATTESTATSIYA_GROUP: "bg-purple-200 text-purple-700",
+};
+
+const accessColors: Record<string, string> = {
+  PUBLIC: "bg-green-100 text-green-700",
+  PREMIUM: "bg-blue-100 text-blue-700",
+  GROUP: "bg-orange-100 text-orange-700",
+};
+
+const accessLabels: Record<string, string> = {
+  PUBLIC: "Ommaviy",
+  PREMIUM: "Premium",
+  GROUP: "Guruh",
+};
+
+const statusColors: Record<string, string> = {
+  DRAFT: "bg-gray-100 text-gray-600",
+  PUBLISHED: "bg-green-100 text-green-700",
+  ARCHIVED: "bg-red-100 text-red-600",
+};
+
+const statusLabels: Record<string, string> = {
+  DRAFT: "Qoralama",
+  PUBLISHED: "Nashr",
+  ARCHIVED: "Arxiv",
+};
+
+const mockTests = Array.from({ length: 15 }, (_, i) => ({
+  id: `test-${i + 1}`,
+  testTitle: `Matematika testi ${i + 1}`,
+  testType: ["DTM", "SAT", "MILLIY_SERTIFIKAT", "ATTESTATSIYA", "DTM_GROUP"][i % 5],
+  testAccess: ["PUBLIC", "PREMIUM", "GROUP"][i % 3],
+  testStatus: ["PUBLISHED", "DRAFT", "ARCHIVED"][i % 3],
+  totalQuestions: 20 + i * 2,
+  duration: 30 + i * 5,
+  totalAttempts: i * 15,
+  createdAt: new Date(2026, 0, i + 1).toLocaleDateString("uz-UZ"),
+}));
+
+const PAGE_SIZE = 10;
+
+export default function AdminTestsPage() {
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("ALL");
+  const [page, setPage] = useState(1);
+
+  const filtered = mockTests.filter((t) => {
+    const matchSearch = t.testTitle.toLowerCase().includes(search.toLowerCase());
+    const matchType = typeFilter === "ALL" || t.testType === typeFilter;
+    return matchSearch && matchType;
+  });
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Testlar</h1>
+          <p className="text-muted-foreground text-sm">{filtered.length} ta test</p>
+        </div>
+        <Link href="/admin/tests/create">
+          <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors">
+            <Plus className="w-4 h-4" />
+            Yangi test
+          </button>
+        </Link>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Test nomi bo'yicha qidirish..."
+            className="pl-9"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {["ALL", "DTM", "SAT", "MILLIY_SERTIFIKAT", "ATTESTATSIYA"].map((type) => (
+            <button
+              key={type}
+              onClick={() => { setTypeFilter(type); setPage(1); }}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                typeFilter === type
+                  ? "bg-primary text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {type === "ALL" ? "Barchasi" : type === "MILLIY_SERTIFIKAT" ? "Milliy" : type}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Table */}
+      <div className="bg-background rounded-2xl border border-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border bg-muted/30">
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Test nomi</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Tur</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Kirish</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Holat</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Savollar</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Vaqt</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Urinishlar</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {paginated.map((test, i) => (
+                <tr key={test.id} className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-sm">{test.testTitle}</p>
+                    <p className="text-xs text-muted-foreground">{test.createdAt}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
+                      {test.testType.replace("_GROUP", " Guruh")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${accessColors[test.testAccess]}`}>
+                      {accessLabels[test.testAccess]}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[test.testStatus]}`}>
+                      {statusLabels[test.testStatus]}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 text-sm">
+                      <FileQuestion className="w-3 h-3 text-muted-foreground" />
+                      {test.totalQuestions}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      {test.duration} daq
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      <Eye className="w-3 h-3" />
+                      {test.totalAttempts}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <Link href={`/admin/tests/${test.id}/edit`}>
+                        <button className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                      </Link>
+                      <button className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 disabled:opacity-40 transition-colors"
+            >
+              ← Oldingi
+            </button>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 disabled:opacity-40 transition-colors"
+            >
+              Keyingi →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
