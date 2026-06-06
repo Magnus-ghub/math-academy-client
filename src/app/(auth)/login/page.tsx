@@ -1,4 +1,4 @@
-import { MessageCircle, Mail } from "lucide-react";
+import { MessageCircle, Mail, SendIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -25,7 +25,7 @@ export default function LoginPage() {
         <div className="flex flex-col gap-3">
           {/* Telegram */}
           <button className="w-full flex items-center justify-center gap-3 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-semibold py-3 px-6 rounded-xl transition-colors">
-            <MessageCircle className="w-5 h-5" />
+            <SendIcon className="w-5 h-5" />
             Telegram orqali kirish
           </button>
 
