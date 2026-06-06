@@ -1,0 +1,6 @@
+export enum ResultStatus {
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  ABANDONED = "ABANDONED",
+  TIME_UP = "TIME_UP",
+}
