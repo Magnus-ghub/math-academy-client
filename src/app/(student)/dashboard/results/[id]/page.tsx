@@ -1,27 +1,48 @@
+"use client";
+
+import { useQuery } from "@apollo/client/react";
 import { CheckCircle, XCircle, Clock, Trophy, ChevronLeft } from "lucide-react";
 import Link from "next/link";
-
-const mockResult = {
-  id: "result-1",
-  testTitle: "DTM 2026 - Variant 1",
-  testType: "DTM",
-  score: 80,
-  correctAnswers: 4,
-  totalQuestions: 5,
-  duration: 35,
-  createdAt: "06.06.2026",
-  answers: [
-    { questionId: "q1", questionText: "2x + 5 = 13 tenglamani yeching.", options: ["x = 3", "x = 4", "x = 5", "x = 6"], selectedAnswer: 1, correctAnswer: 1, isCorrect: true, timeSpent: 45 },
-    { questionId: "q2", questionText: "Uchburchak tomonlari 3, 4, 5 bo'lsa, yuzini toping.", options: ["5", "6", "7", "8"], selectedAnswer: 0, correctAnswer: 1, isCorrect: false, timeSpent: 60 },
-    { questionId: "q3", questionText: "log₂(8) = ?", options: ["2", "3", "4", "8"], selectedAnswer: 1, correctAnswer: 1, isCorrect: true, timeSpent: 30 },
-    { questionId: "q4", questionText: "sin(30°) = ?", options: ["0", "0.5", "√2/2", "1"], selectedAnswer: 1, correctAnswer: 1, isCorrect: true, timeSpent: 25 },
-    { questionId: "q5", questionText: "1 + 2 + 3 + ... + 100 = ?", options: ["4950", "5000", "5050", "5100"], selectedAnswer: 2, correctAnswer: 2, isCorrect: true, timeSpent: 40 },
-  ],
-};
+import { useParams } from "next/navigation";
+import { GET_RESULT } from "@/lib/graphql/result";
+import { GET_QUESTIONS } from "@/lib/graphql/test";
 
 export default function ResultDetailPage() {
-  const scoreColor = mockResult.score >= 80 ? "text-green-600" : mockResult.score >= 60 ? "text-accent" : "text-red-500";
-  const scoreBg = mockResult.score >= 80 ? "bg-green-100" : mockResult.score >= 60 ? "bg-accent/10" : "bg-red-100";
+  const { id } = useParams();
+
+  const { data: resultData, loading: resultLoading } = useQuery<{ getResult: any }>(GET_RESULT, {
+    variables: { resultId: id },
+  });
+
+  const result = resultData?.getResult;
+
+  const { data: questionsData } = useQuery<{ getQuestions: any[] }>(GET_QUESTIONS, {
+    variables: { testId: result?.testId },
+    skip: !result?.testId,
+  });
+
+  const questions = questionsData?.getQuestions || [];
+
+  if (resultLoading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-4">
+        <div className="bg-muted rounded-2xl h-48 animate-pulse" />
+        <div className="bg-muted rounded-2xl h-32 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (!result) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <p>Natija topilmadi</p>
+      </div>
+    );
+  }
+
+  const scoreColor = result.score >= 80 ? "text-green-600" : result.score >= 60 ? "text-accent" : "text-red-500";
+  const scoreBg = result.score >= 80 ? "bg-green-100" : result.score >= 60 ? "bg-accent/10" : "bg-red-100";
+  const scoreBar = result.score >= 80 ? "bg-green-500" : result.score >= 60 ? "bg-accent" : "bg-red-500";
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -37,16 +58,17 @@ export default function ResultDetailPage() {
       <div className="bg-background rounded-2xl border border-border p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
-              {mockResult.testType}
-            </span>
-            <h1 className="text-xl font-bold mt-2">{mockResult.testTitle}</h1>
-            <p className="text-xs text-muted-foreground mt-1">{mockResult.createdAt}</p>
+            <p className="text-xs text-muted-foreground mb-1">
+              {new Date(result.createdAt).toLocaleDateString("uz-UZ")}
+            </p>
+            <h1 className="text-xl font-bold">Test natijasi</h1>
           </div>
           <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center ${scoreBg}`}>
-            <span className={`text-2xl font-black ${scoreColor}`}>{mockResult.score}%</span>
+            <span className={`text-2xl font-black ${scoreColor}`}>
+              {Math.round(result.score)}%
+            </span>
             <span className={`text-xs font-medium ${scoreColor}`}>
-              {mockResult.score >= 80 ? "A'lo" : mockResult.score >= 60 ? "Yaxshi" : "Qoniqarli"}
+              {result.score >= 80 ? "A'lo" : result.score >= 60 ? "Yaxshi" : "Qoniqarli"}
             </span>
           </div>
         </div>
@@ -54,8 +76,8 @@ export default function ResultDetailPage() {
         {/* Progress */}
         <div className="h-2 bg-muted rounded-full overflow-hidden mb-4">
           <div
-            className={`h-full rounded-full ${mockResult.score >= 80 ? "bg-green-500" : mockResult.score >= 60 ? "bg-accent" : "bg-red-500"}`}
-            style={{ width: `${mockResult.score}%` }}
+            className={`h-full rounded-full ${scoreBar}`}
+            style={{ width: `${result.score}%` }}
           />
         </div>
 
@@ -63,83 +85,90 @@ export default function ResultDetailPage() {
         <div className="grid grid-cols-3 gap-4">
           <div className="text-center p-3 bg-green-50 rounded-xl">
             <CheckCircle className="w-5 h-5 text-green-600 mx-auto mb-1" />
-            <p className="text-lg font-bold text-green-600">{mockResult.correctAnswers}</p>
+            <p className="text-lg font-bold text-green-600">{result.correctAnswers}</p>
             <p className="text-xs text-muted-foreground">To'g'ri</p>
           </div>
           <div className="text-center p-3 bg-red-50 rounded-xl">
             <XCircle className="w-5 h-5 text-red-500 mx-auto mb-1" />
-            <p className="text-lg font-bold text-red-500">{mockResult.totalQuestions - mockResult.correctAnswers}</p>
+            <p className="text-lg font-bold text-red-500">
+              {result.totalQuestions - result.correctAnswers}
+            </p>
             <p className="text-xs text-muted-foreground">Noto'g'ri</p>
           </div>
           <div className="text-center p-3 bg-primary/5 rounded-xl">
             <Clock className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-lg font-bold text-primary">{mockResult.duration}</p>
+            <p className="text-lg font-bold text-primary">{result.duration}</p>
             <p className="text-xs text-muted-foreground">Daqiqa</p>
           </div>
         </div>
       </div>
 
       {/* Answers review */}
-      <h2 className="text-lg font-bold mb-4">Javoblar tahlili</h2>
-      <div className="space-y-3">
-        {mockResult.answers.map((answer, i) => (
-          <div
-            key={answer.questionId}
-            className={`bg-background rounded-2xl border-2 p-5 ${
-              answer.isCorrect ? "border-green-200" : "border-red-200"
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                answer.isCorrect ? "bg-green-100" : "bg-red-100"
-              }`}>
-                {answer.isCorrect
-                  ? <CheckCircle className="w-4 h-4 text-green-600" />
-                  : <XCircle className="w-4 h-4 text-red-500" />
-                }
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium mb-3">{i + 1}. {answer.questionText}</p>
-                <div className="space-y-2">
-                  {answer.options.map((opt, j) => (
-                    <div
-                      key={j}
-                      className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
-                        j === answer.correctAnswer
-                          ? "bg-green-50 text-green-700 font-medium"
-                          : j === answer.selectedAnswer && !answer.isCorrect
-                          ? "bg-red-50 text-red-600"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      <span className={`w-5 h-5 rounded-full border flex items-center justify-center font-bold text-xs ${
-                        j === answer.correctAnswer
-                          ? "border-green-500 bg-green-500 text-white"
-                          : j === answer.selectedAnswer && !answer.isCorrect
-                          ? "border-red-500 bg-red-500 text-white"
-                          : "border-border"
-                      }`}>
-                        {["A", "B", "C", "D"][j]}
-                      </span>
-                      {opt}
-                      {j === answer.correctAnswer && (
-                        <span className="ml-auto text-green-600 font-medium">✓ To'g'ri</span>
-                      )}
-                      {j === answer.selectedAnswer && !answer.isCorrect && (
-                        <span className="ml-auto text-red-500">✗ Siz tanlagan</span>
-                      )}
+      {result.answers && result.answers.length > 0 && (
+        <>
+          <h2 className="text-lg font-bold mb-4">Javoblar tahlili</h2>
+          <div className="space-y-3">
+            {result.answers.map((answer: any, i: number) => {
+              const question = questions.find((q: any) => q.id === answer.questionId);
+              return (
+                <div
+                  key={answer.questionId}
+                  className={`bg-background rounded-2xl border-2 p-5 ${
+                    answer.isCorrect ? "border-green-200" : "border-red-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                      answer.isCorrect ? "bg-green-100" : "bg-red-100"
+                    }`}>
+                      {answer.isCorrect
+                        ? <CheckCircle className="w-4 h-4 text-green-600" />
+                        : <XCircle className="w-4 h-4 text-red-500" />
+                      }
                     </div>
-                  ))}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium mb-3">
+                        {i + 1}. {question?.questionText || "Savol yuklanmoqda..."}
+                      </p>
+                      {question?.options && (
+                        <div className="space-y-2">
+                          {question.options.map((opt: string, j: number) => (
+                            <div
+                              key={j}
+                              className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                                j === answer.selectedAnswer && answer.isCorrect
+                                  ? "bg-green-50 text-green-700 font-medium"
+                                  : j === answer.selectedAnswer && !answer.isCorrect
+                                  ? "bg-red-50 text-red-600"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              <span className={`w-5 h-5 rounded-full border flex items-center justify-center font-bold text-xs ${
+                                j === answer.selectedAnswer && answer.isCorrect
+                                  ? "border-green-500 bg-green-500 text-white"
+                                  : j === answer.selectedAnswer && !answer.isCorrect
+                                  ? "border-red-500 bg-red-500 text-white"
+                                  : "border-border"
+                              }`}>
+                                {["A", "B", "C", "D"][j]}
+                              </span>
+                              {opt}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        {answer.timeSpent} soniya
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  {answer.timeSpent} soniya
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 mt-6">
