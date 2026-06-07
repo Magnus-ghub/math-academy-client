@@ -1,5 +1,14 @@
 import { gql } from "@apollo/client";
 
+export const PUBLISH_TEST = gql`
+  mutation UpdateTest($testId: String!, $input: TestUpdate!) {
+    updateTest(testId: $testId, input: $input) {
+      id
+      testStatus
+    }
+  }
+`;
+
 export const GET_PUBLIC_TESTS = gql`
   query GetPublicTests {
     getPublicTests {
