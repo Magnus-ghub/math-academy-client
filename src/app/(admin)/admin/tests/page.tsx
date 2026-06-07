@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Clock, FileQuestion, Eye, Pencil, Trash2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Plus, Clock, FileQuestion, Eye, Pencil, Trash2, Search } from "lucide-react";
 import Link from "next/link";
+import CreateTestModal from "@/components/admin/CreateTestModal";
+import { useQuery } from "@apollo/client/react";
+import { GET_ALL_TESTS } from "@/lib/graphql/test";
+import { Input } from "@/components/ui/input";
 
 const testTypeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary",
@@ -40,27 +43,23 @@ const statusLabels: Record<string, string> = {
   ARCHIVED: "Arxiv",
 };
 
-const mockTests = Array.from({ length: 15 }, (_, i) => ({
-  id: `test-${i + 1}`,
-  testTitle: `Matematika testi ${i + 1}`,
-  testType: ["DTM", "SAT", "MILLIY_SERTIFIKAT", "ATTESTATSIYA", "DTM_GROUP"][i % 5],
-  testAccess: ["PUBLIC", "PREMIUM", "GROUP"][i % 3],
-  testStatus: ["PUBLISHED", "DRAFT", "ARCHIVED"][i % 3],
-  totalQuestions: 20 + i * 2,
-  duration: 30 + i * 5,
-  totalAttempts: i * 15,
-  createdAt: new Date(2026, 0, i + 1).toLocaleDateString("uz-UZ"),
-}));
-
 const PAGE_SIZE = 10;
 
 export default function AdminTestsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [page, setPage] = useState(1);
+  const [showModal, setShowModal] = useState(false);
 
-  const filtered = mockTests.filter((t) => {
-    const matchSearch = t.testTitle.toLowerCase().includes(search.toLowerCase());
+  const { data, loading, refetch } = useQuery<{ getAllTests: any[] }>(
+    GET_ALL_TESTS,
+  );
+  const tests = data?.getAllTests || [];
+
+  const filtered = tests.filter((t: any) => {
+    const matchSearch = t.testTitle
+      .toLowerCase()
+      .includes(search.toLowerCase());
     const matchType = typeFilter === "ALL" || t.testType === typeFilter;
     return matchSearch && matchType;
   });
@@ -73,17 +72,26 @@ export default function AdminTestsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Testlar</h1>
-          <p className="text-muted-foreground text-sm">{filtered.length} ta test</p>
+          <p className="text-muted-foreground text-sm">
+            {filtered.length} ta test
+          </p>
         </div>
-        <Link href="/admin/tests/create">
-          <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors">
-            <Plus className="w-4 h-4" />
-            Yangi test
-          </button>
-        </Link>
+        <button
+          onClick={() => setShowModal(true)}
+          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Yangi test
+        </button>
       </div>
 
       {/* Filters */}
+      {showModal && (
+        <CreateTestModal
+          onClose={() => setShowModal(false)}
+          onSuccess={() => refetch()}
+        />
+      )}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -91,23 +99,35 @@ export default function AdminTestsPage() {
             placeholder="Test nomi bo'yicha qidirish..."
             className="pl-9"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {["ALL", "DTM", "SAT", "MILLIY_SERTIFIKAT", "ATTESTATSIYA"].map((type) => (
-            <button
-              key={type}
-              onClick={() => { setTypeFilter(type); setPage(1); }}
-              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                typeFilter === type
-                  ? "bg-primary text-white"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {type === "ALL" ? "Barchasi" : type === "MILLIY_SERTIFIKAT" ? "Milliy" : type}
-            </button>
-          ))}
+          {["ALL", "DTM", "SAT", "MILLIY_SERTIFIKAT", "ATTESTATSIYA"].map(
+            (type) => (
+              <button
+                key={type}
+                onClick={() => {
+                  setTypeFilter(type);
+                  setPage(1);
+                }}
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  typeFilter === type
+                    ? "bg-primary text-white"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {type === "ALL"
+                  ? "Barchasi"
+                  : type === "MILLIY_SERTIFIKAT"
+                    ? "Milliy"
+                    : type}
+              </button>
+            ),
+          )}
         </div>
       </div>
 
@@ -117,35 +137,60 @@ export default function AdminTestsPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Test nomi</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Tur</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Kirish</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Holat</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Savollar</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Vaqt</th>
-                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Urinishlar</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
+                  Test nomi
+                </th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
+                  Tur
+                </th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
+                  Kirish
+                </th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
+                  Holat
+                </th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
+                  Savollar
+                </th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
+                  Vaqt
+                </th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">
+                  Urinishlar
+                </th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {paginated.map((test, i) => (
-                <tr key={test.id} className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
+                <tr
+                  key={test.id}
+                  className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}
+                >
                   <td className="px-4 py-3">
                     <p className="font-medium text-sm">{test.testTitle}</p>
-                    <p className="text-xs text-muted-foreground">{test.createdAt}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {test.createdAt}
+                    </p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}
+                    >
                       {test.testType.replace("_GROUP", " Guruh")}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${accessColors[test.testAccess]}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${accessColors[test.testAccess]}`}
+                    >
                       {accessLabels[test.testAccess]}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[test.testStatus]}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[test.testStatus]}`}
+                    >
                       {statusLabels[test.testStatus]}
                     </span>
                   </td>
@@ -188,18 +233,19 @@ export default function AdminTestsPage() {
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-border">
           <p className="text-xs text-muted-foreground">
-            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
+            {(page - 1) * PAGE_SIZE + 1}–
+            {Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 disabled:opacity-40 transition-colors"
             >
               ← Oldingi
             </button>
             <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 disabled:opacity-40 transition-colors"
             >
