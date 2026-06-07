@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { Upload } from "lucide-react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { X, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -33,17 +34,26 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
     testDesc: "",
   });
   const [questions, setQuestions] = useState<Question[]>([
-    { questionText: "", options: ["", "", "", ""], correctAnswer: 0, explanation: "" },
+    {
+      questionText: "",
+      options: ["", "", "", ""],
+      correctAnswer: 0,
+      explanation: "",
+    },
   ]);
 
-  const { data: groupsData } = useQuery<{ getAllGroups: any[] }>(GET_ALL_GROUPS);
+  const { data: groupsData } = useQuery<{ getAllGroups: any[] }>(
+    GET_ALL_GROUPS,
+  );
   const groups = groupsData?.getAllGroups || [];
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const [createTest, { loading: creating }] = useMutation(CREATE_TEST, {
     onCompleted: (data: any) => {
       setTestId(data.createTest.id);
       setStep("questions");
-      toast.success("Test yaratildi!")
+      toast.success("Test yaratildi!");
     },
     onError: () => {
       toast.error("Xatolik yuz berdi");
@@ -90,13 +100,51 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
     onClose();
   };
 
+  // Handler:
+  const handleDocxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !testId) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("testId", testId);
+
+    try {
+      const token = JSON.parse(localStorage.getItem("auth-storage") || "{}")
+        ?.state?.accessToken;
+      const res = await fetch("http://localhost:4000/upload/docx-test", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(`${data.totalQuestions} ta savol yuklandi!`);
+        onSuccess();
+        onClose();
+      } else {
+        toast.error(data.message || "Xatolik yuz berdi");
+      }
+    } catch {
+      toast.error("Yuklashda xatolik");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const addNewQuestion = () => {
-    setQuestions([...questions, {
-      questionText: "",
-      options: ["", "", "", ""],
-      correctAnswer: 0,
-      explanation: "",
-    }]);
+    setQuestions([
+      ...questions,
+      {
+        questionText: "",
+        options: ["", "", "", ""],
+        correctAnswer: 0,
+        explanation: "",
+      },
+    ]);
   };
 
   const removeQuestion = (index: number) => {
@@ -105,16 +153,20 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
   };
 
   const updateQuestion = (index: number, field: string, value: any) => {
-    setQuestions(questions.map((q, i) => i === index ? { ...q, [field]: value } : q));
+    setQuestions(
+      questions.map((q, i) => (i === index ? { ...q, [field]: value } : q)),
+    );
   };
 
   const updateOption = (qIndex: number, optIndex: number, value: string) => {
-    setQuestions(questions.map((q, i) => {
-      if (i !== qIndex) return q;
-      const options = [...q.options];
-      options[optIndex] = value;
-      return { ...q, options };
-    }));
+    setQuestions(
+      questions.map((q, i) => {
+        if (i !== qIndex) return q;
+        const options = [...q.options];
+        options[optIndex] = value;
+        return { ...q, options };
+      }),
+    );
   };
 
   return (
@@ -125,10 +177,15 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
           <div>
             <h2 className="font-bold text-lg">Yangi test yaratish</h2>
             <p className="text-xs text-muted-foreground">
-              {step === "info" ? "1-qadam: Ma'lumotlar" : `2-qadam: Savollar (${questions.length} ta)`}
+              {step === "info"
+                ? "1-qadam: Ma'lumotlar"
+                : `2-qadam: Savollar (${questions.length} ta)`}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -137,21 +194,29 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
           {step === "info" ? (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Test nomi *</label>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Test nomi *
+                </label>
                 <Input
                   placeholder="DTM 2026 - Variant 1"
                   value={form.testTitle}
-                  onChange={(e) => setForm({ ...form, testTitle: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, testTitle: e.target.value })
+                  }
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Test turi *</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Test turi *
+                  </label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.testType}
-                    onChange={(e) => setForm({ ...form, testType: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, testType: e.target.value })
+                    }
                   >
                     <option value="DTM">DTM</option>
                     <option value="SAT">SAT</option>
@@ -160,16 +225,22 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                     <option value="DTM_GROUP">DTM Guruh</option>
                     <option value="SAT_GROUP">SAT Guruh</option>
                     <option value="MILLIY_GROUP">Milliy Guruh</option>
-                    <option value="ATTESTATSIYA_GROUP">Attestatsiya Guruh</option>
+                    <option value="ATTESTATSIYA_GROUP">
+                      Attestatsiya Guruh
+                    </option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Kirish turi *</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Kirish turi *
+                  </label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.testAccess}
-                    onChange={(e) => setForm({ ...form, testAccess: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, testAccess: e.target.value })
+                    }
                   >
                     <option value="PUBLIC">Ommaviy</option>
                     <option value="PREMIUM">Premium</option>
@@ -180,15 +251,21 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
 
               {form.testAccess === "GROUP" && (
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Guruh *</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Guruh *
+                  </label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.groupId}
-                    onChange={(e) => setForm({ ...form, groupId: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, groupId: e.target.value })
+                    }
                   >
                     <option value="">Guruh tanlang</option>
                     {groups.map((g: any) => (
-                      <option key={g.id} value={g.id}>{g.groupName}</option>
+                      <option key={g.id} value={g.id}>
+                        {g.groupName}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -196,11 +273,15 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
 
               {(form.testType === "DTM" || form.testType === "DTM_GROUP") && (
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Blok turi</label>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    Blok turi
+                  </label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.testBlock}
-                    onChange={(e) => setForm({ ...form, testBlock: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, testBlock: e.target.value })
+                    }
                   >
                     <option value="">Tanlanmagan</option>
                     <option value="MANDATORY">Majburiy (Matematika)</option>
@@ -210,24 +291,32 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
               )}
 
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqada) *</label>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Vaqt (daqiqada) *
+                </label>
                 <Input
                   type="number"
                   min={5}
                   max={180}
                   value={form.duration}
-                  onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setForm({ ...form, duration: Number(e.target.value) })
+                  }
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Tavsif</label>
+                <label className="text-sm font-medium mb-1.5 block">
+                  Tavsif
+                </label>
                 <textarea
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none"
                   rows={3}
                   placeholder="Test haqida..."
                   value={form.testDesc}
-                  onChange={(e) => setForm({ ...form, testDesc: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, testDesc: e.target.value })
+                  }
                 />
               </div>
 
@@ -244,7 +333,9 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
               {questions.map((q, qIndex) => (
                 <div key={qIndex} className="bg-muted/30 rounded-2xl p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="font-bold text-sm text-primary">{qIndex + 1}-savol</span>
+                    <span className="font-bold text-sm text-primary">
+                      {qIndex + 1}-savol
+                    </span>
                     <button
                       onClick={() => removeQuestion(qIndex)}
                       className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
@@ -259,14 +350,18 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                       rows={2}
                       placeholder="Savol matnini kiriting..."
                       value={q.questionText}
-                      onChange={(e) => updateQuestion(qIndex, "questionText", e.target.value)}
+                      onChange={(e) =>
+                        updateQuestion(qIndex, "questionText", e.target.value)
+                      }
                     />
 
                     <div className="space-y-2">
                       {q.options.map((opt, i) => (
                         <div key={i} className="flex items-center gap-2">
                           <button
-                            onClick={() => updateQuestion(qIndex, "correctAnswer", i)}
+                            onClick={() =>
+                              updateQuestion(qIndex, "correctAnswer", i)
+                            }
                             className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
                               q.correctAnswer === i
                                 ? "border-primary bg-primary text-white"
@@ -278,7 +373,9 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                           <Input
                             placeholder={`${["A", "B", "C", "D"][i]} variant`}
                             value={opt}
-                            onChange={(e) => updateOption(qIndex, i, e.target.value)}
+                            onChange={(e) =>
+                              updateOption(qIndex, i, e.target.value)
+                            }
                           />
                         </div>
                       ))}
@@ -287,11 +384,48 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                     <Input
                       placeholder="Javob izohi (ixtiyoriy)"
                       value={q.explanation}
-                      onChange={(e) => updateQuestion(qIndex, "explanation", e.target.value)}
+                      onChange={(e) =>
+                        updateQuestion(qIndex, "explanation", e.target.value)
+                      }
                     />
                   </div>
                 </div>
               ))}
+              {/* DOCX Upload */}
+              <div className="bg-muted/30 rounded-2xl p-4 border-2 border-dashed border-border hover:border-primary transition-colors">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".docx"
+                  className="hidden"
+                  onChange={handleDocxUpload}
+                />
+                <div className="text-center">
+                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm font-medium mb-1">
+                    Word fayldan yuklash
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    .docx format: 1. Savol / A) variant* (to'g'ri)
+                  </p>
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                    className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
+                  >
+                    {uploading ? "Yuklanmoqda..." : ".docx yuklash"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Separator */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground">
+                  yoki qo'lda kiriting
+                </span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
 
               <button
                 onClick={addNewQuestion}
