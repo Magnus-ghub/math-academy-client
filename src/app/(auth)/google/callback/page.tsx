@@ -1,0 +1,34 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuthStore } from "@/lib/store/auth.store";
+
+export default function GoogleCallbackPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { setAuth } = useAuthStore();
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    const userId = searchParams.get("userId");
+    const userName = searchParams.get("userName");
+    const userRole = searchParams.get("userRole");
+
+    if (token && userId) {
+      setAuth(
+        { id: userId, userName, userRole } as any,
+        token
+      );
+      router.push(userRole === "ADMIN" ? "/admin" : "/dashboard");
+    } else {
+      router.push("/login");
+    }
+  }, []);
+
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <p className="text-muted-foreground animate-pulse">Kirilmoqda...</p>
+    </div>
+  );
+}
