@@ -30,11 +30,20 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       isAuthenticated: false,
 
-      setAuth: (user, accessToken) =>
-        set({ user, accessToken, isAuthenticated: true }),
-
-      logout: () =>
-        set({ user: null, accessToken: null, isAuthenticated: false }),
+      setAuth: (user, accessToken) => {
+        // Cookie qo'shish
+        if (typeof document !== "undefined") {
+          document.cookie = `auth-token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+        }
+        set({ user, accessToken, isAuthenticated: true });
+      },
+      logout: () => {
+        // Cookie o'chirish
+        if (typeof document !== "undefined") {
+          document.cookie = "auth-token=; path=/; max-age=0";
+        }
+        set({ user: null, accessToken: null, isAuthenticated: false });
+      },
 
       updateUser: (updatedUser) =>
         set((state) => ({
@@ -43,6 +52,6 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-    }
-  )
+    },
+  ),
 );
