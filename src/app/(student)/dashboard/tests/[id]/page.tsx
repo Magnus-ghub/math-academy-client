@@ -1,70 +1,56 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@apollo/client/react";
 import { Clock, ChevronLeft, ChevronRight, Flag, CheckCircle } from "lucide-react";
-
-const mockTest = {
-  id: "1",
-  testTitle: "DTM 2026 - Variant 1",
-  testType: "DTM",
-  duration: 60,
-  totalQuestions: 5,
-  questions: [
-    {
-      id: "q1",
-      questionText: "2x + 5 = 13 tenglamani yeching.",
-      options: ["x = 3", "x = 4", "x = 5", "x = 6"],
-      orderIndex: 1,
-    },
-    {
-      id: "q2",
-      questionText: "Uchburchak tomonlari 3, 4, 5 bo'lsa, yuzini toping.",
-      options: ["5", "6", "7", "8"],
-      orderIndex: 2,
-    },
-    {
-      id: "q3",
-      questionText: "log₂(8) = ?",
-      options: ["2", "3", "4", "8"],
-      orderIndex: 3,
-    },
-    {
-      id: "q4",
-      questionText: "sin(30°) = ?",
-      options: ["0", "0.5", "√2/2", "1"],
-      orderIndex: 4,
-    },
-    {
-      id: "q5",
-      questionText: "1 + 2 + 3 + ... + 100 = ?",
-      options: ["4950", "5000", "5050", "5100"],
-      orderIndex: 5,
-    },
-  ],
-};
+import { useRouter, useParams } from "next/navigation";
+import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
+import { SUBMIT_TEST } from "@/lib/graphql/result";
 
 export default function TakeTestPage() {
+  const { id } = useParams();
+  const router = useRouter();
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [timeLeft, setTimeLeft] = useState(mockTest.duration * 60);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
+  const [startTime] = useState(Date.now());
 
-  const currentQuestion = mockTest.questions[currentIndex];
-  const totalQuestions = mockTest.questions.length;
-  const answeredCount = Object.keys(answers).length;
+  const { data: testData, loading: testLoading } = useQuery<{ getTest: any }>(GET_TEST, {
+    variables: { testId: id },
+  });
 
-  // Timer
+  const { data: questionsData, loading: questionsLoading } = useQuery<{ getQuestions: any[] }>(GET_QUESTIONS, {
+    variables: { testId: id },
+  });
+
+  const [submitTest] = useMutation(SUBMIT_TEST, {
+    onCompleted: (data: any) => {
+      router.push(`/dashboard/results/${data.submitTest.id}`);
+    },
+  });
+
+  const test = testData?.getTest;
+  const questions = questionsData?.getQuestions || [];
+
   useEffect(() => {
-    if (isFinished) return;
+    if (test?.duration) {
+      setTimeLeft(test.duration * 60);
+    }
+  }, [test]);
+
+  useEffect(() => {
+    if (isFinished || timeLeft === 0) return;
     const timer = setInterval(() => {
       setTimeLeft((t) => {
-        if (t <= 1) { clearInterval(timer); setIsFinished(true); return 0; }
+        if (t <= 1) { clearInterval(timer); handleFinish(); return 0; }
         return t - 1;
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, [isFinished]);
+  }, [isFinished, timeLeft]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -72,19 +58,45 @@ export default function TakeTestPage() {
     return `${m}:${s}`;
   };
 
-  const selectAnswer = (qId: string, index: number) => {
-    setAnswers((prev) => ({ ...prev, [qId]: index }));
-  };
+  const handleFinish = () => {
+    setIsFinished(true);
+    const duration = Math.floor((Date.now() - startTime) / 1000 / 60);
+    const answersInput = questions.map((q: any, i: number) => ({
+      questionId: q.id,
+      selectedAnswer: answers[q.id] ?? 0,
+      timeSpent: 0,
+    }));
 
-  const toggleFlag = (qId: string) => {
-    setFlagged((prev) => {
-      const next = new Set(prev);
-      next.has(qId) ? next.delete(qId) : next.add(qId);
-      return next;
+    submitTest({
+      variables: {
+        input: {
+          testId: id,
+          answers: answersInput,
+          duration,
+        },
+      },
     });
   };
 
-  const handleFinish = () => setIsFinished(true);
+  if (testLoading || questionsLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!test || questions.length === 0) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <p>Test topilmadi yoki savollar yo'q</p>
+      </div>
+    );
+  }
+
+  const currentQuestion = questions[currentIndex];
+  const totalQuestions = questions.length;
+  const answeredCount = Object.keys(answers).length;
 
   if (isFinished) {
     return (
@@ -96,26 +108,7 @@ export default function TakeTestPage() {
         <p className="text-muted-foreground mb-6">
           {answeredCount} / {totalQuestions} savol javoblandi
         </p>
-        <div className="bg-background rounded-2xl border border-border p-6 mb-6 text-left space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Javoblangan</span>
-            <span className="font-bold">{answeredCount} ta</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Javoblanmagan</span>
-            <span className="font-bold text-red-500">{totalQuestions - answeredCount} ta</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Sarflangan vaqt</span>
-            <span className="font-bold">{formatTime(mockTest.duration * 60 - timeLeft)}</span>
-          </div>
-        </div>
-        <button
-          onClick={() => window.location.href = "/dashboard/results"}
-          className="w-full bg-primary text-white py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
-        >
-          Natijani ko'rish →
-        </button>
+        <p className="text-sm text-muted-foreground animate-pulse">Natija hisoblanmoqda...</p>
       </div>
     );
   }
@@ -125,8 +118,8 @@ export default function TakeTestPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-bold text-lg">{mockTest.testTitle}</h1>
-          <p className="text-sm text-muted-foreground">{mockTest.testType}</p>
+          <h1 className="font-bold text-lg">{test.testTitle}</h1>
+          <p className="text-sm text-muted-foreground">{test.testType}</p>
         </div>
         <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-lg ${
           timeLeft < 300 ? "bg-red-100 text-red-600" : "bg-primary/10 text-primary"
@@ -157,7 +150,13 @@ export default function TakeTestPage() {
             <div className="flex items-start justify-between mb-4">
               <span className="text-sm font-bold text-primary">{currentIndex + 1}-savol</span>
               <button
-                onClick={() => toggleFlag(currentQuestion.id)}
+                onClick={() => {
+                  setFlagged((prev) => {
+                    const next = new Set(prev);
+                    next.has(currentQuestion.id) ? next.delete(currentQuestion.id) : next.add(currentQuestion.id);
+                    return next;
+                  });
+                }}
                 className={`p-2 rounded-lg transition-colors ${
                   flagged.has(currentQuestion.id)
                     ? "bg-accent/10 text-accent"
@@ -170,11 +169,14 @@ export default function TakeTestPage() {
             <p className="text-base font-medium mb-6 leading-relaxed">
               {currentQuestion.questionText}
             </p>
+            {currentQuestion.questionImage && (
+              <img src={currentQuestion.questionImage} alt="question" className="mb-4 rounded-lg max-h-48 object-contain" />
+            )}
             <div className="space-y-3">
-              {currentQuestion.options.map((option, i) => (
+              {currentQuestion.options.map((option: string, i: number) => (
                 <button
                   key={i}
-                  onClick={() => selectAnswer(currentQuestion.id, i)}
+                  onClick={() => setAnswers((prev) => ({ ...prev, [currentQuestion.id]: i }))}
                   className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${
                     answers[currentQuestion.id] === i
                       ? "border-primary bg-primary/5 text-primary"
@@ -230,7 +232,7 @@ export default function TakeTestPage() {
           <div className="bg-background rounded-2xl border border-border p-4 sticky top-6">
             <p className="text-xs font-semibold text-muted-foreground mb-3">SAVOLLAR</p>
             <div className="grid grid-cols-5 lg:grid-cols-4 gap-1.5">
-              {mockTest.questions.map((q, i) => (
+              {questions.map((q: any, i: number) => (
                 <button
                   key={q.id}
                   onClick={() => setCurrentIndex(i)}
@@ -241,30 +243,19 @@ export default function TakeTestPage() {
                       ? "bg-green-100 text-green-700"
                       : flagged.has(q.id)
                       ? "bg-accent/20 text-accent"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {i + 1}
                 </button>
               ))}
             </div>
+
             <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-primary" />
-                Joriy
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-green-100" />
-                Javoblangan
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-accent/20" />
-                Belgilangan
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded bg-muted" />
-                Javoblanmagan
-              </div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-primary" />Joriy</div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-green-100" />Javoblangan</div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-accent/20" />Belgilangan</div>
+              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-muted" />Javoblanmagan</div>
             </div>
 
             <button
