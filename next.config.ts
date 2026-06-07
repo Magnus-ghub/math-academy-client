@@ -12,7 +12,7 @@ const nextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org",
               "frame-src https://oauth.telegram.org",
-              "connect-src 'self' http://localhost:4000 https://oauth.telegram.org",
+              "connect-src 'self' http://api.cuben.info https://oauth.telegram.org",
               "img-src 'self' data: https: blob:",
               "style-src 'self' 'unsafe-inline'",
             ].join("; "),
