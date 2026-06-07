@@ -23,6 +23,7 @@ const menuItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/dashboard/tests", icon: BookOpen, label: "Testlar" },
   { href: "/dashboard/results", icon: Trophy, label: "Natijalarim" },
+  { href: "/dashboard/leaderboard", icon: Trophy, label: "Reyting" },
   { href: "/dashboard/groups", icon: Users, label: "Guruhlarim" },
   { href: "/dashboard/profile", icon: User, label: "Profil" },
 ];
