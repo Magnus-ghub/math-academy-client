@@ -1,23 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
-  LayoutDashboard,
-  BookOpen,
-  Trophy,
-  Users,
-  User,
-  Sun,
-  Moon,
-  LogOut,
-  ChevronRight,
+  LayoutDashboard, BookOpen, Trophy, Users, User,
+  Sun, Moon, LogOut, ChevronRight, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store/auth.store";
-import { useRouter } from "next/navigation";
 
 const menuItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -28,7 +21,7 @@ const menuItems = [
   { href: "/dashboard/profile", icon: User, label: "Profil" },
 ];
 
-export default function StudentSidebar() {
+function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
@@ -40,10 +33,10 @@ export default function StudentSidebar() {
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-background border-r border-border flex flex-col">
+    <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-6 border-b border-border">
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3" onClick={onClose}>
           <Image src="/logo.jpg" alt="Saidxonov Academy" width={36} height={36} className="rounded-lg" />
           <div>
             <p className="font-bold text-sm">Saidxonov</p>
@@ -73,6 +66,7 @@ export default function StudentSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
                 isActive
@@ -105,6 +99,51 @@ export default function StudentSidebar() {
           Chiqish
         </button>
       </div>
-    </aside>
+    </div>
+  );
+}
+
+export default function StudentSidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex w-64 min-h-screen bg-background border-r border-border flex-col">
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile toggle */}
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background border border-border rounded-xl shadow-lg"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/60"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile drawer */}
+      <aside className={cn(
+        "md:hidden fixed top-0 left-0 z-50 w-64 h-full bg-background border-r border-border transition-transform duration-300",
+        mobileOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="absolute top-4 right-4">
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <SidebarContent onClose={() => setMobileOpen(false)} />
+      </aside>
+    </>
   );
 }
