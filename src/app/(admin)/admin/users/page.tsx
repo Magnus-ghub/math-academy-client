@@ -1,15 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter, MoreHorizontal, Shield, Ban, UserCheck } from "lucide-react";
+import { useQuery, useMutation } from "@apollo/client/react";
+import { Search, MoreHorizontal, Shield, Ban, UserCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { GET_ALL_USERS, BLOCK_USER, CHANGE_ROLE } from "@/lib/graphql/user";
 
 const roleColors: Record<string, string> = {
   STUDENT: "bg-gray-100 text-gray-700",
@@ -27,20 +22,8 @@ const roleLabels: Record<string, string> = {
 
 const statusColors: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-700",
-  BLOCKED: "bg-red-100 text-red-700",
-  DELETED: "bg-gray-100 text-gray-500",
+  BLOCKED: "bg-red-100 text-red-600",
 };
-
-// Placeholder data
-const mockUsers = Array.from({ length: 20 }, (_, i) => ({
-  id: `user-${i + 1}`,
-  userName: `Foydalanuvchi ${i + 1}`,
-  userPhone: `+998 9${i} ${100 + i} ${10 + i} ${20 + i}`,
-  userRole: ["STUDENT", "ACADEM_STUDENT", "TEACHER", "ADMIN"][i % 4],
-  userStatus: i % 7 === 0 ? "BLOCKED" : "ACTIVE",
-  userAuthType: i % 2 === 0 ? "TELEGRAM" : "GOOGLE",
-  createdAt: new Date(2026, 0, i + 1).toLocaleDateString("uz-UZ"),
-}));
 
 const PAGE_SIZE = 10;
 
@@ -49,15 +32,38 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [page, setPage] = useState(1);
 
-  const filtered = mockUsers.filter((u) => {
-    const matchSearch = u.userName.toLowerCase().includes(search.toLowerCase()) ||
-      u.userPhone.includes(search);
+  const { data, loading, refetch } = useQuery<{ getAllUsers: any[] }>(GET_ALL_USERS);
+  const users = data?.getAllUsers || [];
+
+  const [blockUser] = useMutation(BLOCK_USER, {
+    onCompleted: () => refetch(),
+  });
+
+  const [changeRole] = useMutation(CHANGE_ROLE, {
+    onCompleted: () => refetch(),
+  });
+
+  const filtered = users.filter((u) => {
+    const matchSearch =
+      u.userName?.toLowerCase().includes(search.toLowerCase()) ||
+      u.userPhone?.includes(search) ||
+      u.telegramId?.includes(search);
     const matchRole = roleFilter === "ALL" || u.userRole === roleFilter;
     return matchSearch && matchRole;
   });
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-muted rounded-2xl h-16 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -73,13 +79,13 @@ export default function AdminUsersPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Ism yoki telefon bo'yicha qidirish..."
+            placeholder="Ism, telefon yoki Telegram ID..."
             className="pl-9"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {["ALL", "STUDENT", "ACADEM_STUDENT", "TEACHER", "ADMIN"].map((role) => (
             <button
               key={role}
@@ -112,53 +118,67 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {paginated.map((user, i) => (
-                <tr key={user.id} className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
+              {paginated.map((user: any, i: number) => (
+                <tr
+                  key={user.id}
+                  className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${
+                    i % 2 === 0 ? "" : "bg-muted/10"
+                  }`}
+                >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                        {user.userName[0]}
+                        {user.userName?.[0]?.toUpperCase() || "U"}
                       </div>
-                      <span className="font-medium text-sm">{user.userName}</span>
+                      <div>
+                        <p className="font-medium text-sm">{user.userName || "—"}</p>
+                        {user.userLastName && (
+                          <p className="text-xs text-muted-foreground">{user.userLastName}</p>
+                        )}
+                      </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-muted-foreground">{user.userPhone}</td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {user.userPhone || "—"}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.userRole]}`}>
                       {roleLabels[user.userRole]}
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[user.userStatus]}`}>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[user.userStatus] || "bg-gray-100 text-gray-600"}`}>
                       {user.userStatus === "ACTIVE" ? "Faol" : "Bloklangan"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {user.userAuthType === "TELEGRAM" ? "🔵 Telegram" : "🔴 Google"}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{user.createdAt}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {new Date(user.createdAt).toLocaleDateString("uz-UZ")}
+                  </td>
                   <td className="px-4 py-3">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <button className="p-1 rounded-lg hover:bg-muted transition-colors">
-                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <UserCheck className="w-4 h-4 mr-2 text-green-600" />
-                          Premium berish
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Shield className="w-4 h-4 mr-2 text-blue-600" />
-                          Rol o'zgartirish
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Ban className="w-4 h-4 mr-2" />
-                          Bloklash
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => changeRole({
+                          variables: {
+                            userId: user.id,
+                            userRole: user.userRole === "STUDENT" ? "ACADEM_STUDENT" : "STUDENT",
+                          },
+                        })}
+                        className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+                        title="Rol o'zgartirish"
+                      >
+                        <Shield className="w-3.5 h-3.5 text-blue-600" />
+                      </button>
+                      <button
+                        onClick={() => blockUser({ variables: { userId: user.id } })}
+                        className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                        title="Bloklash"
+                      >
+                        <Ban className="w-3.5 h-3.5 text-red-500" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -173,34 +193,15 @@ export default function AdminUsersPage() {
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 disabled:opacity-40 transition-colors"
             >
               ← Oldingi
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-              .map((p, idx, arr) => (
-                <>
-                  {idx > 0 && arr[idx - 1] !== p - 1 && (
-                    <span key={`dots-${p}`} className="px-2 py-1.5 text-xs text-muted-foreground">...</span>
-                  )}
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      page === p ? "bg-primary text-white" : "bg-muted hover:bg-muted/80"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                </>
-              ))
-            }
             <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || totalPages === 0}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 disabled:opacity-40 transition-colors"
             >
               Keyingi →
