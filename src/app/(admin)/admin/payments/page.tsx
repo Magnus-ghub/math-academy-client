@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery, useMutation } from "@apollo/client/react";
 import { Search, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { GET_ALL_PAYMENTS, CONFIRM_MANUAL_PAYMENT } from "@/lib/graphql/payment";
 
 const statusColors: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -21,17 +23,6 @@ const providerColors: Record<string, string> = {
   MANUAL: "bg-gray-100 text-gray-700",
 };
 
-const mockPayments = Array.from({ length: 20 }, (_, i) => ({
-  id: `pay-${i + 1}`,
-  userId: `user-${i + 1}`,
-  userName: `Foydalanuvchi ${i + 1}`,
-  amount: (50000 + i * 10000).toLocaleString("uz-UZ"),
-  paymentType: i % 2 === 0 ? "PREMIUM" : "GROUP",
-  paymentProvider: i % 3 === 0 ? "MANUAL" : "CLICK",
-  paymentStatus: ["PENDING", "CONFIRMED", "FAILED"][i % 3],
-  createdAt: new Date(2026, 0, i + 1).toLocaleDateString("uz-UZ"),
-}));
-
 const PAGE_SIZE = 10;
 
 export default function AdminPaymentsPage() {
@@ -39,8 +30,15 @@ export default function AdminPaymentsPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [page, setPage] = useState(1);
 
-  const filtered = mockPayments.filter((p) => {
-    const matchSearch = p.userName.toLowerCase().includes(search.toLowerCase());
+  const { data, loading, refetch } = useQuery<{ getAllPayments: any[] }>(GET_ALL_PAYMENTS);
+  const payments = data?.getAllPayments || [];
+
+  const [confirmPayment] = useMutation(CONFIRM_MANUAL_PAYMENT, {
+    onCompleted: () => refetch(),
+  });
+
+  const filtered = payments.filter((p) => {
+    const matchSearch = p.userId?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "ALL" || p.paymentStatus === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -49,18 +47,28 @@ export default function AdminPaymentsPage() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const stats = {
-    total: mockPayments.length,
-    pending: mockPayments.filter(p => p.paymentStatus === "PENDING").length,
-    confirmed: mockPayments.filter(p => p.paymentStatus === "CONFIRMED").length,
-    failed: mockPayments.filter(p => p.paymentStatus === "FAILED").length,
+    total: payments.length,
+    pending: payments.filter((p) => p.paymentStatus === "PENDING").length,
+    confirmed: payments.filter((p) => p.paymentStatus === "CONFIRMED").length,
+    failed: payments.filter((p) => p.paymentStatus === "FAILED").length,
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="bg-muted rounded-2xl h-16 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">To'lovlar</h1>
-          <p className="text-muted-foreground text-sm">{filtered.length} ta to'lov</p>
+          <p className="text-muted-foreground text-sm">{payments.length} ta to'lov</p>
         </div>
       </div>
 
@@ -87,7 +95,7 @@ export default function AdminPaymentsPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Foydalanuvchi nomi bo'yicha..."
+            placeholder="Foydalanuvchi ID bo'yicha..."
             className="pl-9"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -126,18 +134,24 @@ export default function AdminPaymentsPage() {
               </tr>
             </thead>
             <tbody>
-              {paginated.map((payment, i) => (
-                <tr key={payment.id} className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? "" : "bg-muted/10"}`}>
+              {paginated.map((payment: any, i: number) => (
+                <tr
+                  key={payment.id}
+                  className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${
+                    i % 2 === 0 ? "" : "bg-muted/10"
+                  }`}
+                >
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
-                        {payment.userName[0]}
-                      </div>
-                      <span className="text-sm font-medium">{payment.userName}</span>
-                    </div>
+                    <p className="text-sm font-mono text-muted-foreground truncate max-w-30">
+                      {payment.userId}
+                    </p>
                   </td>
-                  <td className="px-4 py-3 text-sm font-semibold">{payment.amount} so'm</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{payment.paymentType}</td>
+                  <td className="px-4 py-3 text-sm font-semibold">
+                    {payment.amount?.toLocaleString()} so'm
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {payment.paymentType}
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${providerColors[payment.paymentProvider]}`}>
                       {payment.paymentProvider}
@@ -148,17 +162,17 @@ export default function AdminPaymentsPage() {
                       {statusLabels[payment.paymentStatus]}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{payment.createdAt}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {new Date(payment.createdAt).toLocaleDateString("uz-UZ")}
+                  </td>
                   <td className="px-4 py-3">
-                    {payment.paymentStatus === "PENDING" && (
-                      <div className="flex gap-1">
-                        <button className="px-2 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors">
-                          Tasdiqlash
-                        </button>
-                        <button className="px-2 py-1 rounded-lg bg-red-100 text-red-600 text-xs font-medium hover:bg-red-200 transition-colors">
-                          Rad
-                        </button>
-                      </div>
+                    {payment.paymentStatus === "PENDING" && payment.paymentProvider === "MANUAL" && (
+                      <button
+                        onClick={() => confirmPayment({ variables: { paymentId: payment.id } })}
+                        className="px-3 py-1 rounded-lg bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors"
+                      >
+                        Tasdiqlash
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -174,15 +188,15 @@ export default function AdminPaymentsPage() {
           </p>
           <div className="flex gap-2">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 disabled:opacity-40 transition-colors"
             >
               ← Oldingi
             </button>
             <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || totalPages === 0}
               className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted hover:bg-muted/80 disabled:opacity-40 transition-colors"
             >
               Keyingi →
