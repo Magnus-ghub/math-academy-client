@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import { Search, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GET_ALL_PAYMENTS, CONFIRM_MANUAL_PAYMENT } from "@/lib/graphql/payment";
+import { toast } from "sonner";
 
 const statusColors: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -34,7 +35,13 @@ export default function AdminPaymentsPage() {
   const payments = data?.getAllPayments || [];
 
   const [confirmPayment] = useMutation(CONFIRM_MANUAL_PAYMENT, {
-    onCompleted: () => refetch(),
+    onCompleted: () => {
+      refetch(),
+      toast.success("To'lov tasdiqlandi!")
+    },
+    onError: () => {
+      toast.error("Xatolik yuz berdi");
+    },
   });
 
   const filtered = payments.filter((p) => {

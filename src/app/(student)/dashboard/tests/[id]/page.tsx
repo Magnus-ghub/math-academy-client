@@ -6,6 +6,7 @@ import { Clock, ChevronLeft, ChevronRight, Flag, CheckCircle } from "lucide-reac
 import { useRouter, useParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
 import { SUBMIT_TEST } from "@/lib/graphql/result";
+import { toast } from "sonner";
 
 export default function TakeTestPage() {
   const { id } = useParams();
@@ -29,6 +30,10 @@ export default function TakeTestPage() {
   const [submitTest] = useMutation(SUBMIT_TEST, {
     onCompleted: (data: any) => {
       router.push(`/dashboard/results/${data.submitTest.id}`);
+      toast.success("Test yuborildi!")
+    },
+    onError: () => {
+      toast.error("Xatolik yuz berdi");
     },
   });
 

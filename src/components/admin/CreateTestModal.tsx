@@ -6,6 +6,7 @@ import { X, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CREATE_TEST, ADD_QUESTION } from "@/lib/graphql/test";
 import { GET_ALL_GROUPS } from "@/lib/graphql/group";
+import { toast } from "sonner";
 
 interface Question {
   questionText: string;
@@ -42,6 +43,10 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
     onCompleted: (data: any) => {
       setTestId(data.createTest.id);
       setStep("questions");
+      toast.success("Test yaratildi!")
+    },
+    onError: () => {
+      toast.error("Xatolik yuz berdi");
     },
   });
 

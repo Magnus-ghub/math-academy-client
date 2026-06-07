@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { GET_ME } from "@/lib/graphql/user";
 import { UPDATE_USER } from "@/lib/graphql/user";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { updateUser } = useAuthStore();
@@ -39,6 +40,10 @@ export default function ProfilePage() {
       updateUser(data.updateUser);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
+      toast.success("Profil saqlandi!");
+    },
+    onError: () => {
+      toast.error("Xatolik yuz berdi");
     },
   });
 

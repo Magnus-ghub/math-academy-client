@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import { Search, MoreHorizontal, Shield, Ban, UserCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GET_ALL_USERS, BLOCK_USER, CHANGE_ROLE } from "@/lib/graphql/user";
+import { toast } from "sonner";
 
 const roleColors: Record<string, string> = {
   STUDENT: "bg-gray-100 text-gray-700",
@@ -36,7 +37,13 @@ export default function AdminUsersPage() {
   const users = data?.getAllUsers || [];
 
   const [blockUser] = useMutation(BLOCK_USER, {
-    onCompleted: () => refetch(),
+    onCompleted: () => {
+      refetch();
+      toast.success("Foydalanuvchi bloklandi");
+    },
+    onError: () => {
+      toast.error("Xatolik yuz berdi");
+    },
   });
 
   const [changeRole] = useMutation(CHANGE_ROLE, {

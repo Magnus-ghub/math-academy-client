@@ -5,6 +5,7 @@ import { useMutation } from "@apollo/client/react";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CREATE_GROUP } from "@/lib/graphql/group";
+import { toast } from "sonner";
 
 interface Props {
   onClose: () => void;
@@ -24,6 +25,10 @@ export default function CreateGroupModal({ onClose, onSuccess }: Props) {
     onCompleted: () => {
       onSuccess();
       onClose();
+      toast.success("Guruh yaratildi!")
+    },
+    onError: () => {
+      toast.error("Xatolik yuz berdi");
     },
   });
 
