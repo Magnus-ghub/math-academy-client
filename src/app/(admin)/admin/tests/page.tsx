@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Plus, Search, Clock, FileQuestion, Eye, Trash2 } from "lucide-react";
+import { Plus, Search, Clock, FileQuestion, Eye, Pencil, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { GET_ALL_TESTS, UPDATE_TEST, DELETE_QUESTION } from "@/lib/graphql/test";
+import { GET_ALL_TESTS, UPDATE_TEST } from "@/lib/graphql/test";
 import CreateTestModal from "@/components/admin/CreateTestModal";
+import ImportTestModal from "@/components/admin/ImportTestModal";
 
 const testTypeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary",
@@ -50,6 +53,8 @@ export default function AdminTestsPage() {
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const router = useRouter();
 
   const { data, loading, refetch } = useQuery<{ getAllTests: any[] }>(GET_ALL_TESTS);
   const tests = data?.getAllTests || [];
@@ -97,19 +102,38 @@ export default function AdminTestsPage() {
           <h1 className="text-2xl font-bold">Testlar</h1>
           <p className="text-muted-foreground text-sm">{filtered.length} ta test</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Yangi test
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center gap-2 bg-muted border border-border px-4 py-2 rounded-xl text-sm font-medium hover:bg-muted/80 transition-colors"
+          >
+            <Sparkles className="w-4 h-4 text-primary" />
+            AI import
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Yangi test
+          </button>
+        </div>
       </div>
 
       {showModal && (
         <CreateTestModal
           onClose={() => setShowModal(false)}
           onSuccess={() => refetch()}
+        />
+      )}
+
+      {showImport && (
+        <ImportTestModal
+          onClose={() => setShowImport(false)}
+          onImported={(testId) => {
+            refetch();
+            router.push(`/admin/tests/${testId}/edit`);
+          }}
         />
       )}
 
@@ -206,6 +230,11 @@ export default function AdminTestsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
+                      <Link href={`/admin/tests/${test.id}/edit`}>
+                        <button className="p-1.5 rounded-lg hover:bg-muted transition-colors" title="Tahrirlash">
+                          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
+                      </Link>
                       {test.testStatus === "DRAFT" && (
                         <button
                           onClick={() => handleStatusChange(test, "PUBLISHED")}

@@ -95,6 +95,20 @@ export const ADD_QUESTION = gql`
     addQuestion(input: $input) {
       id
       questionText
+      questionImage
+      options
+      correctAnswer
+      orderIndex
+    }
+  }
+`;
+
+export const UPDATE_QUESTION = gql`
+  mutation UpdateQuestion($questionId: String!, $input: QuestionUpdate!) {
+    updateQuestion(questionId: $questionId, input: $input) {
+      id
+      questionText
+      questionImage
       options
       correctAnswer
       orderIndex

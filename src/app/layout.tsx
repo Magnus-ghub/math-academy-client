@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 import { ApolloClientProvider } from "@/providers/apollo-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";

@@ -1,1 +1,404 @@
-export default function EditTestPage() { return <div>Test tahrirlash</div> }
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useQuery, useMutation } from "@apollo/client/react";
+import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { Input } from "@/components/ui/input";
+import {
+  GET_TEST,
+  GET_QUESTIONS,
+  UPDATE_TEST,
+  ADD_QUESTION,
+  UPDATE_QUESTION,
+  DELETE_QUESTION,
+} from "@/lib/graphql/test";
+import { useAuthStore } from "@/lib/store/auth.store";
+import { toast } from "sonner";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
+
+interface QuestionRow {
+  uid: string;
+  id?: string;           // DB id (mavjud savollar uchun)
+  questionText: string;
+  questionImage: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+  uploading: boolean;
+  dirty: boolean;        // o'zgartirilganmi
+  isNew: boolean;        // yangi qo'shilganmi
+}
+
+function makeRow(q?: any): QuestionRow {
+  return {
+    uid: q?.id ?? `new-${Date.now()}-${Math.random()}`,
+    id: q?.id,
+    questionText: q?.questionText ?? "",
+    questionImage: q?.questionImage ?? "",
+    options: q?.options ?? ["", "", "", ""],
+    correctAnswer: q?.correctAnswer ?? 0,
+    explanation: q?.explanation ?? "",
+    uploading: false,
+    dirty: false,
+    isNew: !q?.id,
+  };
+}
+
+export default function EditTestPage() {
+  const { id: testId } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { accessToken } = useAuthStore();
+  const [questions, setQuestions] = useState<QuestionRow[]>([]);
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<"info" | "questions">("questions");
+
+  const { data: testData, loading: testLoading } = useQuery(GET_TEST, {
+    variables: { testId },
+    skip: !testId,
+  });
+
+  const { data: questionsData, loading: questionsLoading } = useQuery(GET_QUESTIONS, {
+    variables: { testId },
+    skip: !testId,
+    fetchPolicy: "network-only",
+  });
+
+  const test = testData?.getTest;
+
+  const [testInfo, setTestInfo] = useState({ testTitle: "", testDesc: "", duration: 30, testAccess: "PUBLIC", testStatus: "DRAFT" });
+
+  useEffect(() => {
+    if (test) {
+      setTestInfo({
+        testTitle: test.testTitle ?? "",
+        testDesc: test.testDesc ?? "",
+        duration: test.duration ?? 30,
+        testAccess: test.testAccess ?? "PUBLIC",
+        testStatus: test.testStatus ?? "DRAFT",
+      });
+    }
+  }, [test]);
+
+  useEffect(() => {
+    if (questionsData?.getQuestions) {
+      setQuestions(questionsData.getQuestions.map(makeRow));
+    }
+  }, [questionsData]);
+
+  const [updateTest] = useMutation(UPDATE_TEST, {
+    onError: () => toast.error("Test ma'lumotlari saqlanmadi"),
+  });
+  const [addQuestion] = useMutation(ADD_QUESTION, {
+    onError: () => toast.error("Savol qo'shishda xatolik"),
+  });
+  const [updateQuestion] = useMutation(UPDATE_QUESTION, {
+    onError: () => toast.error("Savol yangilanmadi"),
+  });
+  const [deleteQuestion] = useMutation(DELETE_QUESTION, {
+    onError: () => toast.error("Savol o'chirilmadi"),
+  });
+
+  const uploadImage = async (file: File, uid: string) => {
+    setQ(uid, "uploading", true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_BASE}/upload/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.url) setQ(uid, "questionImage", data.url);
+      else toast.error("Rasm yuklanmadi");
+    } catch {
+      toast.error("Rasm yuklanmadi");
+    } finally {
+      setQ(uid, "uploading", false);
+    }
+  };
+
+  const setQ = (uid: string, field: keyof QuestionRow, value: any) =>
+    setQuestions((qs) => qs.map((q) => q.uid === uid ? { ...q, [field]: value, dirty: true } : q));
+
+  const setOption = (uid: string, idx: number, value: string) =>
+    setQuestions((qs) => qs.map((q) => {
+      if (q.uid !== uid) return q;
+      const options = [...q.options];
+      options[idx] = value;
+      return { ...q, options, dirty: true };
+    }));
+
+  const removeQuestion = (uid: string, dbId?: string) => {
+    setQuestions((qs) => qs.filter((q) => q.uid !== uid));
+    if (dbId) setDeletedIds((ids) => [...ids, dbId]);
+  };
+
+  const handleSave = async () => {
+    const invalid = questions.some((q) => !q.questionText.trim() || q.options.some((o) => !o.trim()));
+    if (invalid) { toast.error("Barcha savol va variantlarni to'ldiring"); return; }
+
+    setSaving(true);
+    try {
+      // Test info update
+      await updateTest({
+        variables: {
+          testId,
+          input: {
+            testTitle: testInfo.testTitle,
+            testDesc: testInfo.testDesc || undefined,
+            duration: Number(testInfo.duration),
+            testAccess: testInfo.testAccess,
+          },
+        },
+      });
+
+      // Delete removed questions
+      for (const qId of deletedIds) {
+        await deleteQuestion({ variables: { questionId: qId } });
+      }
+      setDeletedIds([]);
+
+      // Save questions
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        if (!q.dirty && !q.isNew) continue;
+
+        const payload = {
+          questionText: q.questionText,
+          questionImage: q.questionImage || undefined,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation || undefined,
+        };
+
+        if (q.isNew) {
+          const res = await addQuestion({
+            variables: {
+              input: { testId, orderIndex: i + 1, ...payload },
+            },
+          });
+          if (res.data?.addQuestion?.id) {
+            setQuestions((qs) => qs.map((x) =>
+              x.uid === q.uid ? { ...x, id: res.data.addQuestion.id, isNew: false, dirty: false } : x
+            ));
+          }
+        } else if (q.id) {
+          await updateQuestion({ variables: { questionId: q.id, input: payload } });
+          setQ(q.uid, "dirty", false);
+        }
+      }
+
+      toast.success("Test saqlandi");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    await handleSave();
+    await updateTest({ variables: { testId, input: { testStatus: "PUBLISHED" } } });
+    toast.success("Test nashr etildi!");
+    router.push("/admin/tests");
+  };
+
+  if (testLoading || questionsLoading) {
+    return (
+      <div className="max-w-3xl mx-auto space-y-3">
+        {[...Array(4)].map((_, i) => <div key={i} className="bg-muted rounded-2xl h-32 animate-pulse" />)}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Link href="/admin/tests">
+            <button className="p-2 rounded-xl hover:bg-muted transition-colors">
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          </Link>
+          <div>
+            <h1 className="text-xl font-bold truncate max-w-sm">{test?.testTitle ?? "Test tahrirlash"}</h1>
+            <p className="text-xs text-muted-foreground">{questions.length} ta savol</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={handleSave} disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-40">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Saqlash
+          </button>
+          {test?.testStatus !== "PUBLISHED" && (
+            <button onClick={handlePublish} disabled={saving}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors">
+              <BookOpen className="w-4 h-4" />
+              Nashr etish
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 bg-muted/50 rounded-xl p-1 w-fit">
+        {(["questions", "info"] as const).map((t) => (
+          <button key={t} onClick={() => setActiveTab(t)}
+            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === t ? "bg-background shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}>
+            {t === "questions" ? `Savollar (${questions.length})` : "Test ma'lumotlari"}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "info" ? (
+        <div className="bg-background rounded-2xl border border-border p-6 space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Test nomi</label>
+            <Input value={testInfo.testTitle} onChange={(e) => setTestInfo({ ...testInfo, testTitle: e.target.value })} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqa)</label>
+              <Input type="number" min={5} max={180} value={testInfo.duration}
+                onChange={(e) => setTestInfo({ ...testInfo, duration: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Kirish turi</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                value={testInfo.testAccess} onChange={(e) => setTestInfo({ ...testInfo, testAccess: e.target.value })}>
+                <option value="PUBLIC">Ommaviy</option>
+                <option value="PREMIUM">Premium</option>
+                <option value="GROUP">Guruh</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Tavsif</label>
+            <textarea className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none"
+              rows={3} value={testInfo.testDesc}
+              onChange={(e) => setTestInfo({ ...testInfo, testDesc: e.target.value })} />
+          </div>
+          <button onClick={handleSave} disabled={saving}
+            className="w-full bg-primary text-white py-2.5 rounded-xl font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Saqlash
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {questions.map((q, i) => (
+            <EditQuestionCard
+              key={q.uid}
+              q={q}
+              index={i}
+              onUpdate={setQ}
+              onUpdateOption={setOption}
+              onRemove={() => removeQuestion(q.uid, q.id)}
+              onImagePick={(file) => uploadImage(file, q.uid)}
+              canRemove={questions.length > 1}
+            />
+          ))}
+
+          <button
+            onClick={() => setQuestions((qs) => [...qs, makeRow()])}
+            className="w-full border-2 border-dashed border-border hover:border-primary rounded-2xl py-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Savol qo'shish
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImagePick, canRemove }: {
+  q: QuestionRow;
+  index: number;
+  onUpdate: (uid: string, field: keyof QuestionRow, value: any) => void;
+  onUpdateOption: (uid: string, idx: number, value: string) => void;
+  onRemove: () => void;
+  onImagePick: (file: File) => void;
+  canRemove: boolean;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className={`bg-background rounded-2xl border p-5 transition-colors ${q.dirty || q.isNew ? "border-primary/40" : "border-border"}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-sm text-primary">{index + 1}-savol</span>
+          {q.isNew && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Yangi</span>}
+          {q.dirty && !q.isNew && <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">O'zgartirildi</span>}
+        </div>
+        {canRemove && (
+          <button onClick={onRemove} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
+            <Trash2 className="w-4 h-4 text-red-500" />
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-3">
+        <textarea
+          className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+          rows={2}
+          placeholder="Savol matnini kiriting..."
+          value={q.questionText}
+          onChange={(e) => onUpdate(q.uid, "questionText", e.target.value)}
+        />
+
+        <div>
+          {q.questionImage ? (
+            <div className="relative inline-block">
+              <img src={q.questionImage} alt="savol rasmi" className="max-h-48 rounded-lg border border-border object-contain" />
+              <button
+                onClick={() => onUpdate(q.uid, "questionImage", "")}
+                className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={q.uploading}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+            >
+              {q.uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+              {q.uploading ? "Yuklanmoqda..." : "Rasm qo'shish (grafik, jadval)"}
+            </button>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) onImagePick(f); e.target.value = ""; }} />
+        </div>
+
+        <div className="space-y-2">
+          {q.options.map((opt, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <button
+                onClick={() => onUpdate(q.uid, "correctAnswer", i)}
+                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                  q.correctAnswer === i ? "border-primary bg-primary text-white" : "border-border hover:border-primary"
+                }`}
+              >
+                {["A", "B", "C", "D"][i]}
+              </button>
+              <Input placeholder={`${["A", "B", "C", "D"][i]} variant`} value={opt}
+                onChange={(e) => onUpdateOption(q.uid, i, e.target.value)} />
+            </div>
+          ))}
+        </div>
+
+        <Input placeholder="Javob izohi (ixtiyoriy)" value={q.explanation}
+          onChange={(e) => onUpdate(q.uid, "explanation", e.target.value)} />
+      </div>
+    </div>
+  );
+}
