@@ -5,14 +5,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@apollo/client/react";
+import { toast } from "sonner";
 import { TELEGRAM_LOGIN } from "@/lib/graphql/auth";
 import { useAuthStore } from "@/lib/store/auth.store";
+
+const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME!;
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
   const { setAuth } = useAuthStore();
+  const widgetMounted = useRef(false);
 
   const getRedirect = (role: string) => {
     if (callbackUrl?.startsWith("/dashboard")) return callbackUrl;
@@ -25,42 +29,43 @@ export default function LoginPage() {
       setAuth(user, accessToken);
       router.push(getRedirect(user.userRole));
     },
-    onError: (error: any) => {
-      console.error("Login error:", error);
+    onError: () => {
+      toast.error("Telegram orqali kirishda xatolik yuz berdi");
     },
   });
 
   useEffect(() => {
+    if (widgetMounted.current) return;
+    widgetMounted.current = true;
+
     (window as any).TelegramLoginCallback = (data: any) => {
       telegramLogin({
         variables: {
           telegramId: data.id.toString(),
           hash: data.hash,
-          authDate: data.auth_date,
-          userName: data.first_name,
-          userLastName: data.last_name,
-          userImage: data.photo_url,
+          authDate: Number(data.auth_date),
+          userName: data.first_name ?? undefined,
+          userLastName: data.last_name ?? undefined,
+          userImage: data.photo_url ?? undefined,
         },
       });
     };
 
-    const timer = setTimeout(() => {
-      const el = document.getElementById("telegram-login-btn");
-      if (!el || el.querySelector("script")) return;
+    const el = document.getElementById("telegram-login-btn");
+    if (!el) return;
 
-      const script = document.createElement("script");
-      script.setAttribute("data-telegram-login", "Saidxonov_Academy_bot");
-      script.setAttribute("data-size", "large");
-      script.setAttribute("data-onauth", "TelegramLoginCallback(user)");
-      script.setAttribute("data-request-access", "write");
-      script.src = "https://telegram.org/js/telegram-widget.js?22";
-      script.async = true;
-      el.appendChild(script);
-      script.onerror = (e) => console.error('Telegram script error:', e);
-    }, 500);
+    const script = document.createElement("script");
+    script.setAttribute("data-telegram-login", BOT_USERNAME);
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-onauth", "TelegramLoginCallback(user)");
+    script.setAttribute("data-request-access", "write");
+    script.setAttribute("data-userpic", "false");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.async = true;
+    script.onerror = () => toast.error("Telegram widget yuklanmadi — domenni tekshiring");
+    el.appendChild(script);
 
     return () => {
-      clearTimeout(timer);
       delete (window as any).TelegramLoginCallback;
     };
   }, []);
@@ -86,6 +91,25 @@ export default function LoginPage() {
         <div className="flex justify-center mb-2">
           <div id="telegram-login-btn" />
         </div>
+
+        {/* Dev bypass — faqat development da ko'rinadi */}
+        {process.env.NODE_ENV === "development" && (
+          <button
+            onClick={() =>
+              telegramLogin({
+                variables: {
+                  telegramId: "123456789",
+                  hash: "dev_bypass",
+                  authDate: Math.floor(Date.now() / 1000),
+                  userName: "DevUser",
+                },
+              })
+            }
+            className="w-full mt-2 py-2 rounded-xl border-2 border-dashed border-yellow-400 text-yellow-600 text-xs font-medium hover:bg-yellow-50 transition-colors"
+          >
+            🛠 Dev: Test login (Telegram bypass)
+          </button>
+        )}
 
         {loading && (
           <p className="text-sm text-muted-foreground animate-pulse text-center mb-4">

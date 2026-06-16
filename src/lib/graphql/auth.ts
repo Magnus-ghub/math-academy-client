@@ -4,7 +4,7 @@ export const TELEGRAM_LOGIN = gql`
   mutation TelegramLogin(
     $telegramId: String!
     $hash: String!
-    $authDate: Float!
+    $authDate: Int!
     $userName: String
     $userLastName: String
     $userImage: String
