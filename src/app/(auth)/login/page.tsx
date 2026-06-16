@@ -46,10 +46,10 @@ export default function LoginPage() {
       script.setAttribute("data-size", "large");
       script.setAttribute("data-onauth", "TelegramLoginCallback(user)");
       script.setAttribute("data-request-access", "write");
-      script.setAttribute("data-origin", "https://cuben.info"); // qo'shing
       script.src = "https://telegram.org/js/telegram-widget.js?22";
       script.async = true;
       el.appendChild(script);
+      script.onerror = (e) => console.error('Telegram script error:', e);
     }, 500);
 
     return () => {
@@ -93,9 +93,10 @@ export default function LoginPage() {
         </div>
 
         <button
-          onClick={() =>
-            (window.location.href = "https://api.cuben.info/auth/google")
-          }
+          onClick={() => {
+            const base = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "");
+            window.location.href = `${base}/auth/google`;
+          }}
           className="w-full flex items-center justify-center gap-3 bg-background hover:bg-muted border border-border font-semibold py-3 px-6 rounded-xl transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

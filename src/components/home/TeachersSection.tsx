@@ -2,7 +2,7 @@ import Image from "next/image";
 
 const teachers = [
   {
-    image: "/images/teacher1.png",
+    image: "/images/teacher1.jpg",
     name: "Jamshid Saidxonov",
     role: "Matematika o'qituvchisi",
     subject: "DTM · SAT · Milliy Sertifikat",
@@ -10,7 +10,7 @@ const teachers = [
     students: "5000+",
   },
   {
-    image: "/images/teacher2.png",
+    image: "/images/teacher2.jpg",
     name: "Bobur Rahimov",
     role: "Algebra va Geometriya",
     subject: "DTM · Olimpiada",
@@ -18,7 +18,7 @@ const teachers = [
     students: "2000+",
   },
   {
-    image: "/images/teacher3.png",
+    image: "/images/teacher3.jpg",
     name: "Sarvinoz Nazarova",
     role: "SAT Math mutaxassisi",
     subject: "SAT · Xalqaro imtihonlar",
@@ -26,7 +26,7 @@ const teachers = [
     students: "1500+",
   },
   {
-    image: "/images/teacher4.png",
+    image: "/images/teacher4.jpg",
     name: "Sherzod Yusupov",
     role: "Attestatsiya mutaxassisi",
     subject: "Attestatsiya · Milliy Sertifikat",

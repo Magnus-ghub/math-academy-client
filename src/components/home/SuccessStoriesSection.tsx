@@ -3,7 +3,7 @@ import { Trophy } from "lucide-react";
 
 const students = [
   {
-    image: "/images/student1.png",
+    image: "/images/student1.jpg",
     name: "Abdulloh Karimov",
     exam: "DTM",
     score: "189/189",
@@ -11,7 +11,7 @@ const students = [
     text: "Saidxonov Academy testlari tufayli DTM da to'liq ball to'pladim.",
   },
   {
-    image: "/images/student2.png",
+    image: "/images/student2.jpg",
     name: "Malika Yusupova",
     exam: "SAT",
     score: "1480/1600",
@@ -19,7 +19,7 @@ const students = [
     text: "SAT ga tayyorgarlik jarayonida bu platforma menga juda katta yordam berdi.",
   },
   {
-    image: "/images/student3.png",
+    image: "/images/student3.jpg",
     name: "Jasur Toshmatov",
     exam: "Milliy Sertifikat",
     score: "95/100",
@@ -27,7 +27,7 @@ const students = [
     text: "Milliy Sertifikat imtihoniga 2 oy tayyorlandim. Natija ajoyib chiqdi!",
   },
   {
-    image: "/images/student4.png",
+    image: "/images/student4.jpeg",
     name: "Dilnoza Rahimova",
     exam: "DTM",
     score: "185/189",

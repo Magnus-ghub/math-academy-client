@@ -15,7 +15,8 @@
       "Read(//Users/nomozof/Desktop/**)"
     ],
     "additionalDirectories": [
-      "/Users/nomozof/Desktop/math-academy-api/src/components/auth"
+      "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
+      "/Users/nomozof/Desktop/math-academy-api"
     ]
   }
 }
