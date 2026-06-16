@@ -11,6 +11,8 @@ export const GET_ME = gql`
       userAuthType
       userPhone
       userImage
+      userAddress
+      userDesc
       telegramId
       googleId
       premiumExpiresAt
@@ -47,14 +49,6 @@ export const GET_ALL_USERS = gql`
   }
 `;
 
-export const BLOCK_USER = gql`
-  mutation BlockUser($userId: String!) {
-    blockUser(userId: $userId) {
-      id
-      userStatus
-    }
-  }
-`;
 
 export const CHANGE_ROLE = gql`
   mutation ChangeRole($userId: String!, $userRole: UserRole!) {
@@ -64,3 +58,32 @@ export const CHANGE_ROLE = gql`
     }
   }
 `;
+
+export const SEARCH_USERS = gql`
+  query SearchUsers($search: String!) {
+    searchUsers(search: $search) {
+      id
+      userName
+      userLastName
+      userPhone
+      userRole
+      userStatus
+      userAuthType
+      telegramId
+    }
+  }
+`;
+
+export const ADMIN_UPDATE_USER = gql`
+  mutation AdminUpdateUser($userId: String!, $input: AdminUserUpdate!) {
+    adminUpdateUser(userId: $userId, input: $input) {
+      id
+      userName
+      userLastName
+      userPhone
+      userRole
+      userStatus
+    }
+  }
+`;
+

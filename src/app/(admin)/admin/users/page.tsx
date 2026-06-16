@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Search, MoreHorizontal, Shield, Ban, UserCheck } from "lucide-react";
+import { Search, Ban, Pencil, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { GET_ALL_USERS, BLOCK_USER, CHANGE_ROLE } from "@/lib/graphql/user";
+import { GET_ALL_USERS, ADMIN_UPDATE_USER } from "@/lib/graphql/user";
 import { toast } from "sonner";
+import EditUserModal from "@/components/admin/EditUserModal";
 
 const roleColors: Record<string, string> = {
   STUDENT: "bg-gray-100 text-gray-700",
@@ -32,27 +33,24 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [page, setPage] = useState(1);
+  const [editingUser, setEditingUser] = useState<any>(null);
 
   const { data, loading, refetch } = useQuery<{ getAllUsers: any[] }>(GET_ALL_USERS);
   const users = data?.getAllUsers || [];
 
-  const [blockUser] = useMutation(BLOCK_USER, {
-    onCompleted: () => {
+  const [adminUpdateUser] = useMutation(ADMIN_UPDATE_USER, {
+    onCompleted: (data) => {
       refetch();
-      toast.success("Foydalanuvchi bloklandi");
+      const status = data.adminUpdateUser.userStatus;
+      toast.success(status === "BLOCKED" ? "Foydalanuvchi bloklandi" : "Foydalanuvchi blokdan chiqarildi");
     },
-    onError: () => {
-      toast.error("Xatolik yuz berdi");
-    },
-  });
-
-  const [changeRole] = useMutation(CHANGE_ROLE, {
-    onCompleted: () => refetch(),
+    onError: () => toast.error("Xatolik yuz berdi"),
   });
 
   const filtered = users.filter((u) => {
     const matchSearch =
       u.userName?.toLowerCase().includes(search.toLowerCase()) ||
+      u.userLastName?.toLowerCase().includes(search.toLowerCase()) ||
       u.userPhone?.includes(search) ||
       u.telegramId?.includes(search);
     const matchRole = roleFilter === "ALL" || u.userRole === roleFilter;
@@ -167,24 +165,29 @@ export default function AdminUsersPage() {
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
                       <button
-                        onClick={() => changeRole({
-                          variables: {
-                            userId: user.id,
-                            userRole: user.userRole === "STUDENT" ? "ACADEM_STUDENT" : "STUDENT",
-                          },
-                        })}
+                        onClick={() => setEditingUser(user)}
                         className="p-1.5 rounded-lg hover:bg-blue-50 transition-colors"
-                        title="Rol o'zgartirish"
+                        title="Tahrirlash"
                       >
-                        <Shield className="w-3.5 h-3.5 text-blue-600" />
+                        <Pencil className="w-3.5 h-3.5 text-blue-600" />
                       </button>
-                      <button
-                        onClick={() => blockUser({ variables: { userId: user.id } })}
-                        className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                        title="Bloklash"
-                      >
-                        <Ban className="w-3.5 h-3.5 text-red-500" />
-                      </button>
+                      {user.userStatus === "BLOCKED" ? (
+                        <button
+                          onClick={() => adminUpdateUser({ variables: { userId: user.id, input: { userStatus: "ACTIVE" } } })}
+                          className="p-1.5 rounded-lg hover:bg-green-50 transition-colors"
+                          title="Blokdan chiqarish"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5 text-green-600" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => adminUpdateUser({ variables: { userId: user.id, input: { userStatus: "BLOCKED" } } })}
+                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                          title="Bloklash"
+                        >
+                          <Ban className="w-3.5 h-3.5 text-red-500" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -196,7 +199,9 @@ export default function AdminUsersPage() {
         {/* Pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-border">
           <p className="text-xs text-muted-foreground">
-            {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} / {filtered.length}
+            {filtered.length === 0
+              ? "0 ta natija"
+              : `${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} / ${filtered.length}`}
           </p>
           <div className="flex gap-2">
             <button
@@ -216,6 +221,12 @@ export default function AdminUsersPage() {
           </div>
         </div>
       </div>
+
+      <EditUserModal
+        user={editingUser}
+        onClose={() => setEditingUser(null)}
+        onSaved={() => refetch()}
+      />
     </div>
   );
 }

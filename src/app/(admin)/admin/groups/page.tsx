@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Plus, Users, Calendar, MoreHorizontal, Power } from "lucide-react";
+import { Plus, Users, Calendar, Power, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   GET_ALL_GROUPS,
@@ -10,6 +10,8 @@ import {
   UPDATE_GROUP,
 } from "@/lib/graphql/group";
 import CreateGroupModal from "@/components/admin/CreateGroupModal";
+import AddUserToGroupModal from "@/components/admin/AddUserToGroupModal";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 
 const groupTypeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary",
@@ -22,6 +24,8 @@ export default function AdminGroupsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [showModal, setShowModal] = useState(false);
+  const [addMemberGroup, setAddMemberGroup] = useState<any>(null);
+  const [confirmGroupId, setConfirmGroupId] = useState<string | null>(null);
   const [form, setForm] = useState({
     groupName: "",
     groupType: "DTM",
@@ -81,6 +85,7 @@ export default function AdminGroupsPage() {
         },
       },
     });
+    setConfirmGroupId(null);
   };
 
   if (loading) {
@@ -177,11 +182,14 @@ export default function AdminGroupsPage() {
                     className={`w-2 h-2 rounded-full ${group.groupStatus === "ACTIVE" ? "bg-green-500" : "bg-gray-300"}`}
                   />
                   <button
-                    onClick={() => handleToggleStatus(group)}
+                    onClick={() => group.groupStatus === "ACTIVE"
+                      ? setConfirmGroupId(group.id)
+                      : handleToggleStatus(group)
+                    }
                     className="p-1 rounded-lg hover:bg-muted transition-colors"
                     title={group.groupStatus === "ACTIVE" ? "Yopish" : "Ochish"}
                   >
-                    <Power className="w-4 h-4 text-muted-foreground" />
+                    <Power className={`w-4 h-4 ${group.groupStatus === "ACTIVE" ? "text-muted-foreground" : "text-green-500"}`} />
                   </button>
                 </div>
               </div>
@@ -206,14 +214,36 @@ export default function AdminGroupsPage() {
                 <button className="flex-1 text-xs py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 font-medium transition-colors">
                   Testlar
                 </button>
-                <button className="flex-1 text-xs py-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 font-medium transition-colors">
-                  Tahrirlash
+                <button
+                  onClick={() => setAddMemberGroup(group)}
+                  className="flex items-center justify-center gap-1.5 flex-1 text-xs py-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 font-medium transition-colors"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  A'zo qo'shish
                 </button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      <AddUserToGroupModal
+        group={addMemberGroup}
+        onClose={() => setAddMemberGroup(null)}
+        onAdded={() => refetch()}
+      />
+
+      <ConfirmModal
+        open={!!confirmGroupId}
+        title="Guruhni yopmoqchimisiz?"
+        description={`"${groups.find((g) => g.id === confirmGroupId)?.groupName}" guruhini yopganingizdan so'ng foydalanuvchilar unga kira olmaydi.`}
+        confirmLabel="Ha, yopish"
+        onConfirm={() => {
+          const group = groups.find((g) => g.id === confirmGroupId);
+          if (group) handleToggleStatus(group);
+        }}
+        onCancel={() => setConfirmGroupId(null)}
+      />
     </div>
   );
 }

@@ -38,3 +38,20 @@ export const UPDATE_GROUP = gql`
     }
   }
 `;
+
+export const GET_GROUP_MEMBER_IDS = gql`
+  query GetGroupMemberIds($groupId: String!) {
+    getGroupMemberIds(groupId: $groupId)
+  }
+`;
+
+export const ADD_USER_TO_GROUP = gql`
+  mutation AddUserToGroup($groupId: String!, $userId: String!) {
+    addUserToGroup(groupId: $groupId, userId: $userId) {
+      id
+      userId
+      groupId
+      expiresAt
+    }
+  }
+`;

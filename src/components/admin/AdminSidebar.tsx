@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Users, BookOpen, FolderOpen, CreditCard, MessageSquare, Flag, FileText, ChevronRight, LogOut } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, BookOpen, FolderOpen, CreditCard, MessageSquare, Flag, FileText, ChevronRight, LogOut, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
@@ -22,7 +22,7 @@ const menuItems = [
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
-  const { logout } = useAuthStore();
+  const { logout, user } = useAuthStore();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -69,6 +69,29 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
       {/* Bottom */}
       <div className="p-4 border-t border-gray-800 space-y-1">
+        {/* Profile card */}
+        <Link
+          href="/admin/profile"
+          onClick={onClose}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all mb-2",
+            pathname === "/admin/profile"
+              ? "bg-primary text-white"
+              : "hover:bg-gray-800"
+          )}
+        >
+          <div className="w-8 h-8 rounded-full bg-primary/30 flex items-center justify-center text-white font-bold text-sm shrink-0">
+            {user?.userName?.[0]?.toUpperCase() || "A"}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-white truncate">
+              {user?.userName || "Admin"} {user?.userLastName || ""}
+            </p>
+            <p className="text-xs text-gray-400 truncate">Profilni ko'rish</p>
+          </div>
+          <UserCircle className="w-4 h-4 text-gray-400 shrink-0" />
+        </Link>
+
         <Link
           href="/"
           onClick={onClose}
