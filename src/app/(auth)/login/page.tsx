@@ -3,20 +3,27 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "@apollo/client/react";
 import { TELEGRAM_LOGIN } from "@/lib/graphql/auth";
 import { useAuthStore } from "@/lib/store/auth.store";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl");
   const { setAuth } = useAuthStore();
+
+  const getRedirect = (role: string) => {
+    if (callbackUrl?.startsWith("/dashboard")) return callbackUrl;
+    return role === "ADMIN" ? "/admin" : "/dashboard";
+  };
 
   const [telegramLogin, { loading }] = useMutation(TELEGRAM_LOGIN, {
     onCompleted: (data: any) => {
       const { user, accessToken } = data.telegramLogin;
       setAuth(user, accessToken);
-      router.push(user.userRole === "ADMIN" ? "/admin" : "/dashboard");
+      router.push(getRedirect(user.userRole));
     },
     onError: (error: any) => {
       console.error("Login error:", error);
@@ -94,6 +101,9 @@ export default function LoginPage() {
 
         <button
           onClick={() => {
+            if (callbackUrl?.startsWith("/dashboard")) {
+              sessionStorage.setItem("auth-callbackUrl", callbackUrl);
+            }
             const base = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "");
             window.location.href = `${base}/auth/google`;
           }}

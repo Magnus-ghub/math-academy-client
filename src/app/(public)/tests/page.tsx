@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { Clock, FileQuestion, Lock, Search } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
+import { useAuthStore } from "@/lib/store/auth.store";
 
 const testTypeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary border-primary/20",
@@ -18,6 +19,17 @@ const types = ["Barchasi", "DTM", "SAT", "MILLIY_SERTIFIKAT", "ATTESTATSIYA"];
 export default function TestsPage() {
   const [typeFilter, setTypeFilter] = useState("Barchasi");
   const [search, setSearch] = useState("");
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
+
+  const handleStart = (test: any) => {
+    const dest = `/dashboard/tests/${test.id}`;
+    if (isAuthenticated) {
+      router.push(dest);
+    } else {
+      router.push(`/login?callbackUrl=${encodeURIComponent(dest)}`);
+    }
+  };
 
   const { data, loading } = useQuery<{ getPublicTests: any[] }>(GET_PUBLIC_TESTS);
   const tests = data?.getPublicTests || [];
@@ -119,15 +131,16 @@ export default function TestsPage() {
                 <span>{test.totalAttempts} urinish</span>
               </div>
 
-              <Link href={test.testAccess === "PUBLIC" ? `/tests/${test.id}` : "/login"}>
-                <button className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              <button
+                onClick={() => test.testAccess === "PUBLIC" ? handleStart(test) : router.push("/login")}
+                className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   test.testAccess === "PUBLIC"
                     ? "bg-primary text-white hover:bg-primary/90"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}>
-                  {test.testAccess === "PUBLIC" ? "Boshlash →" : "🔒 Kirish kerak"}
-                </button>
-              </Link>
+                }`}
+              >
+                {test.testAccess === "PUBLIC" ? "Boshlash →" : "🔒 Kirish kerak"}
+              </button>
             </div>
           ))}
         </div>

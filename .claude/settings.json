@@ -12,7 +12,8 @@
       "Bash(node -e ' *)",
       "Bash(curl -s -I -X OPTIONS http://localhost:4000/graphql -H 'Origin: http://localhost:3000' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type')",
       "Bash(ls /Users/nomozof/Desktop/ | grep -i \"api\\\\|backend\\\\|server\")",
-      "Read(//Users/nomozof/Desktop/**)"
+      "Read(//Users/nomozof/Desktop/**)",
+      "Bash(grep -E '\\\\.\\(tsx|ts\\)$')"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",

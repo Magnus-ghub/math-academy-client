@@ -20,7 +20,12 @@ export default function GoogleCallbackPage() {
         { id: userId, userName, userRole } as any,
         token
       );
-      router.push(userRole === "ADMIN" ? "/admin" : "/dashboard");
+      const stored = sessionStorage.getItem("auth-callbackUrl");
+      if (stored) sessionStorage.removeItem("auth-callbackUrl");
+      const redirect = stored?.startsWith("/dashboard")
+        ? stored
+        : userRole === "ADMIN" ? "/admin" : "/dashboard";
+      router.push(redirect);
     } else {
       router.push("/login");
     }

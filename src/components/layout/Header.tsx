@@ -19,7 +19,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -101,8 +103,51 @@ export default function Header() {
                   </AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                ...
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex items-center gap-2.5 py-0.5">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.userImage || ""} />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
+                          {user.userName?.[0]?.toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-foreground leading-tight">
+                          {user.userName} {user.userLastName || ""}
+                        </span>
+                        <span className="text-xs text-muted-foreground leading-tight">
+                          {user.userRole === UserRole.ADMIN
+                            ? "Admin"
+                            : user.userRole === UserRole.TEACHER
+                              ? "O'qituvchi"
+                              : "O'quvchi"}
+                        </span>
+                      </div>
+                    </div>
+                  </DropdownMenuLabel>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push(dashboardLink)}>
+                  <LayoutDashboard />
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                  <User />
+                  Profil
+                </DropdownMenuItem>
+                {user.userRole === UserRole.ADMIN && (
+                  <DropdownMenuItem onClick={() => router.push("/admin")}>
+                    <Shield />
+                    Admin panel
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+                  <LogOut />
+                  Chiqish
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
