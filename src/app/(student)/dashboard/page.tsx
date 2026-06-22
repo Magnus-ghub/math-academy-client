@@ -37,7 +37,7 @@ export default function DashboardPage() {
       {/* Welcome */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold">
-          Xush kelibsiz, {user?.userName || "Talaba"}! 👋
+          Xush kelibsiz, {user?.userName || "Talaba"}! 
         </h1>
         <p className="text-muted-foreground">Bugun ham matematika bilan mashg'ul bo'ling.</p>
       </div>
@@ -92,7 +92,7 @@ export default function DashboardPage() {
               <div className="bg-background rounded-2xl border border-border p-4 hover:shadow-md transition-all">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-sm">{result.testId}</p>
+                    <p className="font-semibold text-sm">{result.testTitle ?? "Test"}</p>
                     <p className="text-xs text-muted-foreground">{new Date(result.createdAt).toLocaleDateString("uz-UZ")}</p>
                   </div>
                   <div className={`text-2xl font-black ${

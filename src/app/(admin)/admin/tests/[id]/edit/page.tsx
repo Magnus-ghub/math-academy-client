@@ -69,12 +69,22 @@ export default function EditTestPage() {
 
   const test = testData?.getTest;
 
-  const [testInfo, setTestInfo] = useState({ testTitle: "", testDesc: "", duration: 30, testAccess: "PUBLIC", testStatus: "DRAFT" });
+  const [testInfo, setTestInfo] = useState({
+    testTitle: "",
+    testType: "DTM",
+    testBlock: "",
+    testDesc: "",
+    duration: 30,
+    testAccess: "PUBLIC",
+    testStatus: "DRAFT",
+  });
 
   useEffect(() => {
     if (test) {
       setTestInfo({
         testTitle: test.testTitle ?? "",
+        testType: test.testType ?? "DTM",
+        testBlock: test.testBlock ?? "",
         testDesc: test.testDesc ?? "",
         duration: test.duration ?? 30,
         testAccess: test.testAccess ?? "PUBLIC",
@@ -150,6 +160,8 @@ export default function EditTestPage() {
           testId,
           input: {
             testTitle: testInfo.testTitle,
+            testType: testInfo.testType,
+            testBlock: testInfo.testBlock || undefined,
             testDesc: testInfo.testDesc || undefined,
             duration: Number(testInfo.duration),
             testAccess: testInfo.testAccess,
@@ -263,11 +275,23 @@ export default function EditTestPage() {
             <label className="text-sm font-medium mb-1.5 block">Test nomi</label>
             <Input value={testInfo.testTitle} onChange={(e) => setTestInfo({ ...testInfo, testTitle: e.target.value })} />
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqa)</label>
-              <Input type="number" min={5} max={180} value={testInfo.duration}
-                onChange={(e) => setTestInfo({ ...testInfo, duration: Number(e.target.value) })} />
+              <label className="text-sm font-medium mb-1.5 block">Test turi</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                value={testInfo.testType} onChange={(e) => setTestInfo({ ...testInfo, testType: e.target.value })}>
+                <option value="DTM">DTM</option>
+                <option value="SAT">SAT</option>
+                <option value="MILLIY_SERTIFIKAT">Milliy Sertifikat</option>
+                <option value="ATTESTATSIYA">Attestatsiya</option>
+                <option value="MAJBURIY_BLOK">Majburiy blok</option>
+                <option value="DTM_GROUP">DTM Guruh</option>
+                <option value="SAT_GROUP">SAT Guruh</option>
+                <option value="MILLIY_GROUP">Milliy Guruh</option>
+                <option value="ATTESTATSIYA_GROUP">Attestatsiya Guruh</option>
+                <option value="MAJBURIY_BLOK_GROUP">Majburiy blok Guruh</option>
+              </select>
             </div>
             <div>
               <label className="text-sm font-medium mb-1.5 block">Kirish turi</label>
@@ -279,12 +303,32 @@ export default function EditTestPage() {
               </select>
             </div>
           </div>
+
+          {(testInfo.testType === "DTM" || testInfo.testType === "DTM_GROUP") && (
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Blok turi</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                value={testInfo.testBlock} onChange={(e) => setTestInfo({ ...testInfo, testBlock: e.target.value })}>
+                <option value="">Tanlanmagan</option>
+                <option value="MANDATORY">Majburiy (Matematika)</option>
+                <option value="ELECTIVE">Ixtiyoriy</option>
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqa)</label>
+            <Input type="number" min={5} max={180} value={testInfo.duration}
+              onChange={(e) => setTestInfo({ ...testInfo, duration: Number(e.target.value) })} />
+          </div>
+
           <div>
             <label className="text-sm font-medium mb-1.5 block">Tavsif</label>
             <textarea className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none"
               rows={3} value={testInfo.testDesc}
               onChange={(e) => setTestInfo({ ...testInfo, testDesc: e.target.value })} />
           </div>
+
           <button onClick={handleSave} disabled={saving}
             className="w-full bg-primary text-white py-2.5 rounded-xl font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors flex items-center justify-center gap-2">
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}

@@ -6,6 +6,7 @@ import "katex/dist/katex.min.css";
 import { ApolloClientProvider } from "@/providers/apollo-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner";
+import "katex/dist/katex.min.css";
 
 const inter = Inter({ subsets: ["latin"] });
 

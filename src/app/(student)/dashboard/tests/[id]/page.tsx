@@ -1,23 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Clock, ChevronLeft, ChevronRight, Flag, CheckCircle } from "lucide-react";
+import { Clock, Flag, CheckCircle } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
 import { SUBMIT_TEST } from "@/lib/graphql/result";
 import { toast } from "sonner";
+import { MathText } from "@/components/MathText";
 
 export default function TakeTestPage() {
   const { id } = useParams();
   const router = useRouter();
 
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [startTime] = useState(Date.now());
+
+  const questionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const { data: testData, loading: testLoading } = useQuery<{ getTest: any }>(GET_TEST, {
     variables: { testId: id },
@@ -30,7 +32,7 @@ export default function TakeTestPage() {
   const [submitTest] = useMutation(SUBMIT_TEST, {
     onCompleted: (data: any) => {
       router.push(`/dashboard/results/${data.submitTest.id}`);
-      toast.success("Test yuborildi!")
+      toast.success("Test yuborildi!");
     },
     onError: () => {
       toast.error("Xatolik yuz berdi");
@@ -66,7 +68,7 @@ export default function TakeTestPage() {
   const handleFinish = () => {
     setIsFinished(true);
     const duration = Math.floor((Date.now() - startTime) / 1000 / 60);
-    const answersInput = questions.map((q: any, i: number) => ({
+    const answersInput = questions.map((q: any) => ({
       questionId: q.id,
       selectedAnswer: answers[q.id] ?? 0,
       timeSpent: 0,
@@ -81,6 +83,10 @@ export default function TakeTestPage() {
         },
       },
     });
+  };
+
+  const scrollToQuestion = (qId: string) => {
+    questionRefs.current[qId]?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   if (testLoading || questionsLoading) {
@@ -99,7 +105,6 @@ export default function TakeTestPage() {
     );
   }
 
-  const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
   const answeredCount = Object.keys(answers).length;
 
@@ -119,132 +124,117 @@ export default function TakeTestPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="font-bold text-lg">{test.testTitle}</h1>
-          <p className="text-sm text-muted-foreground">{test.testType}</p>
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border pb-4 mb-6 pt-2">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="font-bold text-lg">{test.testTitle}</h1>
+            <p className="text-sm text-muted-foreground">{test.testType}</p>
+          </div>
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-lg ${
+            timeLeft < 300 ? "bg-red-100 text-red-600" : "bg-primary/10 text-primary"
+          }`}>
+            <Clock className="w-5 h-5" />
+            {formatTime(timeLeft)}
+          </div>
         </div>
-        <div className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-lg ${
-          timeLeft < 300 ? "bg-red-100 text-red-600" : "bg-primary/10 text-primary"
-        }`}>
-          <Clock className="w-5 h-5" />
-          {formatTime(timeLeft)}
-        </div>
-      </div>
 
-      {/* Progress */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-          <span>{currentIndex + 1} / {totalQuestions} savol</span>
-          <span>{answeredCount} ta javoblandi</span>
-        </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all"
-            style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
-          />
+        <div>
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+            <span>{answeredCount} / {totalQuestions} savol javoblandi</span>
+          </div>
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all"
+              style={{ width: `${(answeredCount / totalQuestions) * 100}%` }}
+            />
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Question */}
-        <div className="lg:col-span-3">
-          <div className="bg-background rounded-2xl border border-border p-6 mb-4">
-            <div className="flex items-start justify-between mb-4">
-              <span className="text-sm font-bold text-primary">{currentIndex + 1}-savol</span>
-              <button
-                onClick={() => {
-                  setFlagged((prev) => {
-                    const next = new Set(prev);
-                    next.has(currentQuestion.id) ? next.delete(currentQuestion.id) : next.add(currentQuestion.id);
-                    return next;
-                  });
-                }}
-                className={`p-2 rounded-lg transition-colors ${
-                  flagged.has(currentQuestion.id)
-                    ? "bg-accent/10 text-accent"
-                    : "hover:bg-muted text-muted-foreground"
-                }`}
-              >
-                <Flag className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-base font-medium mb-6 leading-relaxed">
-              {currentQuestion.questionText}
-            </p>
-            {currentQuestion.questionImage && (
-              <img src={currentQuestion.questionImage} alt="question" className="mb-4 rounded-lg max-h-48 object-contain" />
-            )}
-            <div className="space-y-3">
-              {currentQuestion.options.map((option: string, i: number) => (
+        {/* Barcha savollar — bitta sahifada (PDF kabi) */}
+        <div className="lg:col-span-3 space-y-5">
+          {questions.map((q: any, i: number) => (
+            <div
+              key={q.id}
+              ref={(el) => { questionRefs.current[q.id] = el; }}
+              className="bg-background rounded-2xl border border-border p-6 scroll-mt-32"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <span className="text-sm font-bold text-primary">{i + 1}-savol</span>
                 <button
-                  key={i}
-                  onClick={() => setAnswers((prev) => ({ ...prev, [currentQuestion.id]: i }))}
-                  className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${
-                    answers[currentQuestion.id] === i
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border hover:border-primary/40 hover:bg-muted/30"
+                  onClick={() => {
+                    setFlagged((prev) => {
+                      const next = new Set(prev);
+                      next.has(q.id) ? next.delete(q.id) : next.add(q.id);
+                      return next;
+                    });
+                  }}
+                  className={`p-2 rounded-lg transition-colors ${
+                    flagged.has(q.id)
+                      ? "bg-accent/10 text-accent"
+                      : "hover:bg-muted text-muted-foreground"
                   }`}
                 >
-                  <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
-                    answers[currentQuestion.id] === i
-                      ? "border-primary bg-primary text-white"
-                      : "border-border"
-                  }`}>
-                    {["A", "B", "C", "D"][i]}
-                  </div>
-                  <span className="text-sm">{option}</span>
+                  <Flag className="w-4 h-4" />
                 </button>
-              ))}
+              </div>
+
+              <div className="text-base font-medium mb-6 leading-relaxed">
+                <MathText text={q.questionText} />
+              </div>
+
+              {q.questionImage && (
+                <img src={q.questionImage} alt="question" className="mb-4 rounded-lg max-h-64 object-contain" />
+              )}
+
+              <div className="space-y-3">
+                {q.options.map((option: string, optIdx: number) => (
+                  <button
+                    key={optIdx}
+                    onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: optIdx }))}
+                    className={`w-full flex items-center gap-3 p-3.5 rounded-xl border-2 text-left transition-all ${
+                      answers[q.id] === optIdx
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border hover:border-primary/40 hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
+                      answers[q.id] === optIdx
+                        ? "border-primary bg-primary text-white"
+                        : "border-border"
+                    }`}>
+                      {["A", "B", "C", "D"][optIdx]}
+                    </div>
+                    <span className="text-sm"><MathText text={option} /></span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ))}
 
-          {/* Navigation */}
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-              disabled={currentIndex === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted disabled:opacity-40 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Oldingi
-            </button>
-
-            {currentIndex === totalQuestions - 1 ? (
-              <button
-                onClick={handleFinish}
-                className="flex items-center gap-2 px-6 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Tugatish
-              </button>
-            ) : (
-              <button
-                onClick={() => setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1))}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
-              >
-                Keyingi
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+          <button
+            onClick={handleFinish}
+            className="w-full py-3 rounded-xl bg-green-600 text-white font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+          >
+            <CheckCircle className="w-5 h-5" />
+            Testni tugatish
+          </button>
         </div>
 
-        {/* Question map */}
+        {/* Savollar xaritasi — sticky panel, bosilganda shu savolga scroll qiladi */}
         <div className="lg:col-span-1">
-          <div className="bg-background rounded-2xl border border-border p-4 sticky top-6">
+          <div className="bg-background rounded-2xl border border-border p-4 sticky top-32">
             <p className="text-xs font-semibold text-muted-foreground mb-3">SAVOLLAR</p>
             <div className="grid grid-cols-5 lg:grid-cols-4 gap-1.5">
               {questions.map((q: any, i: number) => (
                 <button
                   key={q.id}
-                  onClick={() => setCurrentIndex(i)}
+                  onClick={() => scrollToQuestion(q.id)}
                   className={`aspect-square rounded-lg text-xs font-bold transition-all ${
-                    i === currentIndex
-                      ? "bg-primary text-white"
-                      : answers[q.id] !== undefined
+                    answers[q.id] !== undefined
                       ? "bg-green-100 text-green-700"
                       : flagged.has(q.id)
                       ? "bg-accent/20 text-accent"
@@ -257,7 +247,6 @@ export default function TakeTestPage() {
             </div>
 
             <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-primary" />Joriy</div>
               <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-green-100" />Javoblangan</div>
               <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-accent/20" />Belgilangan</div>
               <div className="flex items-center gap-2"><div className="w-3 h-3 rounded bg-muted" />Javoblanmagan</div>

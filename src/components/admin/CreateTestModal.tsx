@@ -1,15 +1,39 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload } from "lucide-react";
+import { X, Plus, Trash2, Upload, Copy, Check, Loader2, AlertCircle, Sparkles, PenLine } from "lucide-react";
 import { useMutation, useQuery } from "@apollo/client/react";
-import { X, Plus, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CREATE_TEST, ADD_QUESTION } from "@/lib/graphql/test";
 import { GET_ALL_GROUPS } from "@/lib/graphql/group";
+import { useAuthStore } from "@/lib/store/auth.store";
 import { toast } from "sonner";
 
-interface Question {
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
+
+const AI_PROMPT = `Quyidagi testni JSON formatiga o'tkazing. Faqat questions massivini qaytaring.
+
+FORMAT:
+{
+  "questions": [
+    {
+      "questionText": "Savol matni. Formulalar $LaTeX$ da: $x^2 + 5x = 0$",
+      "questionImage": null,
+      "options": ["A variant", "B variant", "C variant", "D variant"],
+      "correctAnswer": 0,
+      "explanation": ""
+    }
+  ]
+}
+
+QOIDALAR:
+- correctAnswer: 0=A, 1=B, 2=C, 3=D
+- options da 4 ta variant SHART
+- Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
+- Jadvallar: <table><tr><td>...</td></tr></table>`;
+
+interface ManualQuestion {
   questionText: string;
   options: string[];
   correctAnswer: number;
@@ -22,8 +46,12 @@ interface Props {
 }
 
 export default function CreateTestModal({ onClose, onSuccess }: Props) {
+  const { accessToken } = useAuthStore();
   const [step, setStep] = useState<"info" | "questions">("info");
+  const [questionTab, setQuestionTab] = useState<"ai" | "manual">("ai");
   const [testId, setTestId] = useState<string | null>(null);
+
+  // Step 1 — info
   const [form, setForm] = useState({
     testTitle: "",
     testType: "DTM",
@@ -33,36 +61,36 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
     groupId: "",
     testDesc: "",
   });
-  const [questions, setQuestions] = useState<Question[]>([
-    {
-      questionText: "",
-      options: ["", "", "", ""],
-      correctAnswer: 0,
-      explanation: "",
-    },
-  ]);
 
-  const { data: groupsData } = useQuery<{ getAllGroups: any[] }>(
-    GET_ALL_GROUPS,
-  );
-  const groups = groupsData?.getAllGroups || [];
+  // Step 2 — AI/JSON tab
+  const [jsonText, setJsonText] = useState("");
+  const [jsonError, setJsonError] = useState("");
+  const [jsonLoading, setJsonLoading] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
+
+  // Step 2 — Manual tab
+  const [questions, setQuestions] = useState<ManualQuestion[]>([
+    { questionText: "", options: ["", "", "", ""], correctAnswer: 0, explanation: "" },
+  ]);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const { data: groupsData } = useQuery<{ getAllGroups: any[] }>(GET_ALL_GROUPS);
+  const groups = groupsData?.getAllGroups || [];
 
   const [createTest, { loading: creating }] = useMutation(CREATE_TEST, {
     onCompleted: (data: any) => {
       setTestId(data.createTest.id);
       setStep("questions");
-      toast.success("Test yaratildi!");
+      toast.success("Test yaratildi! Endi savollarni qo'shing.");
     },
-    onError: () => {
-      toast.error("Xatolik yuz berdi");
-    },
+    onError: () => toast.error("Test yaratishda xatolik"),
   });
 
   const [addQuestion, { loading: adding }] = useMutation(ADD_QUESTION);
 
   const handleCreateTest = () => {
+    if (!form.testTitle.trim()) return;
     createTest({
       variables: {
         input: {
@@ -78,46 +106,65 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
     });
   };
 
-  const handleSaveQuestions = async () => {
+  // AI/JSON import
+  const handleJsonImport = async () => {
     if (!testId) return;
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-      if (!q.questionText) continue;
-      await addQuestion({
-        variables: {
-          input: {
-            testId,
-            questionText: q.questionText,
-            options: q.options,
-            correctAnswer: q.correctAnswer,
-            explanation: q.explanation || undefined,
-            orderIndex: i + 1,
-          },
-        },
-      });
+    setJsonError("");
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonText.trim());
+    } catch {
+      setJsonError("JSON formati noto'g'ri.");
+      return;
     }
-    onSuccess();
-    onClose();
+
+    const questions = Array.isArray(parsed) ? parsed : parsed.questions;
+    if (!Array.isArray(questions) || questions.length === 0) {
+      setJsonError('"questions" massivi topilmadi yoki bo\'sh.');
+      return;
+    }
+    const invalid = questions.find(
+      (q: any) => !q.questionText || !Array.isArray(q.options) || q.options.length !== 4
+    );
+    if (invalid) {
+      setJsonError('Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.');
+      return;
+    }
+
+    setJsonLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/upload/json-test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ testId, questions }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Xatolik");
+      toast.success(`${data.totalQuestions} ta savol yuklandi!`);
+      onSuccess();
+      onClose();
+    } catch (e: any) {
+      setJsonError(e.message || "Server xatosi");
+    } finally {
+      setJsonLoading(false);
+    }
   };
 
-  // Handler:
+  // DOCX upload
   const handleDocxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !testId) return;
-
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
     formData.append("testId", testId);
-
     try {
-      const token = JSON.parse(localStorage.getItem("auth-storage") || "{}")
-        ?.state?.accessToken;
-      const res = await fetch("http://localhost:4000/upload/docx-test", {
+      const res = await fetch(`${API_BASE}/upload/docx-test`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
         body: formData,
       });
       const data = await res.json();
@@ -126,7 +173,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
         onSuccess();
         onClose();
       } else {
-        toast.error(data.message || "Xatolik yuz berdi");
+        toast.error(data.message || "Xatolik");
       }
     } catch {
       toast.error("Yuklashda xatolik");
@@ -135,112 +182,116 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
     }
   };
 
-  const addNewQuestion = () => {
-    setQuestions([
-      ...questions,
-      {
-        questionText: "",
-        options: ["", "", "", ""],
-        correctAnswer: 0,
-        explanation: "",
-      },
-    ]);
-  };
+  // Manual questions
+  const addNewQuestion = () =>
+    setQuestions([...questions, { questionText: "", options: ["", "", "", ""], correctAnswer: 0, explanation: "" }]);
 
-  const removeQuestion = (index: number) => {
+  const removeQuestion = (i: number) => {
     if (questions.length === 1) return;
-    setQuestions(questions.filter((_, i) => i !== index));
+    setQuestions(questions.filter((_, idx) => idx !== i));
   };
 
-  const updateQuestion = (index: number, field: string, value: any) => {
-    setQuestions(
-      questions.map((q, i) => (i === index ? { ...q, [field]: value } : q)),
-    );
-  };
+  const updateQuestion = (i: number, field: string, value: any) =>
+    setQuestions(questions.map((q, idx) => (idx === i ? { ...q, [field]: value } : q)));
 
-  const updateOption = (qIndex: number, optIndex: number, value: string) => {
+  const updateOption = (qIdx: number, optIdx: number, value: string) =>
     setQuestions(
       questions.map((q, i) => {
-        if (i !== qIndex) return q;
-        const options = [...q.options];
-        options[optIndex] = value;
-        return { ...q, options };
-      }),
+        if (i !== qIdx) return q;
+        const opts = [...q.options];
+        opts[optIdx] = value;
+        return { ...q, options: opts };
+      })
     );
+
+  const handleSaveManual = async () => {
+    if (!testId) return;
+    const valid = questions.filter((q) => q.questionText.trim());
+    if (valid.length === 0) {
+      toast.error("Kamida 1 ta savol kiriting");
+      return;
+    }
+    for (let i = 0; i < valid.length; i++) {
+      await addQuestion({
+        variables: {
+          input: {
+            testId,
+            questionText: valid[i].questionText,
+            options: valid[i].options,
+            correctAnswer: valid[i].correctAnswer,
+            explanation: valid[i].explanation || undefined,
+            orderIndex: i + 1,
+          },
+        },
+      });
+    }
+    toast.success(`${valid.length} ta savol saqlandi!`);
+    onSuccess();
+    onClose();
+  };
+
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(AI_PROMPT);
+    setPromptCopied(true);
+    setTimeout(() => setPromptCopied(false), 2000);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-background rounded-2xl border border-border w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-background rounded-2xl border border-border w-full max-w-2xl max-h-[90vh] flex flex-col">
+
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border sticky top-0 bg-background">
+        <div className="flex items-center justify-between p-6 border-b border-border shrink-0">
           <div>
             <h2 className="font-bold text-lg">Yangi test yaratish</h2>
             <p className="text-xs text-muted-foreground">
-              {step === "info"
-                ? "1-qadam: Ma'lumotlar"
-                : `2-qadam: Savollar (${questions.length} ta)`}
+              {step === "info" ? "1-qadam: Test ma'lumotlari" : "2-qadam: Savollarni qo'shish"}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-muted transition-colors"
-          >
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-muted transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6">
-          {step === "info" ? (
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* ── STEP 1: INFO ── */}
+          {step === "info" && (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">
-                  Test nomi *
-                </label>
+                <label className="text-sm font-medium mb-1.5 block">Test nomi *</label>
                 <Input
                   placeholder="DTM 2026 - Variant 1"
                   value={form.testTitle}
-                  onChange={(e) =>
-                    setForm({ ...form, testTitle: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, testTitle: e.target.value })}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Test turi *
-                  </label>
+                  <label className="text-sm font-medium mb-1.5 block">Test turi *</label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.testType}
-                    onChange={(e) =>
-                      setForm({ ...form, testType: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, testType: e.target.value })}
                   >
                     <option value="DTM">DTM</option>
                     <option value="SAT">SAT</option>
                     <option value="MILLIY_SERTIFIKAT">Milliy Sertifikat</option>
                     <option value="ATTESTATSIYA">Attestatsiya</option>
+                    <option value="MAJBURIY_BLOK">Majburiy blok</option>
                     <option value="DTM_GROUP">DTM Guruh</option>
                     <option value="SAT_GROUP">SAT Guruh</option>
                     <option value="MILLIY_GROUP">Milliy Guruh</option>
-                    <option value="ATTESTATSIYA_GROUP">
-                      Attestatsiya Guruh
-                    </option>
+                    <option value="ATTESTATSIYA_GROUP">Attestatsiya Guruh</option>
+                    <option value="MAJBURIY_BLOK_GROUP">Majburiy blok Guruh</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Kirish turi *
-                  </label>
+                  <label className="text-sm font-medium mb-1.5 block">Kirish turi *</label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.testAccess}
-                    onChange={(e) =>
-                      setForm({ ...form, testAccess: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, testAccess: e.target.value })}
                   >
                     <option value="PUBLIC">Ommaviy</option>
                     <option value="PREMIUM">Premium</option>
@@ -251,21 +302,15 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
 
               {form.testAccess === "GROUP" && (
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Guruh *
-                  </label>
+                  <label className="text-sm font-medium mb-1.5 block">Guruh *</label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.groupId}
-                    onChange={(e) =>
-                      setForm({ ...form, groupId: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, groupId: e.target.value })}
                   >
                     <option value="">Guruh tanlang</option>
                     {groups.map((g: any) => (
-                      <option key={g.id} value={g.id}>
-                        {g.groupName}
-                      </option>
+                      <option key={g.id} value={g.id}>{g.groupName}</option>
                     ))}
                   </select>
                 </div>
@@ -273,15 +318,11 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
 
               {(form.testType === "DTM" || form.testType === "DTM_GROUP") && (
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    Blok turi
-                  </label>
+                  <label className="text-sm font-medium mb-1.5 block">Blok turi</label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.testBlock}
-                    onChange={(e) =>
-                      setForm({ ...form, testBlock: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, testBlock: e.target.value })}
                   >
                     <option value="">Tanlanmagan</option>
                     <option value="MANDATORY">Majburiy (Matematika)</option>
@@ -291,165 +332,212 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
               )}
 
               <div>
-                <label className="text-sm font-medium mb-1.5 block">
-                  Vaqt (daqiqada) *
-                </label>
+                <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqada) *</label>
                 <Input
                   type="number"
                   min={5}
                   max={180}
                   value={form.duration}
-                  onChange={(e) =>
-                    setForm({ ...form, duration: Number(e.target.value) })
-                  }
+                  onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-1.5 block">
-                  Tavsif
-                </label>
+                <label className="text-sm font-medium mb-1.5 block">Tavsif</label>
                 <textarea
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none"
-                  rows={3}
+                  rows={2}
                   placeholder="Test haqida..."
                   value={form.testDesc}
-                  onChange={(e) =>
-                    setForm({ ...form, testDesc: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, testDesc: e.target.value })}
                 />
               </div>
 
               <button
                 onClick={handleCreateTest}
-                disabled={creating || !form.testTitle}
+                disabled={creating || !form.testTitle.trim()}
                 className="w-full bg-primary text-white py-2.5 rounded-xl font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
               >
                 {creating ? "Yaratilmoqda..." : "Davom etish →"}
               </button>
             </div>
-          ) : (
+          )}
+
+          {/* ── STEP 2: QUESTIONS ── */}
+          {step === "questions" && (
             <div className="space-y-4">
-              {questions.map((q, qIndex) => (
-                <div key={qIndex} className="bg-muted/30 rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-bold text-sm text-primary">
-                      {qIndex + 1}-savol
-                    </span>
+              {/* Tabs */}
+              <div className="flex gap-2 p-1 bg-muted rounded-xl">
+                <button
+                  onClick={() => setQuestionTab("ai")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    questionTab === "ai" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  AI / JSON import
+                </button>
+                <button
+                  onClick={() => setQuestionTab("manual")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    questionTab === "manual" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <PenLine className="w-3.5 h-3.5" />
+                  Qo'lda kiritish
+                </button>
+              </div>
+
+              {/* AI/JSON tab */}
+              {questionTab === "ai" && (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-sm">
+                    <p className="font-semibold text-blue-800 dark:text-blue-200 mb-1">Qanday ishlaydi?</p>
+                    <ol className="list-decimal list-inside space-y-1 text-xs text-blue-700 dark:text-blue-300">
+                      <li>Quyidagi promptni nusxalang va ChatGPT / Claude ga yuboring</li>
+                      <li>Test rasmini yoki matnini ham yuboring</li>
+                      <li>AI qaytargan JSON ni quyidagi maydonga joylashtiring</li>
+                    </ol>
+                  </div>
+
+                  <div className="relative">
+                    <pre className="bg-muted rounded-xl p-4 text-xs overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed text-muted-foreground">
+                      {AI_PROMPT}
+                    </pre>
                     <button
-                      onClick={() => removeQuestion(qIndex)}
-                      className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                      onClick={copyPrompt}
+                      className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-background border border-border text-xs font-medium hover:bg-muted transition-colors"
                     >
-                      <Trash2 className="w-4 h-4 text-red-500" />
+                      {promptCopied
+                        ? <><Check className="w-3.5 h-3.5 text-green-600" />Nusxalandi!</>
+                        : <><Copy className="w-3.5 h-3.5" />Nusxalash</>}
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium mb-1.5 block">AI qaytargan JSON</label>
                     <textarea
-                      className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none"
-                      rows={2}
-                      placeholder="Savol matnini kiriting..."
-                      value={q.questionText}
-                      onChange={(e) =>
-                        updateQuestion(qIndex, "questionText", e.target.value)
-                      }
-                    />
-
-                    <div className="space-y-2">
-                      {q.options.map((opt, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <button
-                            onClick={() =>
-                              updateQuestion(qIndex, "correctAnswer", i)
-                            }
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
-                              q.correctAnswer === i
-                                ? "border-primary bg-primary text-white"
-                                : "border-border hover:border-primary"
-                            }`}
-                          >
-                            {["A", "B", "C", "D"][i]}
-                          </button>
-                          <Input
-                            placeholder={`${["A", "B", "C", "D"][i]} variant`}
-                            value={opt}
-                            onChange={(e) =>
-                              updateOption(qIndex, i, e.target.value)
-                            }
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    <Input
-                      placeholder="Javob izohi (ixtiyoriy)"
-                      value={q.explanation}
-                      onChange={(e) =>
-                        updateQuestion(qIndex, "explanation", e.target.value)
-                      }
+                      className="w-full border border-border rounded-xl px-3 py-2.5 text-xs font-mono bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      rows={10}
+                      placeholder={'{\n  "questions": [\n    {\n      "questionText": "...",\n      "options": ["A", "B", "C", "D"],\n      "correctAnswer": 0\n    }\n  ]\n}'}
+                      value={jsonText}
+                      onChange={(e) => { setJsonText(e.target.value); setJsonError(""); }}
                     />
                   </div>
-                </div>
-              ))}
-              {/* DOCX Upload */}
-              <div className="bg-muted/30 rounded-2xl p-4 border-2 border-dashed border-border hover:border-primary transition-colors">
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept=".docx"
-                  className="hidden"
-                  onChange={handleDocxUpload}
-                />
-                <div className="text-center">
-                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm font-medium mb-1">
-                    Word fayldan yuklash
-                  </p>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    .docx format: 1. Savol / A) variant* (to'g'ri)
-                  </p>
+
+                  {jsonError && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      {jsonError}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleJsonImport}
+                    disabled={!jsonText.trim() || jsonLoading}
+                    className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
+                  >
+                    {jsonLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    {jsonLoading ? "Yuklanmoqda..." : "Savollarni yuklash"}
+                  </button>
+
+                  {/* DOCX divider */}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-border" />
+                    <span className="text-xs text-muted-foreground">yoki Word fayl</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
+                  <input ref={fileRef} type="file" accept=".docx" className="hidden" onChange={handleDocxUpload} />
                   <button
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading}
-                    className="bg-primary text-white px-4 py-2 rounded-xl text-xs font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 border border-border py-2.5 rounded-xl text-sm font-medium hover:bg-muted disabled:opacity-40 transition-colors"
                   >
-                    {uploading ? "Yuklanmoqda..." : ".docx yuklash"}
+                    <Upload className="w-4 h-4" />
+                    {uploading ? "Yuklanmoqda..." : ".docx fayldan yuklash"}
                   </button>
                 </div>
-              </div>
+              )}
 
-              {/* Separator */}
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-border" />
-                <span className="text-xs text-muted-foreground">
-                  yoki qo'lda kiriting
-                </span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
+              {/* Manual tab */}
+              {questionTab === "manual" && (
+                <div className="space-y-4">
+                  {questions.map((q, qIdx) => (
+                    <div key={qIdx} className="bg-muted/30 rounded-2xl p-5 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-sm text-primary">{qIdx + 1}-savol</span>
+                        <button
+                          onClick={() => removeQuestion(qIdx)}
+                          className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
 
-              <button
-                onClick={addNewQuestion}
-                className="w-full border-2 border-dashed border-border hover:border-primary rounded-2xl py-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                Savol qo'shish
-              </button>
+                      <textarea
+                        className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none"
+                        rows={2}
+                        placeholder="Savol matnini kiriting..."
+                        value={q.questionText}
+                        onChange={(e) => updateQuestion(qIdx, "questionText", e.target.value)}
+                      />
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setStep("info")}
-                  className="flex-1 border border-border py-2.5 rounded-xl text-sm font-medium hover:bg-muted transition-colors"
-                >
-                  ← Orqaga
-                </button>
-                <button
-                  onClick={handleSaveQuestions}
-                  disabled={adding}
-                  className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
-                >
-                  {adding ? "Saqlanmoqda..." : "Saqlash ✓"}
-                </button>
-              </div>
+                      <div className="space-y-2">
+                        {q.options.map((opt, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <button
+                              onClick={() => updateQuestion(qIdx, "correctAnswer", i)}
+                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                                q.correctAnswer === i
+                                  ? "border-primary bg-primary text-white"
+                                  : "border-border hover:border-primary"
+                              }`}
+                            >
+                              {["A", "B", "C", "D"][i]}
+                            </button>
+                            <Input
+                              placeholder={`${["A", "B", "C", "D"][i]} variant`}
+                              value={opt}
+                              onChange={(e) => updateOption(qIdx, i, e.target.value)}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <Input
+                        placeholder="Javob izohi (ixtiyoriy)"
+                        value={q.explanation}
+                        onChange={(e) => updateQuestion(qIdx, "explanation", e.target.value)}
+                      />
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={addNewQuestion}
+                    className="w-full border-2 border-dashed border-border hover:border-primary rounded-2xl py-3 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Savol qo'shish
+                  </button>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setStep("info")}
+                      className="flex-1 border border-border py-2.5 rounded-xl text-sm font-medium hover:bg-muted transition-colors"
+                    >
+                      ← Orqaga
+                    </button>
+                    <button
+                      onClick={handleSaveManual}
+                      disabled={adding}
+                      className="flex-1 bg-primary text-white py-2.5 rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
+                    >
+                      {adding ? "Saqlanmoqda..." : "Saqlash ✓"}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

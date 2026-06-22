@@ -12,9 +12,17 @@ const testTypeColors: Record<string, string> = {
   SAT: "bg-accent/10 text-accent border-accent/20",
   MILLIY_SERTIFIKAT: "bg-green-50 text-green-700 border-green-200",
   ATTESTATSIYA: "bg-purple-50 text-purple-700 border-purple-200",
+  MAJBURIY_BLOK: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
-const types = ["Barchasi", "DTM", "SAT", "MILLIY_SERTIFIKAT", "ATTESTATSIYA"];
+const types = [
+  { key: "Barchasi", label: "Barchasi" },
+  { key: "DTM", label: "DTM" },
+  { key: "SAT", label: "SAT" },
+  { key: "MILLIY_SERTIFIKAT", label: "Milliy" },
+  { key: "ATTESTATSIYA", label: "Attestatsiya" },
+  { key: "MAJBURIY_BLOK", label: "Majburiy blok" },
+];
 
 export default function TestsPage() {
   const [typeFilter, setTypeFilter] = useState("Barchasi");
@@ -23,7 +31,7 @@ export default function TestsPage() {
   const { isAuthenticated } = useAuthStore();
 
   const handleStart = (test: any) => {
-    const dest = `/dashboard/tests/${test.id}`;
+    const dest = `/exam/${test.id}`;
     if (isAuthenticated) {
       router.push(dest);
     } else {
@@ -62,17 +70,17 @@ export default function TestsPage() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {types.map((type) => (
+          {types.map(({ key, label }) => (
             <button
-              key={type}
-              onClick={() => setTypeFilter(type)}
+              key={key}
+              onClick={() => setTypeFilter(key)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                typeFilter === type
+                typeFilter === key
                   ? "bg-primary text-white"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
-              {type === "MILLIY_SERTIFIKAT" ? "Milliy" : type}
+              {label}
             </button>
           ))}
         </div>

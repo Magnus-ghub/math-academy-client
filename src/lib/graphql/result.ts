@@ -25,6 +25,8 @@ export const GET_MY_RESULTS = gql`
     getMyResults {
       id
       testId
+      testTitle
+      testType
       score
       correctAnswers
       totalQuestions
@@ -40,6 +42,8 @@ export const GET_RESULT = gql`
     getResult(resultId: $resultId) {
       id
       testId
+      testTitle
+      testType
       score
       correctAnswers
       totalQuestions

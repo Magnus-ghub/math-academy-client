@@ -31,7 +31,10 @@ export const GET_TEST = gql`
       id
       testTitle
       testType
+      testBlock
       testAccess
+      testStatus
+      testDesc
       totalQuestions
       duration
       groupId
@@ -119,5 +122,11 @@ export const UPDATE_QUESTION = gql`
 export const DELETE_QUESTION = gql`
   mutation DeleteQuestion($questionId: String!) {
     deleteQuestion(questionId: $questionId)
+  }
+`;
+
+export const DELETE_TEST = gql`
+  mutation DeleteTest($testId: String!) {
+    deleteTest(testId: $testId)
   }
 `;

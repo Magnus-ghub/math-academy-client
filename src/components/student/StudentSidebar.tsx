@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,6 +25,9 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
   const router = useRouter();
 
   const handleLogout = () => {
@@ -88,8 +91,8 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
         >
-          {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          {theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim"}
+          {mounted && (theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />)}
+          {mounted ? (theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim") : "Tema"}
         </button>
         <button
           onClick={handleLogout}

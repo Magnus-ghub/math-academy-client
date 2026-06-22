@@ -117,4 +117,15 @@
   html {
     @apply font-sans;
   }
+
+  /* MathText ichidagi HTML jadvallar */
+  .math-text table {
+    @apply border-collapse text-sm my-2 w-full;
+  }
+  .math-text td, .math-text th {
+    @apply border border-border px-3 py-1.5 text-center;
+  }
+  .math-text th {
+    @apply bg-muted font-semibold;
+  }
 }

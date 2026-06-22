@@ -15,11 +15,16 @@
       "Read(//Users/nomozof/Desktop/**)",
       "Bash(grep -E '\\\\.\\(tsx|ts\\)$')",
       "Bash(xargs ls)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(git -C /Users/nomozof/Desktop/math-academy-api status --short)",
+      "Bash(git -C /Users/nomozof/Desktop/math-academy-client status --short)",
+      "Bash(mkdir -p /Users/nomozof/Desktop/math-academy-client/src/app/\\\\\\(exam\\\\\\)/exam/\\\\[id\\\\])",
+      "Bash(psql -U math_user -d math_academy -c \"ALTER TYPE tests_testtype_enum ADD VALUE IF NOT EXISTS 'MAJBURIY_BLOK'; ALTER TYPE tests_testtype_enum ADD VALUE IF NOT EXISTS 'MAJBURIY_BLOK_GROUP';\")"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
-      "/Users/nomozof/Desktop/math-academy-api"
+      "/Users/nomozof/Desktop/math-academy-api",
+      "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/exam"
     ]
   }
 }
