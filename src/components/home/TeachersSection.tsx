@@ -23,7 +23,7 @@ interface Teacher {
 export default function TeachersSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { data, loading } = useQuery(GET_TEACHERS);
+  const { data, loading } = useQuery<{ getTeachers: Teacher[] }>(GET_TEACHERS);
   const teachers: Teacher[] = data?.getTeachers ?? [];
 
   const scroll = (dir: "left" | "right") => {

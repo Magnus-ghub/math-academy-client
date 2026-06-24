@@ -63,7 +63,7 @@ export default function AddUserToGroupModal({ group, onClose, onAdded }: Props) 
   const users = searchData?.searchUsers ?? [];
 
   const [addUser, { loading: adding }] = useMutation(ADD_USER_TO_GROUP, {
-    onCompleted: (data) => {
+    onCompleted: (data: any) => {
       const userId = data.addUserToGroup.userId;
       setAddedIds((prev) => new Set([...prev, userId]));
       onAdded();
