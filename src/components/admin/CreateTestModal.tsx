@@ -55,6 +55,8 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
   const [form, setForm] = useState({
     testTitle: "",
     testType: "DTM",
+    dtmType: "",
+    testDifficulty: "STANDART",
     testAccess: "PUBLIC",
     testBlock: "",
     duration: 30,
@@ -96,6 +98,8 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
         input: {
           testTitle: form.testTitle,
           testType: form.testType,
+          dtmType: form.dtmType || undefined,
+          testDifficulty: form.testDifficulty,
           testAccess: form.testAccess,
           duration: Number(form.duration),
           testDesc: form.testDesc || undefined,
@@ -272,18 +276,12 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                     value={form.testType}
-                    onChange={(e) => setForm({ ...form, testType: e.target.value })}
+                    onChange={(e) => setForm({ ...form, testType: e.target.value, dtmType: "" })}
                   >
                     <option value="DTM">DTM</option>
                     <option value="SAT">SAT</option>
                     <option value="MILLIY_SERTIFIKAT">Milliy Sertifikat</option>
                     <option value="ATTESTATSIYA">Attestatsiya</option>
-                    <option value="MAJBURIY_BLOK">Majburiy blok</option>
-                    <option value="DTM_GROUP">DTM Guruh</option>
-                    <option value="SAT_GROUP">SAT Guruh</option>
-                    <option value="MILLIY_GROUP">Milliy Guruh</option>
-                    <option value="ATTESTATSIYA_GROUP">Attestatsiya Guruh</option>
-                    <option value="MAJBURIY_BLOK_GROUP">Majburiy blok Guruh</option>
                   </select>
                 </div>
                 <div>
@@ -316,30 +314,45 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                 </div>
               )}
 
-              {(form.testType === "DTM" || form.testType === "DTM_GROUP") && (
+              {form.testType === "DTM" && (
                 <div>
-                  <label className="text-sm font-medium mb-1.5 block">Blok turi</label>
+                  <label className="text-sm font-medium mb-1.5 block">DTM turi *</label>
                   <select
                     className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
-                    value={form.testBlock}
-                    onChange={(e) => setForm({ ...form, testBlock: e.target.value })}
+                    value={form.dtmType}
+                    onChange={(e) => setForm({ ...form, dtmType: e.target.value })}
                   >
                     <option value="">Tanlanmagan</option>
-                    <option value="MANDATORY">Majburiy (Matematika)</option>
-                    <option value="ELECTIVE">Ixtiyoriy</option>
+                    <option value="MAJBURIY">Majburiy blok</option>
+                    <option value="ASOSIY">Asosiy blok</option>
+                    <option value="FULL">Full DTM</option>
                   </select>
                 </div>
               )}
 
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqada) *</label>
-                <Input
-                  type="number"
-                  min={5}
-                  max={180}
-                  value={form.duration}
-                  onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Qiyinlik darajasi</label>
+                  <select
+                    className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                    value={form.testDifficulty}
+                    onChange={(e) => setForm({ ...form, testDifficulty: e.target.value })}
+                  >
+                    <option value="EASY">Oson</option>
+                    <option value="STANDART">Standart</option>
+                    <option value="HARD">Qiyin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqada) *</label>
+                  <Input
+                    type="number"
+                    min={5}
+                    max={180}
+                    value={form.duration}
+                    onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}
+                  />
+                </div>
               </div>
 
               <div>

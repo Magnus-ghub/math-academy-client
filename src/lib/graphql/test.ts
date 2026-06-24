@@ -15,6 +15,7 @@ export const GET_PUBLIC_TESTS = gql`
       id
       testTitle
       testType
+      dtmType
       testAccess
       testStatus
       totalQuestions
@@ -31,6 +32,8 @@ export const GET_TEST = gql`
       id
       testTitle
       testType
+      dtmType
+      testDifficulty
       testBlock
       testAccess
       testStatus
@@ -61,6 +64,7 @@ export const GET_ALL_TESTS = gql`
       id
       testTitle
       testType
+      dtmType
       testAccess
       testStatus
       totalQuestions

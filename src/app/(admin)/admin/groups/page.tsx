@@ -134,7 +134,7 @@ export default function AdminGroupsPage() {
           />
         </div>
         <div className="flex gap-2">
-          {["ALL", "DTM", "SAT", "MILLIY_SERTIFIKAT", "ATTESTATSIYA"].map(
+          {["ALL", "MILLIY_SERTIFIKAT", "ATTESTATSIYA", "SAT", "DTM" ].map(
             (type) => (
               <button
                 key={type}

@@ -12,20 +12,43 @@ const testTypeColors: Record<string, string> = {
   SAT: "bg-accent/10 text-accent border-accent/20",
   MILLIY_SERTIFIKAT: "bg-green-50 text-green-700 border-green-200",
   ATTESTATSIYA: "bg-purple-50 text-purple-700 border-purple-200",
-  MAJBURIY_BLOK: "bg-orange-50 text-orange-700 border-orange-200",
 };
 
-const types = [
+const dtmTypeLabels: Record<string, string> = {
+  MAJBURIY: "DTM Majburiy",
+  ASOSIY: "DTM Asosiy",
+  FULL: "Full DTM",
+};
+
+const getTestLabel = (test: any): string => {
+  if (test.testType === "DTM" && test.dtmType) return dtmTypeLabels[test.dtmType] ?? "DTM";
+  const labels: Record<string, string> = {
+    MILLIY_SERTIFIKAT: "Milliy",
+    ATTESTATSIYA: "Attestatsiya",
+    SAT: "SAT",
+    DTM: "DTM",
+  };
+  return labels[test.testType] ?? test.testType;
+};
+
+const mainTypes = [
   { key: "Barchasi", label: "Barchasi" },
-  { key: "DTM", label: "DTM" },
-  { key: "SAT", label: "SAT" },
   { key: "MILLIY_SERTIFIKAT", label: "Milliy" },
   { key: "ATTESTATSIYA", label: "Attestatsiya" },
-  { key: "MAJBURIY_BLOK", label: "Majburiy blok" },
+  { key: "SAT", label: "SAT" },
+  { key: "DTM", label: "DTM" },
+];
+
+const dtmSubTypes = [
+  { key: "", label: "Barchasi" },
+  { key: "MAJBURIY", label: "Majburiy blok" },
+  { key: "ASOSIY", label: "Asosiy blok" },
+  { key: "FULL", label: "Full DTM" },
 ];
 
 export default function TestsPage() {
   const [typeFilter, setTypeFilter] = useState("Barchasi");
+  const [dtmFilter, setDtmFilter] = useState("");
   const [search, setSearch] = useState("");
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
@@ -39,13 +62,19 @@ export default function TestsPage() {
     }
   };
 
+  const handleMainFilter = (key: string) => {
+    setTypeFilter(key);
+    setDtmFilter("");
+  };
+
   const { data, loading } = useQuery<{ getPublicTests: any[] }>(GET_PUBLIC_TESTS);
   const tests = data?.getPublicTests || [];
 
   const filtered = tests.filter((t) => {
     const matchType = typeFilter === "Barchasi" || t.testType === typeFilter;
+    const matchDtm = typeFilter !== "DTM" || !dtmFilter || t.dtmType === dtmFilter;
     const matchSearch = t.testTitle.toLowerCase().includes(search.toLowerCase());
-    return matchType && matchSearch;
+    return matchType && matchDtm && matchSearch;
   });
 
   return (
@@ -59,7 +88,7 @@ export default function TestsPage() {
       </div>
 
       {/* Search + Filter */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-8">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -70,10 +99,10 @@ export default function TestsPage() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {types.map(({ key, label }) => (
+          {mainTypes.map(({ key, label }) => (
             <button
               key={key}
-              onClick={() => setTypeFilter(key)}
+              onClick={() => handleMainFilter(key)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                 typeFilter === key
                   ? "bg-primary text-white"
@@ -85,6 +114,25 @@ export default function TestsPage() {
           ))}
         </div>
       </div>
+
+      {/* DTM sub-filter */}
+      {typeFilter === "DTM" && (
+        <div className="flex gap-2 flex-wrap mb-4 pl-1">
+          {dtmSubTypes.map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setDtmFilter(key)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                dtmFilter === key
+                  ? "bg-primary/10 text-primary border-primary/30"
+                  : "border-border text-muted-foreground hover:border-primary/30 hover:text-primary"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="flex gap-6 mb-8 text-sm text-muted-foreground">
@@ -115,7 +163,7 @@ export default function TestsPage() {
             >
               <div className="flex items-start justify-between mb-3">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
-                  {test.testType.replace("_", " ")}
+                  {getTestLabel(test)}
                 </span>
                 {test.testAccess !== "PUBLIC" && (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">

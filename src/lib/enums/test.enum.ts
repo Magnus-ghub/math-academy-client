@@ -3,12 +3,6 @@ export enum TestType {
   SAT = "SAT",
   MILLIY_SERTIFIKAT = "MILLIY_SERTIFIKAT",
   ATTESTATSIYA = "ATTESTATSIYA",
-  MAJBURIY_BLOK = "MAJBURIY_BLOK",
-  DTM_GROUP = "DTM_GROUP",
-  SAT_GROUP = "SAT_GROUP",
-  MILLIY_GROUP = "MILLIY_GROUP",
-  ATTESTATSIYA_GROUP = "ATTESTATSIYA_GROUP",
-  MAJBURIY_BLOK_GROUP = "MAJBURIY_BLOK_GROUP",
 }
 
 export enum TestAccess {
@@ -26,4 +20,10 @@ export enum TestStatus {
 export enum TestBlock {
   MANDATORY = "MANDATORY",
   ELECTIVE = "ELECTIVE",
+}
+
+export enum DTMType {
+  MAJBURIY = "MAJBURIY",
+  ASOSIY = "ASOSIY",
+  FULL = "FULL",
 }

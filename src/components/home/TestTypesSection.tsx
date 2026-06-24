@@ -3,24 +3,6 @@ import { Calculator, BookOpen, Award, GraduationCap } from "lucide-react";
 
 const testTypes = [
   {
-    icon: Calculator,
-    title: "DTM",
-    description: "Davlat Test Markazi imtihoniga to'liq tayyorgarlik. Majburiy matematika bloki va fan testlari.",
-    color: "bg-primary/10 text-primary",
-    border: "border-primary/20 hover:border-primary",
-    href: "/tests?type=DTM",
-    count: "50+ test",
-  },
-  {
-    icon: BookOpen,
-    title: "SAT",
-    description: "SAT imtihoniga yo'naltirilgan matematika testlari. Xalqaro standartlar asosida.",
-    color: "bg-accent/10 text-accent",
-    border: "border-accent/20 hover:border-accent",
-    href: "/tests?type=SAT",
-    count: "30+ test",
-  },
-  {
     icon: Award,
     title: "Milliy Sertifikat",
     description: "Milliy Sertifikat imtihoniga maxsus tayyorlangan test to'plamlari.",
@@ -37,6 +19,24 @@ const testTypes = [
     border: "border-purple-200 hover:border-purple-500",
     href: "/tests?type=ATTESTATSIYA",
     count: "20+ test",
+  },
+  {
+    icon: BookOpen,
+    title: "SAT",
+    description: "SAT imtihoniga yo'naltirilgan matematika testlari. Xalqaro standartlar asosida.",
+    color: "bg-accent/10 text-accent",
+    border: "border-accent/20 hover:border-accent",
+    href: "/tests?type=SAT",
+    count: "30+ test",
+  },
+  {
+    icon: Calculator,
+    title: "DTM",
+    description: "Davlat Test Markazi imtihoniga to'liq tayyorgarlik. Majburiy matematika bloki va fan testlari.",
+    color: "bg-primary/10 text-primary",
+    border: "border-primary/20 hover:border-primary",
+    href: "/tests?type=DTM",
+    count: "50+ test",
   },
 ];
 

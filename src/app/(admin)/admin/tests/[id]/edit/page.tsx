@@ -72,6 +72,8 @@ export default function EditTestPage() {
   const [testInfo, setTestInfo] = useState({
     testTitle: "",
     testType: "DTM",
+    dtmType: "",
+    testDifficulty: "STANDART",
     testBlock: "",
     testDesc: "",
     duration: 30,
@@ -84,6 +86,8 @@ export default function EditTestPage() {
       setTestInfo({
         testTitle: test.testTitle ?? "",
         testType: test.testType ?? "DTM",
+        dtmType: test.dtmType ?? "",
+        testDifficulty: test.testDifficulty ?? "STANDART",
         testBlock: test.testBlock ?? "",
         testDesc: test.testDesc ?? "",
         duration: test.duration ?? 30,
@@ -161,6 +165,8 @@ export default function EditTestPage() {
           input: {
             testTitle: testInfo.testTitle,
             testType: testInfo.testType,
+            dtmType: testInfo.dtmType || undefined,
+            testDifficulty: testInfo.testDifficulty,
             testBlock: testInfo.testBlock || undefined,
             testDesc: testInfo.testDesc || undefined,
             duration: Number(testInfo.duration),
@@ -280,17 +286,11 @@ export default function EditTestPage() {
             <div>
               <label className="text-sm font-medium mb-1.5 block">Test turi</label>
               <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
-                value={testInfo.testType} onChange={(e) => setTestInfo({ ...testInfo, testType: e.target.value })}>
+                value={testInfo.testType} onChange={(e) => setTestInfo({ ...testInfo, testType: e.target.value, dtmType: "" })}>
                 <option value="DTM">DTM</option>
                 <option value="SAT">SAT</option>
                 <option value="MILLIY_SERTIFIKAT">Milliy Sertifikat</option>
                 <option value="ATTESTATSIYA">Attestatsiya</option>
-                <option value="MAJBURIY_BLOK">Majburiy blok</option>
-                <option value="DTM_GROUP">DTM Guruh</option>
-                <option value="SAT_GROUP">SAT Guruh</option>
-                <option value="MILLIY_GROUP">Milliy Guruh</option>
-                <option value="ATTESTATSIYA_GROUP">Attestatsiya Guruh</option>
-                <option value="MAJBURIY_BLOK_GROUP">Majburiy blok Guruh</option>
               </select>
             </div>
             <div>
@@ -304,22 +304,34 @@ export default function EditTestPage() {
             </div>
           </div>
 
-          {(testInfo.testType === "DTM" || testInfo.testType === "DTM_GROUP") && (
+          {testInfo.testType === "DTM" && (
             <div>
-              <label className="text-sm font-medium mb-1.5 block">Blok turi</label>
+              <label className="text-sm font-medium mb-1.5 block">DTM turi</label>
               <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
-                value={testInfo.testBlock} onChange={(e) => setTestInfo({ ...testInfo, testBlock: e.target.value })}>
+                value={testInfo.dtmType} onChange={(e) => setTestInfo({ ...testInfo, dtmType: e.target.value })}>
                 <option value="">Tanlanmagan</option>
-                <option value="MANDATORY">Majburiy (Matematika)</option>
-                <option value="ELECTIVE">Ixtiyoriy</option>
+                <option value="MAJBURIY">Majburiy blok</option>
+                <option value="ASOSIY">Asosiy blok</option>
+                <option value="FULL">Full DTM</option>
               </select>
             </div>
           )}
 
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqa)</label>
-            <Input type="number" min={5} max={180} value={testInfo.duration}
-              onChange={(e) => setTestInfo({ ...testInfo, duration: Number(e.target.value) })} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Qiyinlik darajasi</label>
+              <select className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                value={testInfo.testDifficulty} onChange={(e) => setTestInfo({ ...testInfo, testDifficulty: e.target.value })}>
+                <option value="EASY">Oson</option>
+                <option value="STANDART">Standart</option>
+                <option value="HARD">Qiyin</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqa)</label>
+              <Input type="number" min={5} max={180} value={testInfo.duration}
+                onChange={(e) => setTestInfo({ ...testInfo, duration: Number(e.target.value) })} />
+            </div>
           </div>
 
           <div>
@@ -374,8 +386,21 @@ function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImag
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const imageItem = Array.from(e.clipboardData?.items ?? []).find(
+      (item) => item.type.startsWith("image/")
+    );
+    if (!imageItem) return;
+    e.preventDefault();
+    const file = imageItem.getAsFile();
+    if (file) onImagePick(file);
+  };
+
   return (
-    <div className={`bg-background rounded-2xl border p-5 transition-colors ${q.dirty || q.isNew ? "border-primary/40" : "border-border"}`}>
+    <div
+      onPaste={handlePaste}
+      className={`bg-background rounded-2xl border p-5 transition-colors ${q.dirty || q.isNew ? "border-primary/40" : "border-border"}`}
+    >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="font-bold text-sm text-primary">{index + 1}-savol</span>
@@ -410,14 +435,19 @@ function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImag
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={q.uploading}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
-            >
-              {q.uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-              {q.uploading ? "Yuklanmoqda..." : "Rasm qo'shish (grafik, jadval)"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={q.uploading}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+              >
+                {q.uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                {q.uploading ? "Yuklanmoqda..." : "Fayl tanlash"}
+              </button>
+              {!q.uploading && (
+                <span className="text-xs text-muted-foreground">yoki savol ichida <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-xs">Ctrl+V</kbd> bilan rasmni joylashtiring</span>
+              )}
+            </div>
           )}
           <input ref={fileRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) onImagePick(f); e.target.value = ""; }} />

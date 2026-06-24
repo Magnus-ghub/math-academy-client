@@ -10,16 +10,27 @@ import { GET_ALL_TESTS, UPDATE_TEST, DELETE_TEST } from "@/lib/graphql/test";
 import CreateTestModal from "@/components/admin/CreateTestModal";
 
 const testTypeColors: Record<string, string> = {
-  DTM: "bg-primary/10 text-primary",
-  SAT: "bg-accent/10 text-accent",
   MILLIY_SERTIFIKAT: "bg-green-100 text-green-700",
   ATTESTATSIYA: "bg-purple-100 text-purple-700",
-  MAJBURIY_BLOK: "bg-orange-100 text-orange-700",
-  DTM_GROUP: "bg-primary/20 text-primary",
-  SAT_GROUP: "bg-accent/20 text-accent",
-  MILLIY_GROUP: "bg-green-200 text-green-700",
-  ATTESTATSIYA_GROUP: "bg-purple-200 text-purple-700",
-  MAJBURIY_BLOK_GROUP: "bg-orange-200 text-orange-700",
+  SAT: "bg-accent/10 text-accent",
+  DTM: "bg-primary/10 text-primary",
+};
+
+const dtmTypeLabels: Record<string, string> = {
+  MAJBURIY: "DTM Majburiy",
+  ASOSIY: "DTM Asosiy",
+  FULL: "Full DTM",
+};
+
+const testTypeLabel = (test: any): string => {
+  if (test.testType === "DTM" && test.dtmType) return dtmTypeLabels[test.dtmType] ?? "DTM";
+  const labels: Record<string, string> = {
+    MILLIY_SERTIFIKAT: "Milliy",
+    ATTESTATSIYA: "Attestatsiya",
+    SAT: "SAT",
+    DTM: "DTM",
+  };
+  return labels[test.testType] ?? test.testType;
 };
 
 const accessColors: Record<string, string> = {
@@ -51,6 +62,7 @@ const PAGE_SIZE = 10;
 export default function AdminTestsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [dtmFilter, setDtmFilter] = useState("");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
@@ -78,7 +90,8 @@ export default function AdminTestsPage() {
   const filtered = tests.filter((t: any) => {
     const matchSearch = t.testTitle.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "ALL" || t.testType === typeFilter;
-    return matchSearch && matchType;
+    const matchDtm = typeFilter !== "DTM" || !dtmFilter || t.dtmType === dtmFilter;
+    return matchSearch && matchType && matchDtm;
   });
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -168,13 +181,12 @@ export default function AdminTestsPage() {
         <div className="flex gap-2 flex-wrap">
           {[
             { key: "ALL", label: "Barchasi" },
-            { key: "DTM", label: "DTM" },
-            { key: "SAT", label: "SAT" },
             { key: "MILLIY_SERTIFIKAT", label: "Milliy" },
             { key: "ATTESTATSIYA", label: "Attestatsiya" },
-            { key: "MAJBURIY_BLOK", label: "Majburiy blok" },
+            { key: "SAT", label: "SAT" },
+            { key: "DTM", label: "DTM" },
           ].map(({ key, label }) => (
-            <button key={key} onClick={() => { setTypeFilter(key); setPage(1); }}
+            <button key={key} onClick={() => { setTypeFilter(key); setDtmFilter(""); setPage(1); }}
               className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 typeFilter === key ? "bg-primary text-white" : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}>
@@ -183,6 +195,27 @@ export default function AdminTestsPage() {
           ))}
         </div>
       </div>
+
+      {/* DTM sub-filter */}
+      {typeFilter === "DTM" && (
+        <div className="flex gap-2 flex-wrap mb-4 pl-1">
+          {[
+            { key: "", label: "Barchasi" },
+            { key: "MAJBURIY", label: "Majburiy blok" },
+            { key: "ASOSIY", label: "Asosiy blok" },
+            { key: "FULL", label: "Full DTM" },
+          ].map(({ key, label }) => (
+            <button key={key} onClick={() => { setDtmFilter(key); setPage(1); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                dtmFilter === key
+                  ? "bg-primary/10 text-primary border-primary/30"
+                  : "border-border text-muted-foreground hover:border-primary/30 hover:text-primary"
+              }`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Cards grid */}
       {paginated.length === 0 ? (
@@ -195,8 +228,8 @@ export default function AdminTestsPage() {
             <div key={test.id} className="bg-background border border-border rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/30 hover:shadow-sm transition-all">
               {/* Top badges */}
               <div className="flex items-center justify-between">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
-                  {test.testType.replace("_GROUP", " G").replace("_", " ")}
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${testTypeColors[test.testType] ?? "bg-muted text-muted-foreground"}`}>
+                  {testTypeLabel(test)}
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[test.testStatus]}`}>
                   {statusLabels[test.testStatus]}

@@ -19,7 +19,9 @@
       "Bash(git -C /Users/nomozof/Desktop/math-academy-api status --short)",
       "Bash(git -C /Users/nomozof/Desktop/math-academy-client status --short)",
       "Bash(mkdir -p /Users/nomozof/Desktop/math-academy-client/src/app/\\\\\\(exam\\\\\\)/exam/\\\\[id\\\\])",
-      "Bash(psql -U math_user -d math_academy -c \"ALTER TYPE tests_testtype_enum ADD VALUE IF NOT EXISTS 'MAJBURIY_BLOK'; ALTER TYPE tests_testtype_enum ADD VALUE IF NOT EXISTS 'MAJBURIY_BLOK_GROUP';\")"
+      "Bash(psql -U math_user -d math_academy -c \"ALTER TYPE tests_testtype_enum ADD VALUE IF NOT EXISTS 'MAJBURIY_BLOK'; ALTER TYPE tests_testtype_enum ADD VALUE IF NOT EXISTS 'MAJBURIY_BLOK_GROUP';\")",
+      "Bash(psql -d math_academy -c \"DO \\\\$\\\\$ BEGIN IF NOT EXISTS \\(SELECT 1 FROM pg_type WHERE typname = 'tests_dtmtype_enum'\\) THEN CREATE TYPE tests_dtmtype_enum AS ENUM \\('MAJBURIY', 'ASOSIY', 'FULL'\\); END IF; END \\\\$\\\\$;\")",
+      "Bash(psql -d math_academy -c ' *)"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
