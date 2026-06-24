@@ -31,16 +31,18 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (user, accessToken) => {
-        // Cookie qo'shish
         if (typeof document !== "undefined") {
-          document.cookie = `auth-token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}`;
+          const isSecure = location.protocol === "https:";
+          const flags = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+          document.cookie = `auth-token=${accessToken}; ${flags}`;
         }
         set({ user, accessToken, isAuthenticated: true });
       },
       logout: () => {
-        // Cookie o'chirish
         if (typeof document !== "undefined") {
-          document.cookie = "auth-token=; path=/; max-age=0";
+          const isSecure = location.protocol === "https:";
+          const flags = `path=/; max-age=0; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+          document.cookie = `auth-token=; ${flags}`;
         }
         set({ user: null, accessToken: null, isAuthenticated: false });
       },

@@ -10,13 +10,14 @@ import { TELEGRAM_LOGIN } from "@/lib/graphql/auth";
 import { useAuthStore } from "@/lib/store/auth.store";
 
 const BOT_USERNAME = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME!;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl");
   const { setAuth } = useAuthStore();
-  const widgetMounted = useRef(false);
+  const mounted = useRef(false);
 
   const getRedirect = (role: string) => {
     if (callbackUrl?.startsWith("/dashboard")) return callbackUrl;
@@ -29,14 +30,19 @@ function LoginContent() {
       setAuth(user, accessToken);
       router.push(getRedirect(user.userRole));
     },
-    onError: () => {
-      toast.error("Telegram orqali kirishda xatolik yuz berdi");
+    onError: (err) => {
+      const msg = err.graphQLErrors?.[0]?.message;
+      if (msg === "Invalid Telegram data") {
+        toast.error("Telegram ma'lumotlari noto'g'ri — qayta urinib ko'ring");
+      } else {
+        toast.error("Kirishda xatolik yuz berdi");
+      }
     },
   });
 
   useEffect(() => {
-    if (widgetMounted.current) return;
-    widgetMounted.current = true;
+    if (mounted.current) return;
+    mounted.current = true;
 
     (window as any).TelegramLoginCallback = (data: any) => {
       telegramLogin({
@@ -52,7 +58,7 @@ function LoginContent() {
     };
 
     const el = document.getElementById("telegram-login-btn");
-    if (!el) return;
+    if (!el || el.querySelector("script")) return;
 
     const script = document.createElement("script");
     script.setAttribute("data-telegram-login", BOT_USERNAME);
@@ -62,7 +68,8 @@ function LoginContent() {
     script.setAttribute("data-userpic", "false");
     script.src = "https://telegram.org/js/telegram-widget.js?22";
     script.async = true;
-    script.onerror = () => toast.error("Telegram widget yuklanmadi — domenni tekshiring");
+    script.onerror = () =>
+      toast.error("Telegram widget yuklanmadi — domenni tekshiring");
     el.appendChild(script);
 
     return () => {
@@ -89,10 +96,16 @@ function LoginContent() {
 
         {/* Telegram Widget */}
         <div className="flex justify-center mb-2">
-          <div id="telegram-login-btn" />
+          <div id="telegram-login-btn" className="min-h-12.5" />
         </div>
 
-        {/* Dev bypass — faqat development da ko'rinadi */}
+        {loading && (
+          <p className="text-sm text-muted-foreground animate-pulse text-center mt-2 mb-4">
+            Kirilmoqda...
+          </p>
+        )}
+
+        {/* Dev bypass — faqat local development da */}
         {process.env.NODE_ENV === "development" && (
           <button
             onClick={() =>
@@ -107,14 +120,8 @@ function LoginContent() {
             }
             className="w-full mt-2 py-2 rounded-xl border-2 border-dashed border-yellow-400 text-yellow-600 text-xs font-medium hover:bg-yellow-50 transition-colors"
           >
-            🛠 Dev: Test login (Telegram bypass)
+            Dev: Test login (Telegram bypass)
           </button>
-        )}
-
-        {loading && (
-          <p className="text-sm text-muted-foreground animate-pulse text-center mb-4">
-            Kirilmoqda...
-          </p>
         )}
 
         <div className="flex items-center gap-3 my-6">
@@ -128,8 +135,7 @@ function LoginContent() {
             if (callbackUrl?.startsWith("/dashboard")) {
               sessionStorage.setItem("auth-callbackUrl", callbackUrl);
             }
-            const base = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "");
-            window.location.href = `${base}/auth/google`;
+            window.location.href = `${API_BASE}/auth/google`;
           }}
           className="w-full flex items-center justify-center gap-3 bg-background hover:bg-muted border border-border font-semibold py-3 px-6 rounded-xl transition-colors"
         >

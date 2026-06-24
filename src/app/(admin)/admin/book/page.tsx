@@ -41,7 +41,7 @@ export default function AdminBookPage() {
     { name: "", address: "", phone: "" },
   ]);
 
-  const { data, loading } = useQuery(GET_BOOK, { fetchPolicy: "network-only" });
+  const { data, loading } = useQuery<{ getBook: any }>(GET_BOOK, { fetchPolicy: "network-only" });
 
   useEffect(() => {
     const book = data?.getBook;
@@ -66,7 +66,7 @@ export default function AdminBookPage() {
     }
   }, [data]);
 
-  const [createContent] = useMutation(CREATE_CONTENT);
+  const [createContent] = useMutation<{ createContent: { id: string | null } }>(CREATE_CONTENT);
   const [updateContent] = useMutation(UPDATE_CONTENT_FULL);
 
   const uploadImage = async (file: File) => {

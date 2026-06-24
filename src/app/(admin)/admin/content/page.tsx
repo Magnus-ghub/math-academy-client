@@ -59,6 +59,22 @@ interface ContentForm {
   contentVideo: string;
 }
 
+interface CreateContentResponse {
+  createContent: {
+    id: string;
+  };
+}
+
+interface CreateContentVariables {
+  input: {
+    contentType: string;
+    contentTitle: string;
+    contentDesc?: string;
+    contentImage?: string;
+    contentVideo?: string;
+  };
+}
+
 const defaultForm: ContentForm = {
   contentType: "SUCCESS_STORY",
   contentTitle: "",
@@ -92,7 +108,7 @@ export default function AdminContentPage() {
     onError: () => toast.error("Xatolik yuz berdi"),
   });
 
-  const [createContent] = useMutation(CREATE_CONTENT, {
+  const [createContent] = useMutation<CreateContentResponse, CreateContentVariables>(CREATE_CONTENT, {
     onError: () => toast.error("Saqlashda xatolik"),
   });
 
