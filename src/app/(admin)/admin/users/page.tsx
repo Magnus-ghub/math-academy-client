@@ -38,7 +38,10 @@ export default function AdminUsersPage() {
   const { data, loading, refetch } = useQuery<{ getAllUsers: any[] }>(GET_ALL_USERS);
   const users = data?.getAllUsers || [];
 
-  const [adminUpdateUser] = useMutation(ADMIN_UPDATE_USER, {
+  const [adminUpdateUser] = useMutation<
+    { adminUpdateUser: { userStatus: string } },
+    { userId: string; input: { userStatus: string } }
+  >(ADMIN_UPDATE_USER, {
     onCompleted: (data) => {
       refetch();
       const status = data.adminUpdateUser.userStatus;

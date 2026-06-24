@@ -32,6 +32,38 @@ interface QuestionRow {
   isNew: boolean;        // yangi qo'shilganmi
 }
 
+interface TestData {
+  getTest?: {
+    id?: string;
+    testTitle?: string;
+    testType?: string;
+    dtmType?: string;
+    testDifficulty?: string;
+    testBlock?: string;
+    testDesc?: string;
+    duration?: number;
+    testAccess?: string;
+    testStatus?: string;
+  };
+}
+
+interface QuestionsData {
+  getQuestions?: Array<{
+    id: string;
+    questionText?: string;
+    questionImage?: string;
+    options?: string[];
+    correctAnswer?: number;
+    explanation?: string;
+  }>;
+}
+
+interface AddQuestionData {
+  addQuestion?: {
+    id: string;
+  };
+}
+
 function makeRow(q?: any): QuestionRow {
   return {
     uid: q?.id ?? `new-${Date.now()}-${Math.random()}`,
@@ -56,12 +88,12 @@ export default function EditTestPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "questions">("questions");
 
-  const { data: testData, loading: testLoading } = useQuery(GET_TEST, {
+  const { data: testData, loading: testLoading } = useQuery<TestData, { testId: string }>(GET_TEST, {
     variables: { testId },
     skip: !testId,
   });
 
-  const { data: questionsData, loading: questionsLoading } = useQuery(GET_QUESTIONS, {
+  const { data: questionsData, loading: questionsLoading } = useQuery<QuestionsData, { testId: string }>(GET_QUESTIONS, {
     variables: { testId },
     skip: !testId,
     fetchPolicy: "network-only",
@@ -106,7 +138,7 @@ export default function EditTestPage() {
   const [updateTest] = useMutation(UPDATE_TEST, {
     onError: () => toast.error("Test ma'lumotlari saqlanmadi"),
   });
-  const [addQuestion] = useMutation(ADD_QUESTION, {
+  const [addQuestion] = useMutation<AddQuestionData>(ADD_QUESTION, {
     onError: () => toast.error("Savol qo'shishda xatolik"),
   });
   const [updateQuestion] = useMutation(UPDATE_QUESTION, {
@@ -200,9 +232,10 @@ export default function EditTestPage() {
               input: { testId, orderIndex: i + 1, ...payload },
             },
           });
-          if (res.data?.addQuestion?.id) {
+          const newId = res.data?.addQuestion?.id;
+          if (newId) {
             setQuestions((qs) => qs.map((x) =>
-              x.uid === q.uid ? { ...x, id: res.data.addQuestion.id, isNew: false, dirty: false } : x
+              x.uid === q.uid ? { ...x, id: newId, isNew: false, dirty: false } : x
             ));
           }
         } else if (q.id) {

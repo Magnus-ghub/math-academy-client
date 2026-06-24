@@ -148,7 +148,7 @@ export default function ExamPage() {
     <>
       {/* ── HEADER ── */}
       <header className="shrink-0 bg-background border-b border-border px-4 py-3">
-        <div className="max-w-screen-xl mx-auto flex items-center gap-4">
+        <div className="max-w-7xl mx-auto flex items-center gap-4">
           {/* Back */}
           <button
             onClick={() => router.back()}
@@ -200,7 +200,7 @@ export default function ExamPage() {
       </header>
 
       {/* ── BODY ── */}
-      <div className="flex flex-1 overflow-hidden max-w-screen-xl mx-auto w-full">
+      <div className="flex flex-1 overflow-hidden max-w-7xl mx-auto w-full">
 
         {/* ── LEFT: Questions (scrollable) ── */}
         <main className="flex-1 overflow-y-auto px-4 py-5 space-y-4">
