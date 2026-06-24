@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Users, BookOpen, FolderOpen, CreditCard, MessageSquare, Flag, FileText, ChevronRight, LogOut, UserCircle } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, BookOpen, FolderOpen, CreditCard, MessageSquare, Flag, FileText, ChevronRight, LogOut, UserCircle, BookMarked } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ const menuItems = [
   { href: "/admin/tests", icon: BookOpen, label: "Testlar" },
   { href: "/admin/payments", icon: CreditCard, label: "To'lovlar" },
   { href: "/admin/content", icon: FileText, label: "Kontent" },
+  { href: "/admin/book", icon: BookMarked, label: "Kitob" },
   { href: "/admin/comments", icon: MessageSquare, label: "Izohlar" },
   { href: "/admin/reports", icon: Flag, label: "Reportlar" },
 ];

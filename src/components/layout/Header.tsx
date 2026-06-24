@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   Menu,
@@ -32,15 +32,24 @@ import { UserRole } from "@/lib/enums/user.enum";
 const navLinks = [
   { href: "/", label: "Bosh sahifa" },
   { href: "/tests", label: "Testlar" },
+  { href: "/#events", label: "Tadbirlar" },
+  { href: "/#faq", label: "FAQ" },
   { href: "/about", label: "Haqida" },
   { href: "/contact", label: "Aloqa" },
 ];
 
 export default function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
+
+  const isActive = (href: string) => {
+    if (href.includes("#")) return false;
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
 
   const handleLogout = () => {
     logout();
@@ -68,12 +77,16 @@ export default function Header() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isActive(link.href)
+                  ? "text-primary bg-primary/8"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+              }`}
             >
               {link.label}
             </Link>
@@ -177,13 +190,17 @@ export default function Header() {
                     Saidxonov Academy
                   </span>
                 </Link>
-                <nav className="flex flex-col gap-4">
+                <nav className="flex flex-col gap-1">
                   {navLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
                       onClick={() => setOpen(false)}
-                      className="text-base font-medium text-muted-foreground hover:text-primary transition-colors"
+                      className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                        isActive(link.href)
+                          ? "text-primary bg-primary/8"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }`}
                     >
                       {link.label}
                     </Link>

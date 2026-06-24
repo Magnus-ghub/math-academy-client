@@ -21,7 +21,13 @@
       "Bash(mkdir -p /Users/nomozof/Desktop/math-academy-client/src/app/\\\\\\(exam\\\\\\)/exam/\\\\[id\\\\])",
       "Bash(psql -U math_user -d math_academy -c \"ALTER TYPE tests_testtype_enum ADD VALUE IF NOT EXISTS 'MAJBURIY_BLOK'; ALTER TYPE tests_testtype_enum ADD VALUE IF NOT EXISTS 'MAJBURIY_BLOK_GROUP';\")",
       "Bash(psql -d math_academy -c \"DO \\\\$\\\\$ BEGIN IF NOT EXISTS \\(SELECT 1 FROM pg_type WHERE typname = 'tests_dtmtype_enum'\\) THEN CREATE TYPE tests_dtmtype_enum AS ENUM \\('MAJBURIY', 'ASOSIY', 'FULL'\\); END IF; END \\\\$\\\\$;\")",
-      "Bash(psql -d math_academy -c ' *)"
+      "Bash(psql -d math_academy -c ' *)",
+      "Bash(npm list *)",
+      "Bash(psql -d math_academy -c \"\\\\d contents\")",
+      "Bash(curl -s -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' -d '{\"query\":\"mutation { createContent\\(input: { contentType: BOOK, contentTitle: \\\\\"test\\\\\" }\\) { id } }\"}')",
+      "Bash(xargs ls -la)",
+      "Bash(cat /dev/null > /Users/nomozof/Desktop/math-academy-client/src/components/home/FAQSection.tsx && echo \"created\")",
+      "Read(//dev/**)"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",

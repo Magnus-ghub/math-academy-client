@@ -50,7 +50,7 @@ export default function HowItWorksSection() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
                   <step.icon className="w-7 h-7 text-primary" />
                 </div>
-                <span className="text-4xl font-black text-primary/20 absolute -top-2 -right-2">{step.step}</span>
+                {/* <span className="text-4xl font-black text-primary/20 absolute -top-2 -right-2">{step.step}</span> */}
                 <h3 className="font-bold text-lg mb-2">{step.title}</h3>
                 <p className="text-muted-foreground text-sm leading-relaxed">{step.desc}</p>
               </div>

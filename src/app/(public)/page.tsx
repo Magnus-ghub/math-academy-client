@@ -5,6 +5,10 @@ import SuccessStoriesSection from "@/components/home/SuccessStoriesSection";
 import TeachersSection from "@/components/home/TeachersSection";
 import TelegramStatsSection from "@/components/home/TelegramStatsSection";
 import TestTypesSection from "@/components/home/TestTypesSection";
+import BookSection from "@/components/home/BookSection";
+import HowItWorksSection from "@/components/home/HowItWorksSection";
+import FAQSection from "@/components/home/FAQSection";
+import EventsSection from "@/components/home/EventsSection";
 
 export default function HomePage() {
   return (
@@ -12,8 +16,12 @@ export default function HomePage() {
       <HeroSection />
       <TelegramStatsSection />
       <TestTypesSection />
-      <SuccessStoriesSection />
+      <BookSection />
       <TeachersSection />
+      <HowItWorksSection />
+      <SuccessStoriesSection />
+      <EventsSection />
+      <FAQSection />
       <CTASection />
     </>
   );

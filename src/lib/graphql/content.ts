@@ -6,8 +6,8 @@ export const GET_ALL_CONTENT = gql`
       id
       contentType
       contentStatus
-      title
-      desc
+      contentTitle
+      contentDesc
       contentImage
       contentVideo
       viewCount
@@ -35,8 +35,8 @@ export const GET_SUCCESS_STORIES = gql`
   query GetSuccessStories {
     getSuccessStories {
       id
-      title
-      desc
+      contentTitle
+      contentDesc
       contentImage
       viewCount
       createdAt
@@ -48,8 +48,8 @@ export const GET_TEACHERS = gql`
   query GetTeachers {
     getTeachers {
       id
-      title
-      desc
+      contentTitle
+      contentDesc
       contentImage
       createdAt
     }
@@ -60,11 +60,61 @@ export const GET_EVENTS = gql`
   query GetEvents {
     getEvents {
       id
-      title
-      desc
+      contentTitle
+      contentDesc
       contentImage
       contentVideo
       publishedAt
+      createdAt
+    }
+  }
+`;
+
+export const GET_FAQS = gql`
+  query GetFaqs {
+    getFaqs {
+      id
+      contentTitle
+      contentDesc
+    }
+  }
+`;
+
+export const GET_BOOK = gql`
+  query GetBook {
+    getBook {
+      id
+      contentTitle
+      contentDesc
+      contentImage
+      contentStatus
+      metaJson
+      updatedAt
+    }
+  }
+`;
+
+export const CREATE_CONTENT = gql`
+  mutation CreateContent($input: ContentInput!) {
+    createContent(input: $input) {
+      id
+      contentType
+      contentTitle
+      contentStatus
+      metaJson
+    }
+  }
+`;
+
+export const UPDATE_CONTENT_FULL = gql`
+  mutation UpdateContentFull($contentId: String!, $input: ContentUpdate!) {
+    updateContent(contentId: $contentId, input: $input) {
+      id
+      contentTitle
+      contentDesc
+      contentImage
+      contentStatus
+      metaJson
     }
   }
 `;
