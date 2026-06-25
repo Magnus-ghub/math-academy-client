@@ -9,5 +9,7 @@ export interface Report {
   userId: string;
   questionId?: string;
   testId?: string;
+  testTitle?: string;
+  questionOrder?: number;
   createdAt: string;
 }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { LogoutConfirmModal } from "@/components/LogoutConfirmModal";
 import {
   Menu,
   Sun,
@@ -43,6 +44,7 @@ export default function Header() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
 
   const isActive = (href: string) => {
@@ -60,6 +62,7 @@ export default function Header() {
     user?.userRole === UserRole.ADMIN ? "/admin" : "/dashboard";
 
   return (
+    <>
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
@@ -157,7 +160,7 @@ export default function Header() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+                <DropdownMenuItem variant="destructive" onClick={() => setShowLogoutConfirm(true)}>
                   <LogOut />
                   Chiqish
                 </DropdownMenuItem>
@@ -219,8 +222,8 @@ export default function Header() {
                     </button>
                     <button
                       onClick={() => {
-                        handleLogout();
                         setOpen(false);
+                        setShowLogoutConfirm(true);
                       }}
                       className="w-full py-2.5 rounded-xl border border-border text-sm font-medium text-destructive"
                     >
@@ -240,5 +243,13 @@ export default function Header() {
         </div>
       </div>
     </header>
+
+    {showLogoutConfirm && (
+      <LogoutConfirmModal
+        onConfirm={handleLogout}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
+    )}
+  </>
   );
 }

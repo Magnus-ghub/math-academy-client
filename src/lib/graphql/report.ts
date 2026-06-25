@@ -11,6 +11,8 @@ export const GET_PENDING_REPORTS = gql`
       userId
       questionId
       testId
+      testTitle
+      questionOrder
       createdAt
     }
   }

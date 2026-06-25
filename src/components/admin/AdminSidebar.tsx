@@ -8,6 +8,7 @@ import { Menu, X, LayoutDashboard, Users, BookOpen, FolderOpen, CreditCard, Mess
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
+import { LogoutConfirmModal } from "@/components/LogoutConfirmModal";
 
 const menuItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
@@ -25,6 +26,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { logout, user } = useAuthStore();
   const router = useRouter();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -101,12 +103,19 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           ← Saytga qaytish
         </Link>
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-400 hover:bg-red-900/30 hover:text-red-400 transition-all"
         >
           <LogOut className="w-4 h-4" />
           Chiqish
         </button>
+
+        {showLogoutConfirm && (
+          <LogoutConfirmModal
+            onConfirm={handleLogout}
+            onCancel={() => setShowLogoutConfirm(false)}
+          />
+        )}
       </div>
     </div>
   );

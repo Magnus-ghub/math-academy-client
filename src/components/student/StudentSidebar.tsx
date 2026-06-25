@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { LogoutConfirmModal } from "@/components/LogoutConfirmModal";
 
 const menuItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -26,6 +27,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
   const router = useRouter();
@@ -95,12 +97,19 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
           {mounted ? (theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim") : "Tema"}
         </button>
         <button
-          onClick={handleLogout}
+          onClick={() => setShowLogoutConfirm(true)}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all"
         >
           <LogOut className="w-4 h-4" />
           Chiqish
         </button>
+
+        {showLogoutConfirm && (
+          <LogoutConfirmModal
+            onConfirm={handleLogout}
+            onCancel={() => setShowLogoutConfirm(false)}
+          />
+        )}
       </div>
     </div>
   );

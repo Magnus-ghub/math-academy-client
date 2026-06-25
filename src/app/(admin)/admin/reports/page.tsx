@@ -57,10 +57,14 @@ export default function AdminReportsPage() {
     onError: () => toast.error("Xatolik yuz berdi"),
   });
 
-  const filtered = reports.filter((r) =>
-    r.reportText?.toLowerCase().includes(search.toLowerCase()) ||
-    r.reportReason?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = reports.filter((r) => {
+    const q = search.toLowerCase();
+    return (
+      r.reportText?.toLowerCase().includes(q) ||
+      r.reportReason?.toLowerCase().includes(q) ||
+      r.testTitle?.toLowerCase().includes(q)
+    );
+  });
 
   if (loading) {
     return (
@@ -123,13 +127,21 @@ export default function AdminReportsPage() {
                     </span>
                   </div>
                   {report.reportText && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-2">
                       {report.reportText}
                     </p>
                   )}
-                  <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
-                    {report.testId && <span>Test: {report.testId}</span>}
-                    {report.questionId && <span>Savol: {report.questionId}</span>}
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {report.testTitle && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium">
+                        Test: {report.testTitle}
+                      </span>
+                    )}
+                    {report.questionOrder != null && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium">
+                        {report.questionOrder}-savol
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">

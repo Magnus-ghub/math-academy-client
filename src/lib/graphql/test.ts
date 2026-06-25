@@ -53,6 +53,9 @@ export const GET_QUESTIONS = gql`
       questionText
       questionImage
       options
+      correctAnswer
+      explanation
+      section
       orderIndex
     }
   }
