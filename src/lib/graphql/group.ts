@@ -1,5 +1,18 @@
 import { gql } from "@apollo/client";
 
+export const GET_MY_GROUPS = gql`
+  query GetMyGroups {
+    getMyGroups {
+      id
+      groupId
+      groupType
+      groupName
+      expiresAt
+      joinedAt
+    }
+  }
+`;
+
 export const GET_ALL_GROUPS = gql`
   query GetAllGroups {
     getAllGroups {
@@ -52,6 +65,29 @@ export const ADD_USER_TO_GROUP = gql`
       userId
       groupId
       expiresAt
+    }
+  }
+`;
+
+export const REMOVE_USER_FROM_GROUP = gql`
+  mutation RemoveUserFromGroup($groupId: String!, $userId: String!) {
+    removeUserFromGroup(groupId: $groupId, userId: $userId)
+  }
+`;
+
+export const GET_GROUP_MEMBERS = gql`
+  query GetGroupMembers($groupId: String!) {
+    getGroupMembers(groupId: $groupId) {
+      id
+      userName
+      userLastName
+      userImage
+      telegramId
+      userPhone
+      userRole
+      userAuthType
+      expiresAt
+      joinedAt
     }
   }
 `;

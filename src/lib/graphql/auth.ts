@@ -28,6 +28,14 @@ export const TELEGRAM_LOGIN = gql`
         telegramId
         userImage
       }
+      groups {
+        id
+        groupId
+        groupType
+        groupName
+        expiresAt
+        joinedAt
+      }
     }
   }
 `;

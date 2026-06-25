@@ -94,6 +94,21 @@ export const GET_BOOK = gql`
   }
 `;
 
+export const GET_GROUP_MATERIALS = gql`
+  query GetGroupMaterials($groupId: String!) {
+    getGroupMaterials(groupId: $groupId) {
+      id
+      contentTitle
+      contentDesc
+      contentImage
+      contentVideo
+      metaJson
+      viewCount
+      createdAt
+    }
+  }
+`;
+
 export const CREATE_CONTENT = gql`
   mutation CreateContent($input: ContentInput!) {
     createContent(input: $input) {

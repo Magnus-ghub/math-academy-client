@@ -74,7 +74,7 @@ export default function AdminHeader() {
         >
           <Bell className="w-5 h-5 text-muted-foreground" />
           {pendingCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+            <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
               {pendingCount > 99 ? "99+" : pendingCount}
             </span>
           )}
@@ -94,7 +94,7 @@ export default function AdminHeader() {
               className="rounded-full object-cover shrink-0"
             />
           ) : (
-            <div className="w-[30px] h-[30px] rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
+            <div className="w-7.5 h-7.5 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
               {user?.userName?.[0]?.toUpperCase() ?? "A"}
             </div>
           )}

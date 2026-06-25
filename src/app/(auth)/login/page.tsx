@@ -34,8 +34,8 @@ function LoginContent() {
 
   const [telegramLogin, { loading }] = useMutation(TELEGRAM_LOGIN, {
     onCompleted: (data: any) => {
-      const { user, accessToken } = data.telegramLogin;
-      setAuth(user, accessToken);
+      const { user, accessToken, groups } = data.telegramLogin;
+      setAuth(user, accessToken, groups);
       router.push(getRedirect(user.userRole));
     },
     onError: (err: any) => {

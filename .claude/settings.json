@@ -27,12 +27,14 @@
       "Bash(curl -s -X POST http://localhost:4000/graphql -H 'Content-Type: application/json' -d '{\"query\":\"mutation { createContent\\(input: { contentType: BOOK, contentTitle: \\\\\"test\\\\\" }\\) { id } }\"}')",
       "Bash(xargs ls -la)",
       "Bash(cat /dev/null > /Users/nomozof/Desktop/math-academy-client/src/components/home/FAQSection.tsx && echo \"created\")",
-      "Read(//dev/**)"
+      "Read(//dev/**)",
+      "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(student\\)/dashboard/groups/[id]\")"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
       "/Users/nomozof/Desktop/math-academy-api",
-      "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/exam"
+      "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/exam",
+      "/Users/nomozof/Desktop/math-academy-client/src/app/(student)/dashboard/groups"
     ]
   }
 }
