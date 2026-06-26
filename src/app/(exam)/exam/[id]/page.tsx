@@ -49,6 +49,7 @@ export default function ExamPage() {
     {
       variables: { testId: id },
       skip: !id,
+      fetchPolicy: "network-only",
     },
   );
 
@@ -57,6 +58,7 @@ export default function ExamPage() {
   }>(GET_QUESTIONS, {
     variables: { testId: id },
     skip: !id,
+    fetchPolicy: "network-only",
   });
 
   const [submitTest] = useMutation(SUBMIT_TEST, {
