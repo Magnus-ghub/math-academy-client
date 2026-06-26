@@ -44,6 +44,7 @@ interface TestData {
     duration?: number;
     testAccess?: string;
     testStatus?: string;
+    testPrice?: number;
   };
 }
 
@@ -111,6 +112,7 @@ export default function EditTestPage() {
     duration: 30,
     testAccess: "PUBLIC",
     testStatus: "DRAFT",
+    testPrice: "",
   });
 
   useEffect(() => {
@@ -125,6 +127,7 @@ export default function EditTestPage() {
         duration: test.duration ?? 30,
         testAccess: test.testAccess ?? "PUBLIC",
         testStatus: test.testStatus ?? "DRAFT",
+        testPrice: test.testPrice ? String(test.testPrice) : "",
       });
     }
   }, [test]);
@@ -203,6 +206,9 @@ export default function EditTestPage() {
             testDesc: testInfo.testDesc || undefined,
             duration: Number(testInfo.duration),
             testAccess: testInfo.testAccess,
+            testPrice: testInfo.testAccess === "PREMIUM" && testInfo.testPrice
+              ? Number(testInfo.testPrice)
+              : undefined,
           },
         },
       });
@@ -366,6 +372,25 @@ export default function EditTestPage() {
                 onChange={(e) => setTestInfo({ ...testInfo, duration: Number(e.target.value) })} />
             </div>
           </div>
+
+          {testInfo.testAccess === "PREMIUM" && (
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Narx (UZS)</label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="Masalan: 50000"
+                  value={testInfo.testPrice}
+                  onChange={(e) => setTestInfo({ ...testInfo, testPrice: e.target.value })}
+                  className="pr-14"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
+                  UZS
+                </span>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="text-sm font-medium mb-1.5 block">Tavsif</label>

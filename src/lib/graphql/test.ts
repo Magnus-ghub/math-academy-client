@@ -18,6 +18,7 @@ export const GET_PUBLIC_TESTS = gql`
       dtmType
       testAccess
       testStatus
+      testPrice
       totalQuestions
       duration
       totalAttempts
@@ -35,6 +36,7 @@ export const GET_TESTS = gql`
       dtmType
       testAccess
       testStatus
+      testPrice
       totalQuestions
       duration
       totalAttempts
@@ -55,6 +57,7 @@ export const GET_TEST = gql`
       testAccess
       testStatus
       testDesc
+      testPrice
       totalQuestions
       duration
       groupId

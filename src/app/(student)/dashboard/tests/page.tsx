@@ -5,6 +5,7 @@ import { useQuery } from "@apollo/client/react";
 import { Clock, FileQuestion, Lock } from "lucide-react";
 import Link from "next/link";
 import { GET_TESTS } from "@/lib/graphql/test";
+import PaymentModal from "@/components/PaymentModal";
 
 const testTypeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary border-primary/20",
@@ -48,6 +49,7 @@ const dtmSubTypes = [
 export default function StudentTestsPage() {
   const [typeFilter, setTypeFilter] = useState("Barchasi");
   const [dtmFilter, setDtmFilter] = useState("");
+  const [paymentTest, setPaymentTest] = useState<any>(null);
 
   const { data, loading } = useQuery<{ getTests: any[] }>(GET_TESTS);
   const tests = data?.getTests || [];
@@ -134,9 +136,13 @@ export default function StudentTestsPage() {
                     Bepul
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                  <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full font-semibold">
                     <Lock className="w-3 h-3" />
-                    {test.testAccess === "PREMIUM" ? "Premium" : "Guruh"}
+                    {test.testAccess === "PREMIUM"
+                      ? test.testPrice
+                        ? `${test.testPrice.toLocaleString("uz-UZ")} UZS`
+                        : "Premium"
+                      : "Guruh"}
                   </div>
                 )}
               </div>
@@ -155,18 +161,26 @@ export default function StudentTestsPage() {
                 <span>{test.totalAttempts} urinish</span>
               </div>
 
-              <Link href={`/exam/${test.id}`}>
-                <button className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  test.testAccess === "PUBLIC"
-                    ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-                }`}>
-                  {test.testAccess === "PUBLIC" ? "Boshlash →" : test.testAccess === "PREMIUM" ? "🔒 Premium" : "🔒 Guruh"}
+              {test.testAccess === "PUBLIC" ? (
+                <Link href={`/exam/${test.id}`}>
+                  <button className="w-full py-2.5 rounded-xl text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors">
+                    Boshlash →
+                  </button>
+                </Link>
+              ) : (
+                <button
+                  onClick={() => setPaymentTest(test)}
+                  className="w-full py-2.5 rounded-xl text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+                >
+                  {test.testAccess === "PREMIUM" ? "🔒 Premium" : "🔒 Guruh"}
                 </button>
-              </Link>
+              )}
             </div>
           ))}
         </div>
+      )}
+      {paymentTest && (
+        <PaymentModal test={paymentTest} onClose={() => setPaymentTest(null)} />
       )}
     </div>
   );

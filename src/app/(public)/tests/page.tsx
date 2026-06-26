@@ -6,6 +6,7 @@ import { Clock, FileQuestion, Lock, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
 import { useAuthStore } from "@/lib/store/auth.store";
+import PaymentModal from "@/components/PaymentModal";
 
 const testTypeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary border-primary/20",
@@ -50,10 +51,15 @@ export default function TestsPage() {
   const [typeFilter, setTypeFilter] = useState("Barchasi");
   const [dtmFilter, setDtmFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [paymentTest, setPaymentTest] = useState<any>(null);
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
 
   const handleStart = (test: any) => {
+    if (test.testAccess !== "PUBLIC") {
+      setPaymentTest(test);
+      return;
+    }
     const dest = `/exam/${test.id}`;
     if (isAuthenticated) {
       router.push(dest);
@@ -170,9 +176,13 @@ export default function TestsPage() {
                     Bepul
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                  <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full font-semibold">
                     <Lock className="w-3 h-3" />
-                    {test.testAccess === "PREMIUM" ? "Premium" : "Guruh"}
+                    {test.testAccess === "PREMIUM"
+                      ? test.testPrice
+                        ? `${test.testPrice.toLocaleString("uz-UZ")} UZS`
+                        : "Premium"
+                      : "Guruh"}
                   </div>
                 )}
               </div>
@@ -204,6 +214,9 @@ export default function TestsPage() {
             </div>
           ))}
         </div>
+      )}
+      {paymentTest && (
+        <PaymentModal test={paymentTest} onClose={() => setPaymentTest(null)} />
       )}
     </div>
   );

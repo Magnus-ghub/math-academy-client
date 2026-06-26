@@ -15,7 +15,7 @@ const footerLinks = {
   'Yordam': [
     { href: 'mailto:info@saidxonovacademy.uz', label: 'Aloqa' },
     { href: '/#faq', label: 'FAQ' },
-    { href: 'https://t.me/saidxonovacademy', label: 'Telegram kanal' },
+    { href: 'https://t.me/MatematikaMilliy_Sertifikat', label: 'Telegram kanal' },
   ],
 };
 

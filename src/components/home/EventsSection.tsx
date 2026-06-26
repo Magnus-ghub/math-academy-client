@@ -138,7 +138,7 @@ export default function EventsSection() {
         {/* Footer CTA */}
         <div className="mt-8 flex justify-center">
           <a
-            href="https://t.me/saidxonov_academy"
+            href="https://t.me/QabulAdmin"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary border border-border hover:border-primary/40 px-5 py-2.5 rounded-xl transition-colors duration-200"

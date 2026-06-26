@@ -206,9 +206,10 @@ export default function Header() {
             <SheetTrigger className="md:hidden">
               <Menu className="h-5 w-5" />
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <div className="flex flex-col gap-6 mt-8">
-                <Link href="/" className="flex items-center gap-2">
+            <SheetContent side="right" className="w-72 flex flex-col p-0">
+              {/* Logo */}
+              <div className="px-6 pt-14 pb-5 border-b border-border">
+                <Link href="/" onClick={() => setOpen(false)} className="flex items-center gap-2.5">
                   <Image
                     src="/logo.jpg"
                     alt="Saidxonov Academy"
@@ -220,55 +221,55 @@ export default function Header() {
                     Saidxonov Academy
                   </span>
                 </Link>
-                <nav className="flex flex-col gap-1">
-                  {navLinks.map((link) =>
-                    link.section ? (
-                      <button
-                        key={link.label}
-                        onClick={(e) => handleSectionClick(e, link.section!)}
-                        className="px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left text-muted-foreground hover:text-foreground hover:bg-muted"
-                      >
-                        {link.label}
-                      </button>
-                    ) : (
-                      <Link
-                        key={link.href + link.label}
-                        href={link.href}
-                        onClick={() => setOpen(false)}
-                        className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                          isActive(link.href)
-                            ? "text-primary bg-primary/8"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
-                    )
-                  )}
-                </nav>
-                {isAuthenticated ? (
-                  <div className="flex flex-col gap-2">
+              </div>
+
+              {/* Nav links */}
+              <nav className="flex flex-col gap-0.5 px-4 py-4 flex-1">
+                {navLinks.map((link) =>
+                  link.section ? (
                     <button
-                      onClick={() => {
-                        router.push(dashboardLink);
-                        setOpen(false);
-                      }}
-                      className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-medium"
+                      key={link.label}
+                      onClick={(e) => handleSectionClick(e, link.section!)}
+                      className="px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left text-muted-foreground hover:text-foreground hover:bg-muted"
+                    >
+                      {link.label}
+                    </button>
+                  ) : (
+                    <Link
+                      key={link.href + link.label}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                        isActive(link.href)
+                          ? "text-primary bg-primary/8"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  )
+                )}
+              </nav>
+
+              {/* Auth buttons */}
+              <div className="px-4 pb-8 pt-2 border-t border-border">
+                {isAuthenticated ? (
+                  <div className="flex flex-col gap-2 pt-4">
+                    <button
+                      onClick={() => { router.push(dashboardLink); setOpen(false); }}
+                      className="w-full py-3 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
                       Dashboard
                     </button>
                     <button
-                      onClick={() => {
-                        setOpen(false);
-                        setShowLogoutConfirm(true);
-                      }}
-                      className="w-full py-2.5 rounded-xl border border-border text-sm font-medium text-destructive"
+                      onClick={() => { setOpen(false); setShowLogoutConfirm(true); }}
+                      className="w-full py-3 rounded-xl border border-border text-sm font-medium text-destructive hover:bg-destructive/5 transition-colors"
                     >
                       Chiqish
                     </button>
                   </div>
                 ) : (
-                  <Link href="/login" onClick={() => setOpen(false)}>
+                  <Link href="/login" onClick={() => setOpen(false)} className="block pt-4">
                     <Button className="w-full bg-primary hover:bg-primary/90">
                       Kirish
                     </Button>

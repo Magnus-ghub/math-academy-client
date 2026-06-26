@@ -63,6 +63,7 @@ export default function CreateTestPage() {
     duration: 30,
     groupId: "",
     testDesc: "",
+    testPrice: "",
   });
 
   const [questions, setQuestions] = useState<QuestionDraft[]>([newQuestion(0)]);
@@ -106,6 +107,8 @@ export default function CreateTestPage() {
     if (testInfo.testBlock) input.testBlock = testInfo.testBlock;
     if (testInfo.testAccess === "GROUP" && testInfo.groupId)
       input.groupId = testInfo.groupId;
+    if (testInfo.testAccess === "PREMIUM" && testInfo.testPrice)
+      input.testPrice = Number(testInfo.testPrice);
 
     const res = await createTest({ variables: { input } });
     if (res.data?.createTest?.id) {
@@ -300,6 +303,29 @@ export default function CreateTestPage() {
                   setTestInfo({ ...testInfo, groupId: e.target.value })
                 }
               />
+            </div>
+          )}
+
+          {testInfo.testAccess === "PREMIUM" && (
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">
+                Narx (UZS)
+              </label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="Masalan: 50000"
+                  value={testInfo.testPrice}
+                  onChange={(e) =>
+                    setTestInfo({ ...testInfo, testPrice: e.target.value })
+                  }
+                  className="pr-14"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium">
+                  UZS
+                </span>
+              </div>
             </div>
           )}
 

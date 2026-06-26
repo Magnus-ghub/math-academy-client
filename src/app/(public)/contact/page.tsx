@@ -5,10 +5,9 @@ import { MessageCircle, Mail, Phone, MapPin, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 const contacts = [
-  { icon: MessageCircle, label: "Telegram", value: "@saidxonovacademy", href: "https://t.me/saidxonovacademy", color: "bg-[#2AABEE]/10 text-[#2AABEE]" },
+  { icon: MessageCircle, label: "Telegram", value: "@Jamshid_Saidxonov", href: "https://t.me/Jamshid_Saidxonov", color: "bg-[#2AABEE]/10 text-[#2AABEE]" },
   { icon: Mail, label: "Email", value: "info@saidxonovacademy.uz", href: "mailto:info@saidxonovacademy.uz", color: "bg-accent/10 text-accent" },
-  { icon: Phone, label: "Telefon", value: "+998 90 000 00 00", href: "tel:+998900000000", color: "bg-green-100 text-green-700" },
-  { icon: MapPin, label: "Manzil", value: "Toshkent, O'zbekiston", href: "#", color: "bg-primary/10 text-primary" },
+  { icon: MapPin, label: "Manzil", value: "Termiz, O'zbekiston", href: "#", color: "bg-primary/10 text-primary" },
 ];
 
 export default function ContactPage() {
