@@ -1,11 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Trophy, Users, BookOpen, Star, CheckCircle, TrendingUp } from "lucide-react";
-
-const floatingCards = [
-  { exam: "DTM", score: "189/189", name: "Abdulloh K.", color: "bg-primary" },
-  { exam: "SAT", score: "1520/1600", name: "Malika Y.", color: "bg-accent" },
-  { exam: "Milliy Sertifikat", score: "98/100", name: "Jasur T.", color: "bg-emerald-500" },
-];
+import { ArrowRight, Users, Star, CheckCircle, TrendingUp, Trophy } from "lucide-react";
+import HeroBookVisual from "./HeroBookVisual";
 
 const stats = [
   { value: "50K+", label: "Obunachi", icon: Users },
@@ -101,74 +96,8 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Right — visual cards */}
-          <div className="relative shrink-0 w-full max-w-sm lg:max-w-md hidden sm:block">
-            {/* Main card — test preview */}
-            <div className="bg-background rounded-3xl border border-border shadow-2xl p-6">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <p className="text-xs text-muted-foreground">Joriy test</p>
-                  <p className="font-bold text-sm">DTM Matematika — 2026</p>
-                </div>
-                <span className="bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">Davom etmoqda</span>
-              </div>
-
-              {/* Progress */}
-              <div className="mb-5">
-                <div className="flex justify-between text-xs text-muted-foreground mb-2">
-                  <span>30 / 30 savol</span>
-                  <span className="text-primary font-semibold">100%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full w-full bg-primary rounded-full" />
-                </div>
-              </div>
-
-              {/* Score */}
-              <div className="bg-primary/5 border border-primary/15 rounded-2xl p-4 text-center mb-4">
-                <p className="text-4xl font-black text-primary">28/30</p>
-                <p className="text-xs text-muted-foreground mt-1">To'g'ri javoblar</p>
-              </div>
-
-              {/* Mini stats */}
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "To'g'ri", val: "28", color: "text-green-600" },
-                  { label: "Noto'g'ri", val: "2", color: "text-red-500" },
-                  { label: "Vaqt", val: "58:42", color: "text-primary" },
-                ].map((s) => (
-                  <div key={s.label} className="bg-muted/50 rounded-xl p-2.5 text-center">
-                    <p className={`font-bold text-sm ${s.color}`}>{s.val}</p>
-                    <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Floating result cards */}
-            {floatingCards.map((card, i) => (
-              <div
-                key={i}
-                className="absolute bg-background border border-border rounded-2xl shadow-lg px-4 py-3 flex items-center gap-3"
-                style={{
-                  ...(i === 0 && { top: "-1rem", right: "-1.5rem" }),
-                  ...(i === 1 && { bottom: "4rem", left: "-2rem" }),
-                  ...(i === 2 && { bottom: "-1rem", right: "1rem" }),
-                }}
-              >
-                <div className={`w-8 h-8 ${card.color} rounded-xl flex items-center justify-center shrink-0`}>
-                  <Trophy className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold leading-none">{card.score}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{card.exam} · {card.name}</p>
-                </div>
-              </div>
-            ))}
-
-            {/* Decorative ring */}
-            <div className="absolute -z-10 inset-0 scale-110 rounded-full bg-primary/5 blur-2xl" />
-          </div>
+          {/* Right — book visual */}
+          <HeroBookVisual />
         </div>
       </div>
     </section>

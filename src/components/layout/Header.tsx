@@ -33,10 +33,9 @@ import { UserRole } from "@/lib/enums/user.enum";
 const navLinks = [
   { href: "/", label: "Bosh sahifa" },
   { href: "/tests", label: "Testlar" },
-  { href: "/#events", label: "Tadbirlar" },
-  { href: "/#faq", label: "FAQ" },
-  { href: "/about", label: "Haqida" },
+  { href: "/about", label: "Biz Haqimizda" },
   { href: "/contact", label: "Aloqa" },
+  { href: "/#faq", label: "FAQ" },
 ];
 
 export default function Header() {
@@ -148,10 +147,6 @@ export default function Header() {
                 <DropdownMenuItem onClick={() => router.push(dashboardLink)}>
                   <LayoutDashboard />
                   Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/profile")}>
-                  <User />
-                  Profil
                 </DropdownMenuItem>
                 {user.userRole === UserRole.ADMIN && (
                   <DropdownMenuItem onClick={() => router.push("/admin")}>
