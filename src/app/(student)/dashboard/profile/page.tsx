@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { Camera, Save, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,13 @@ import { UPDATE_USER } from "@/lib/graphql/user";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { toast } from "sonner";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
+
 export default function ProfilePage() {
-  const { updateUser } = useAuthStore();
+  const { updateUser, accessToken } = useAuthStore();
   const [saved, setSaved] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     userName: "",
     userLastName: "",
@@ -46,6 +50,32 @@ export default function ProfilePage() {
       toast.error("Xatolik yuz berdi");
     },
   });
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API_BASE}/upload/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        await updateUserMutation({ variables: { input: { userImage: data.url } } });
+      } else {
+        toast.error("Rasm yuklanmadi");
+      }
+    } catch {
+      toast.error("Rasm yuklashda xatolik");
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSave = () => {
     updateUserMutation({
@@ -91,8 +121,23 @@ export default function ProfilePage() {
                 {user?.userName?.[0]?.toUpperCase() || "U"}
               </div>
             )}
-            <button className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center">
-              <Camera className="w-3 h-3" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-60"
+            >
+              {uploadingImage ? (
+                <span className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Camera className="w-3 h-3" />
+              )}
             </button>
           </div>
           <div>
