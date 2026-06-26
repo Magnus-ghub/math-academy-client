@@ -20,10 +20,8 @@ const imgSrc = (path?: string | null) => {
 const typeLabels: Record<string, string> = {
   SUCCESS_STORY: "Muvaffaqiyat",
   TEACHER: "O'qituvchi",
-  EVENT: "Tadbir",
-  NEWS: "Yangilik",
+  EVENT: "E'lon",
   FAQ: "FAQ",
-  BANNER: "Banner",
   BOOK: "Kitob",
 };
 
@@ -31,9 +29,7 @@ const typeColors: Record<string, string> = {
   SUCCESS_STORY: "bg-green-100 text-green-700",
   TEACHER: "bg-blue-100 text-blue-700",
   EVENT: "bg-accent/10 text-accent",
-  NEWS: "bg-purple-100 text-purple-700",
   FAQ: "bg-gray-100 text-gray-700",
-  BANNER: "bg-primary/10 text-primary",
   BOOK: "bg-orange-100 text-orange-700",
 };
 

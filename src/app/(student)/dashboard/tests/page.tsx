@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { Clock, FileQuestion, Lock } from "lucide-react";
 import Link from "next/link";
-import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
+import { GET_TESTS } from "@/lib/graphql/test";
 
 const testTypeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary border-primary/20",
@@ -49,8 +49,8 @@ export default function StudentTestsPage() {
   const [typeFilter, setTypeFilter] = useState("Barchasi");
   const [dtmFilter, setDtmFilter] = useState("");
 
-  const { data, loading } = useQuery<{ getPublicTests: any[] }>(GET_PUBLIC_TESTS);
-  const tests = data?.getPublicTests || [];
+  const { data, loading } = useQuery<{ getTests: any[] }>(GET_TESTS);
+  const tests = data?.getTests || [];
 
   const handleMainFilter = (key: string) => {
     setTypeFilter(key);
@@ -129,7 +129,11 @@ export default function StudentTestsPage() {
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
                   {getTestLabel(test)}
                 </span>
-                {test.testAccess !== "PUBLIC" && (
+                {test.testAccess === "PUBLIC" ? (
+                  <div className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
+                    Bepul
+                  </div>
+                ) : (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
                     <Lock className="w-3 h-3" />
                     {test.testAccess === "PREMIUM" ? "Premium" : "Guruh"}
@@ -151,13 +155,13 @@ export default function StudentTestsPage() {
                 <span>{test.totalAttempts} urinish</span>
               </div>
 
-              <Link href={test.testAccess === "PUBLIC" ? `/exam/${test.id}` : "#"}>
+              <Link href={`/exam/${test.id}`}>
                 <button className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   test.testAccess === "PUBLIC"
                     ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
                 }`}>
-                  {test.testAccess === "PUBLIC" ? "Boshlash →" : "🔒 Kirish kerak"}
+                  {test.testAccess === "PUBLIC" ? "Boshlash →" : test.testAccess === "PREMIUM" ? "🔒 Premium" : "🔒 Guruh"}
                 </button>
               </Link>
             </div>

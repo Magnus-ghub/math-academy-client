@@ -16,11 +16,11 @@ export default function HomePage() {
       <HeroSection />
       <TelegramStatsSection />
       <TestTypesSection />
+      <EventsSection />
       <BookSection />
       <TeachersSection />
       <HowItWorksSection />
       <SuccessStoriesSection />
-      <EventsSection />
       <FAQSection />
       <CTASection />
     </>

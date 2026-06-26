@@ -15,9 +15,9 @@ export default function HeroBookVisual() {
         <Image
           src="/images/kitob.jpg"
           alt="Milliy Sertifikat sA+ri Matematika"
-          width={288}
-          height={384}
-          className="w-64 md:w-72 rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.28)] object-cover select-none"
+          width={388}
+          height={484}
+          className="w-74 md:w-82 rounded-2xl shadow-[0_32px_64px_rgba(0,0,0,0.28)] object-cover select-none"
           priority
           draggable={false}
         />

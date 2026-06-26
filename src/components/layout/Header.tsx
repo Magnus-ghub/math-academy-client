@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
@@ -32,10 +32,11 @@ import { UserRole } from "@/lib/enums/user.enum";
 
 const navLinks = [
   { href: "/", label: "Bosh sahifa" },
+  { href: "/", label: "Kurslar", section: "events" },
   { href: "/tests", label: "Testlar" },
   { href: "/about", label: "Biz Haqimizda" },
   { href: "/contact", label: "Aloqa" },
-  { href: "/#faq", label: "FAQ" },
+  { href: "/", label: "FAQ", section: "faq" },
 ];
 
 export default function Header() {
@@ -46,8 +47,29 @@ export default function Header() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const { user, isAuthenticated, logout } = useAuthStore();
 
-  const isActive = (href: string) => {
-    if (href.includes("#")) return false;
+  const pendingSection = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (pathname === "/" && pendingSection.current) {
+      const id = pendingSection.current;
+      pendingSection.current = null;
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100);
+    }
+  }, [pathname]);
+
+  const handleSectionClick = (e: React.MouseEvent, section: string) => {
+    e.preventDefault();
+    setOpen(false);
+    if (pathname === "/") {
+      document.getElementById(section)?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      pendingSection.current = section;
+      router.push("/");
+    }
+  };
+
+  const isActive = (href: string, section?: string) => {
+    if (section) return false;
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
@@ -80,19 +102,29 @@ export default function Header() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isActive(link.href)
-                  ? "text-primary bg-primary/8"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) =>
+            link.section ? (
+              <button
+                key={link.label}
+                onClick={(e) => handleSectionClick(e, link.section!)}
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-muted"
+              >
+                {link.label}
+              </button>
+            ) : (
+              <Link
+                key={link.href + link.label}
+                href={link.href}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive(link.href)
+                    ? "text-primary bg-primary/8"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                }`}
+              >
+                {link.label}
+              </Link>
+            )
+          )}
         </nav>
 
         {/* Right side */}
@@ -189,20 +221,30 @@ export default function Header() {
                   </span>
                 </Link>
                 <nav className="flex flex-col gap-1">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setOpen(false)}
-                      className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                        isActive(link.href)
-                          ? "text-primary bg-primary/8"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                  {navLinks.map((link) =>
+                    link.section ? (
+                      <button
+                        key={link.label}
+                        onClick={(e) => handleSectionClick(e, link.section!)}
+                        className="px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left text-muted-foreground hover:text-foreground hover:bg-muted"
+                      >
+                        {link.label}
+                      </button>
+                    ) : (
+                      <Link
+                        key={link.href + link.label}
+                        href={link.href}
+                        onClick={() => setOpen(false)}
+                        className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                          isActive(link.href)
+                            ? "text-primary bg-primary/8"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    )
+                  )}
                 </nav>
                 {isAuthenticated ? (
                   <div className="flex flex-col gap-2">

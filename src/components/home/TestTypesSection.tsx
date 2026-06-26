@@ -42,31 +42,31 @@ const testTypes = [
 
 export default function TestTypesSection() {
   return (
-    <section className="py-20 bg-muted/30">
+    <section className="py-12 md:py-20 bg-muted/30">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        <div className="text-center mb-8 md:mb-12">
+          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">
             Test turlari
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-sm md:text-lg max-w-2xl mx-auto hidden sm:block">
             Qaysi imtihonga tayyorlanayotgan bo'lsangiz — bizda siz uchun maxsus testlar bor
           </p>
         </div>
 
         {/* Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
           {testTypes.map((type) => (
             <Link href={type.href} key={type.title}>
-              <div className={`bg-background rounded-2xl border-2 p-6 h-full transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-1 ${type.border}`}>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${type.color}`}>
-                  <type.icon className="w-6 h-6" />
+              <div className={`bg-background rounded-2xl border-2 p-4 md:p-6 h-full transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-1 ${type.border}`}>
+                <div className={`w-9 h-9 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 md:mb-4 ${type.color}`}>
+                  <type.icon className="w-4 h-4 md:w-6 md:h-6" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">{type.title}</h3>
-                <p className="text-muted-foreground text-sm mb-4 leading-relaxed">
+                <h3 className="text-sm md:text-xl font-bold mb-1 md:mb-2 leading-tight">{type.title}</h3>
+                <p className="text-muted-foreground text-xs md:text-sm mb-3 md:mb-4 leading-relaxed hidden sm:block">
                   {type.description}
                 </p>
-                <span className="text-xs font-semibold px-3 py-1 rounded-full bg-muted">
+                <span className="text-[10px] md:text-xs font-semibold px-2 py-1 md:px-3 rounded-full bg-muted">
                   {type.count}
                 </span>
               </div>

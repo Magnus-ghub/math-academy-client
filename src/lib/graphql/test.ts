@@ -26,6 +26,23 @@ export const GET_PUBLIC_TESTS = gql`
   }
 `;
 
+export const GET_TESTS = gql`
+  query GetTests {
+    getTests {
+      id
+      testTitle
+      testType
+      dtmType
+      testAccess
+      testStatus
+      totalQuestions
+      duration
+      totalAttempts
+      createdAt
+    }
+  }
+`;
+
 export const GET_TEST = gql`
   query GetTest($testId: String!) {
     getTest(testId: $testId) {

@@ -165,10 +165,14 @@ export default function TestsPage() {
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
                   {getTestLabel(test)}
                 </span>
-                {test.testAccess !== "PUBLIC" && (
+                {test.testAccess === "PUBLIC" ? (
+                  <div className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-full">
+                    Bepul
+                  </div>
+                ) : (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
                     <Lock className="w-3 h-3" />
-                    Premium
+                    {test.testAccess === "PREMIUM" ? "Premium" : "Guruh"}
                   </div>
                 )}
               </div>
@@ -188,14 +192,14 @@ export default function TestsPage() {
               </div>
 
               <button
-                onClick={() => test.testAccess === "PUBLIC" ? handleStart(test) : router.push("/login")}
+                onClick={() => handleStart(test)}
                 className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   test.testAccess === "PUBLIC"
                     ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
                 }`}
               >
-                {test.testAccess === "PUBLIC" ? "Boshlash →" : "🔒 Kirish kerak"}
+                {test.testAccess === "PUBLIC" ? "Boshlash →" : test.testAccess === "PREMIUM" ? "🔒 Premium" : "🔒 Guruh"}
               </button>
             </div>
           ))}
