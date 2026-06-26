@@ -139,6 +139,17 @@ export default function Header() {
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
 
+          {/* Kabinet link — only when logged in, desktop */}
+          {isAuthenticated && (
+            <Link
+              href={dashboardLink}
+              className="hidden md:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-primary text-primary text-sm font-semibold hover:bg-primary hover:text-white transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Kabinet
+            </Link>
+          )}
+
           {/* User menu */}
           {isAuthenticated && user ? (
             <DropdownMenu>

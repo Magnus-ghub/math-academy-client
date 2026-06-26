@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, Trophy, Users, User,
-  Sun, Moon, LogOut, ChevronRight, Menu, X,
+  ChevronRight, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/lib/store/auth.store";
-import { LogoutConfirmModal } from "@/components/LogoutConfirmModal";
 
 const menuItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -24,18 +22,7 @@ const menuItems = [
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme();
-  const { user, logout } = useAuthStore();
-  const [mounted, setMounted] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-    router.push("/");
-  };
+  const { user } = useAuthStore();
 
   return (
     <div className="flex flex-col h-full">
@@ -87,30 +74,6 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         })}
       </nav>
 
-      {/* Bottom */}
-      <div className="p-4 border-t border-border space-y-1">
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-        >
-          {mounted && (theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />)}
-          {mounted ? (theme === "dark" ? "Kunduzgi rejim" : "Tungi rejim") : "Tema"}
-        </button>
-        <button
-          onClick={() => setShowLogoutConfirm(true)}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-muted-foreground hover:bg-red-50 hover:text-red-600 transition-all"
-        >
-          <LogOut className="w-4 h-4" />
-          Chiqish
-        </button>
-
-        {showLogoutConfirm && (
-          <LogoutConfirmModal
-            onConfirm={handleLogout}
-            onCancel={() => setShowLogoutConfirm(false)}
-          />
-        )}
-      </div>
     </div>
   );
 }

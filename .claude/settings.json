@@ -30,7 +30,8 @@
       "Read(//dev/**)",
       "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(student\\)/dashboard/groups/[id]\")",
       "Bash(npm uninstall *)",
-      "Bash(rm /Users/nomozof/Desktop/math-academy-client/src/middleware.ts)"
+      "Bash(rm /Users/nomozof/Desktop/math-academy-client/src/middleware.ts)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
