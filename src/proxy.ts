@@ -1,46 +1,60 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-function getTokenRole(token: string): string | null {
+interface JwtPayload {
+  userId: string;
+  userRole: string;
+  groups: any[];
+  exp: number;
+}
+
+const AUTH_PATHS = ["/login", "/onboarding"];
+
+function getToken(req: NextRequest): string | null {
+  return req.cookies.get("auth-token")?.value ?? null;
+}
+
+function decodeToken(token: string): JwtPayload | null {
   try {
-    const payload = token.split(".")[1];
-    const decoded = JSON.parse(atob(payload));
-    return decoded.userRole ?? null;
+    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = Buffer.from(base64, "base64").toString("utf-8");
+    const payload = JSON.parse(json) as JwtPayload;
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
   } catch {
     return null;
   }
 }
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get("auth-token")?.value;
+export function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  // Student sahifalari — login kerak
-  if (pathname.startsWith("/dashboard")) {
-    if (!token) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("callbackUrl", pathname + (request.nextUrl.search || ""));
+  const token = getToken(req);
+  const payload = token ? decodeToken(token) : null;
+  const isAuth = !!payload;
+  const role = payload?.userRole;
+
+  if (AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/")) && isAuth) {
+    const dest = role === "ADMIN" ? "/admin" : "/dashboard";
+    return NextResponse.redirect(new URL(dest, req.url));
+  }
+
+  if (pathname.startsWith("/admin")) {
+    if (!isAuth) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
-  }
-
-  // Admin sahifalari — login + ADMIN rol kerak
-  if (pathname.startsWith("/admin")) {
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    const role = getTokenRole(token);
     if (role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
 
-  // Login sahifasi — login bo'lgan kirmasin
-  if (pathname === "/login") {
-    if (token) {
-      const callbackUrl = request.nextUrl.searchParams.get("callbackUrl");
-      const redirectTo = callbackUrl?.startsWith("/dashboard") ? callbackUrl : "/dashboard";
-      return NextResponse.redirect(new URL(redirectTo, request.url));
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/exam")) {
+    if (!isAuth) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(loginUrl);
     }
   }
 
@@ -48,5 +62,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/login"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|logo.jpg|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.ico).*)",
+  ],
 };

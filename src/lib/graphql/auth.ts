@@ -63,6 +63,14 @@ export const GOOGLE_LOGIN = gql`
         googleId
         userImage
       }
+      groups {
+        id
+        groupId
+        groupType
+        groupName
+        expiresAt
+        joinedAt
+      }
     }
   }
 `;

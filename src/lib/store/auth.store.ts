@@ -50,6 +50,7 @@ export const useAuthStore = create<AuthState>()(
         }
         set({ user, accessToken, groups, isAuthenticated: true });
       },
+
       logout: () => {
         if (typeof document !== "undefined") {
           const isSecure = location.protocol === "https:";

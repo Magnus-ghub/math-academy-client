@@ -28,13 +28,16 @@
       "Bash(xargs ls -la)",
       "Bash(cat /dev/null > /Users/nomozof/Desktop/math-academy-client/src/components/home/FAQSection.tsx && echo \"created\")",
       "Read(//dev/**)",
-      "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(student\\)/dashboard/groups/[id]\")"
+      "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(student\\)/dashboard/groups/[id]\")",
+      "Bash(npm uninstall *)",
+      "Bash(rm /Users/nomozof/Desktop/math-academy-client/src/middleware.ts)"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
       "/Users/nomozof/Desktop/math-academy-api",
       "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/exam",
-      "/Users/nomozof/Desktop/math-academy-client/src/app/(student)/dashboard/groups"
+      "/Users/nomozof/Desktop/math-academy-client/src/app/(student)/dashboard/groups",
+      "/Users/nomozof/Desktop/math-academy-client/src"
     ]
   }
 }

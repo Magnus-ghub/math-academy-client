@@ -16,10 +16,7 @@ function GoogleCallbackContent() {
     const userRole = searchParams.get("userRole");
 
     if (token && userId) {
-      setAuth(
-        { id: userId, userName, userRole } as any,
-        token
-      );
+      setAuth({ id: userId, userName, userRole } as any, token, []);
       const stored = sessionStorage.getItem("auth-callbackUrl");
       if (stored) sessionStorage.removeItem("auth-callbackUrl");
       const redirect = stored?.startsWith("/dashboard")
