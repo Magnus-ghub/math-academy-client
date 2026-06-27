@@ -41,7 +41,8 @@
       "Bash(find /Users/nomozof/Desktop/math-academy-api -name \"package.json\" -maxdepth 2 | xargs grep -l \"bcrypt\\\\|nodemailer\\\\|smtp\" 2>/dev/null)",
       "Bash(cat /Users/nomozof/Desktop/math-academy-api/package.json | grep -E \"bcrypt|nodemailer|mailer|smtp|argon|handlebars\")",
       "Read(//Users/nomozof/Desktop/math-academy-api/src/components/auth/strategies/**)",
-      "Bash(ls /Users/nomozof/Desktop/math-academy-api/src/components/auth/)"
+      "Bash(ls /Users/nomozof/Desktop/math-academy-api/src/components/auth/)",
+      "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(exam\\)/sat/[id]\")"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
@@ -51,7 +52,8 @@
       "/Users/nomozof/Desktop/math-academy-client/src",
       "/Users/nomozof/Desktop/math-academy-api/src/schema",
       "/Users/nomozof/Desktop/math-academy-api/src/libs/enums",
-      "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/users"
+      "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/users",
+      "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/sat"
     ]
   }
 }

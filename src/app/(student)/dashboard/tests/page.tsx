@@ -162,9 +162,9 @@ export default function StudentTestsPage() {
               </div>
 
               {test.testAccess === "PUBLIC" ? (
-                <Link href={`/exam/${test.id}`}>
+                <Link href={test.testType === "SAT" ? `/sat/${test.id}` : `/exam/${test.id}`}>
                   <button className="w-full py-2.5 rounded-xl text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors">
-                    Boshlash →
+                    {test.testType === "SAT" ? "Start SAT →" : "Boshlash →"}
                   </button>
                 </Link>
               ) : (
