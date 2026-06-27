@@ -9,6 +9,8 @@ export const GET_ME = gql`
       userRole
       userStatus
       userAuthType
+      userEmail
+      hasPassword
       userPhone
       userImage
       userAddress

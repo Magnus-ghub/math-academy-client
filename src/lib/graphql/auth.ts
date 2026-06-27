@@ -18,6 +18,7 @@ export const TELEGRAM_LOGIN = gql`
       userImage: $userImage
     ) {
       accessToken
+      isNewUser
       user {
         id
         userName
@@ -54,12 +55,14 @@ export const GOOGLE_LOGIN = gql`
       avatar: $avatar
     ) {
       accessToken
+      isNewUser
       user {
         id
         userName
         userRole
         userStatus
         userAuthType
+        userEmail
         googleId
         userImage
       }
@@ -72,5 +75,56 @@ export const GOOGLE_LOGIN = gql`
         joinedAt
       }
     }
+  }
+`;
+
+export const LOGIN_WITH_EMAIL = gql`
+  mutation LoginWithEmail($email: String!, $password: String!) {
+    loginWithEmail(email: $email, password: $password) {
+      accessToken
+      isNewUser
+      user {
+        id
+        userName
+        userLastName
+        userRole
+        userStatus
+        userAuthType
+        userEmail
+        userImage
+      }
+      groups {
+        id
+        groupId
+        groupType
+        groupName
+        expiresAt
+        joinedAt
+      }
+    }
+  }
+`;
+
+export const SET_GOOGLE_PASSWORD = gql`
+  mutation SetGooglePassword($userId: String!, $password: String!) {
+    setGooglePassword(userId: $userId, password: $password)
+  }
+`;
+
+export const REQUEST_PASSWORD_RESET = gql`
+  mutation RequestPasswordReset($email: String!) {
+    requestPasswordReset(email: $email)
+  }
+`;
+
+export const RESET_PASSWORD = gql`
+  mutation ResetPassword($token: String!, $newPassword: String!) {
+    resetPassword(token: $token, newPassword: $newPassword)
+  }
+`;
+
+export const CHANGE_PASSWORD = gql`
+  mutation ChangePassword($newPassword: String!, $currentPassword: String) {
+    changePassword(newPassword: $newPassword, currentPassword: $currentPassword)
   }
 `;

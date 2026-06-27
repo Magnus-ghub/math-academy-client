@@ -14,18 +14,29 @@ function GoogleCallbackContent() {
     const userId = searchParams.get("userId");
     const userName = searchParams.get("userName");
     const userRole = searchParams.get("userRole");
+    const email = searchParams.get("email");
+    const isNewUser = searchParams.get("isNewUser") === "true";
 
-    if (token && userId) {
-      setAuth({ id: userId, userName, userRole } as any, token, []);
-      const stored = sessionStorage.getItem("auth-callbackUrl");
-      if (stored) sessionStorage.removeItem("auth-callbackUrl");
-      const redirect = stored?.startsWith("/dashboard")
-        ? stored
-        : userRole === "ADMIN" ? "/admin" : "/dashboard";
-      router.push(redirect);
-    } else {
+    if (!token || !userId) {
       router.push("/login");
+      return;
     }
+
+    setAuth({ id: userId, userName, userRole, userEmail: email } as any, token, []);
+
+    if (isNewUser) {
+      // Yangi foydalanuvchi — parol yaratish sahifasiga yo'naltirish
+      sessionStorage.setItem("google-set-password-userId", userId);
+      router.push("/set-password");
+      return;
+    }
+
+    const stored = sessionStorage.getItem("auth-callbackUrl");
+    if (stored) sessionStorage.removeItem("auth-callbackUrl");
+    const redirect = stored?.startsWith("/dashboard")
+      ? stored
+      : userRole === "ADMIN" ? "/admin" : "/dashboard";
+    router.push(redirect);
   }, []);
 
   return (

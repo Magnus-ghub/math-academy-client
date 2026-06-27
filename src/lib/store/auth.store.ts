@@ -9,6 +9,7 @@ interface User {
   userStatus: string;
   userAuthType: string;
   userImage?: string;
+  userEmail?: string;
   telegramId?: string;
   googleId?: string;
   premiumExpiresAt?: string;

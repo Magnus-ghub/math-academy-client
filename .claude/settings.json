@@ -31,14 +31,27 @@
       "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(student\\)/dashboard/groups/[id]\")",
       "Bash(npm uninstall *)",
       "Bash(rm /Users/nomozof/Desktop/math-academy-client/src/middleware.ts)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")",
+      "Bash(find /Users/nomozof/Desktop -name \"*.ts\" -path \"*/backend*\" 2>/dev/null | head -5; ls /Users/nomozof/Desktop/)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/components/auth/**)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/users/**)",
+      "Bash(find /Users/nomozof/Desktop/math-academy-api/src/schema -type f | sort)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/schema/**)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/enums/**)",
+      "Bash(find /Users/nomozof/Desktop/math-academy-api -name \"package.json\" -maxdepth 2 | xargs grep -l \"bcrypt\\\\|nodemailer\\\\|smtp\" 2>/dev/null)",
+      "Bash(cat /Users/nomozof/Desktop/math-academy-api/package.json | grep -E \"bcrypt|nodemailer|mailer|smtp|argon|handlebars\")",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/components/auth/strategies/**)",
+      "Bash(ls /Users/nomozof/Desktop/math-academy-api/src/components/auth/)"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
       "/Users/nomozof/Desktop/math-academy-api",
       "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/exam",
       "/Users/nomozof/Desktop/math-academy-client/src/app/(student)/dashboard/groups",
-      "/Users/nomozof/Desktop/math-academy-client/src"
+      "/Users/nomozof/Desktop/math-academy-client/src",
+      "/Users/nomozof/Desktop/math-academy-api/src/schema",
+      "/Users/nomozof/Desktop/math-academy-api/src/libs/enums",
+      "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/users"
     ]
   }
 }
