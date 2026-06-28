@@ -8,14 +8,32 @@ interface MathTextProps {
   className?: string;
 }
 
+// $...$ yoki $$...$$ ichida bo'lmagan \pi, \sqrt{x}, \frac{a}{b} kabi
+// LaTeX buyruqlarini avtomatik $...$ bilan o'raydi, KaTeX o'qiy olsin.
+function preprocessText(text: string): string {
+  const DELIM = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
+  const parts = text.split(DELIM);
+  return parts
+    .map((part, i) => {
+      if (i % 2 === 1) return part; // allaqachon math delimiters ichida
+      return part.replace(
+        /\\[a-zA-Z]+(?:\{[^}]*\}(?:\{[^}]*\})?)?/g,
+        (match) => `$${match}$`
+      );
+    })
+    .join("");
+}
+
 // Matnni $...$ (inline) va $$...$$ (block) formulalarga ajratib,
 // har birini KaTeX bilan HTML'ga aylantiradi.
 export function MathText({ text, className }: MathTextProps) {
   const html = useMemo(() => {
     if (!text) return "";
 
+    const processed = preprocessText(text);
+
     // Avval block formulalarni ($$...$$) ajratamiz
-    const blockSplit = text.split(/\$\$(.+?)\$\$/g);
+    const blockSplit = processed.split(/\$\$(.+?)\$\$/g);
 
     return blockSplit
       .map((part, i) => {
