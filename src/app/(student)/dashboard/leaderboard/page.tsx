@@ -46,14 +46,18 @@ function LeaderboardList({ testId }: { testId: string }) {
           </div>
 
           {/* Avatar */}
-          <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-            {entry.userId?.[0]?.toUpperCase() || "U"}
+          <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm shrink-0 overflow-hidden">
+            {entry.userImage ? (
+              <img src={entry.userImage} alt={entry.userName} className="w-full h-full object-cover" />
+            ) : (
+              (entry.userName?.[0] ?? "U").toUpperCase()
+            )}
           </div>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-sm truncate">
-              {entry.userId === user?.id ? "Siz" : `Foydalanuvchi`}
+              {entry.userName}
               {entry.userId === user?.id && (
                 <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                   Siz
@@ -62,7 +66,7 @@ function LeaderboardList({ testId }: { testId: string }) {
             </p>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
-              {entry.duration} daqiqa
+              {entry.duration} daqiqa · {entry.correctAnswers}/{entry.totalQuestions} to'g'ri
             </div>
           </div>
 

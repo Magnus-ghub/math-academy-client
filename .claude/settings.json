@@ -45,7 +45,14 @@
       "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(exam\\)/sat/[id]\")",
       "Bash(find /Users/nomozof/Desktop/math-academy-api -type f -name \"*.ts\" | grep -i \"upload\\\\|question\\\\|import\" | head -20)",
       "Read(//Users/nomozof/Desktop/math-academy-api/src/components/upload/**)",
-      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/question/**)"
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/question/**)",
+      "Bash(ls /Users/nomozof/Desktop/ 2>/dev/null)",
+      "Bash(find /Users/nomozof/Desktop/math-academy-api -name \"*.ts\" | xargs grep -l \"leaderboard\\\\|getLeaderboard\" 2>/dev/null)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/components/results/**)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/result/**)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/components/users/**)",
+      "Bash(find /Users/nomozof/Desktop/math-academy-api/src -name \"results.module.ts\" -o -name \"result.module.ts\" | head -5)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/**)"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
@@ -58,7 +65,9 @@
       "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/users",
       "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/sat",
       "/Users/nomozof/Desktop/math-academy-api/src/components/upload",
-      "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/question"
+      "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/question",
+      "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/result",
+      "/Users/nomozof/Desktop/math-academy-api/src/components/results"
     ]
   }
 }

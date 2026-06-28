@@ -64,13 +64,14 @@ export const GET_RESULT = gql`
 export const GET_LEADERBOARD = gql`
   query GetLeaderboard($testId: String!) {
     getLeaderboard(testId: $testId) {
-      id
+      rank
       userId
+      userName
+      userImage
       score
       correctAnswers
       totalQuestions
       duration
-      createdAt
     }
   }
 `;

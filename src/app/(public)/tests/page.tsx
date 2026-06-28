@@ -2,11 +2,195 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { Clock, FileQuestion, Lock, Search } from "lucide-react";
+import { Clock, FileQuestion, Lock, Search, Trophy, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
+import { GET_LEADERBOARD } from "@/lib/graphql/result";
 import { useAuthStore } from "@/lib/store/auth.store";
 import PaymentModal from "@/components/PaymentModal";
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+const MEDAL_EMOJI = ["🥇", "🥈", "🥉"];
+const MEDAL_COLORS = ["text-yellow-500", "text-gray-400", "text-amber-600"];
+
+function abbrev(name: string): string {
+  const parts = name.trim().split(" ");
+  if (parts.length < 2) return name;
+  return `${parts[0]} ${parts[1][0]}.`;
+}
+
+function scoreColor(score: number) {
+  if (score >= 80) return "text-green-600";
+  if (score >= 60) return "text-amber-500";
+  return "text-red-500";
+}
+
+// ─── LeaderboardModal ────────────────────────────────────────────────────────
+
+function LeaderboardModal({
+  testId,
+  testTitle,
+  onClose,
+}: {
+  testId: string;
+  testTitle: string;
+  onClose: () => void;
+}) {
+  const { data, loading } = useQuery<{ getLeaderboard: any[] }>(GET_LEADERBOARD, {
+    variables: { testId },
+  });
+  const entries = data?.getLeaderboard ?? [];
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-500" />
+            <div>
+              <p className="font-bold text-gray-900 text-sm">Top natijalar</p>
+              <p className="text-xs text-gray-400 truncate max-w-[240px]">{testTitle}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-50">
+          {loading ? (
+            <div className="p-6 space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="p-10 text-center text-gray-400">
+              <Trophy className="w-10 h-10 mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Hali natijalar yo'q</p>
+            </div>
+          ) : (
+            entries.map((e: any) => (
+              <div
+                key={e.rank}
+                className={`flex items-center gap-3 px-5 py-3.5 ${
+                  e.rank <= 3 ? "bg-amber-50/40" : "hover:bg-gray-50"
+                } transition-colors`}
+              >
+                {/* Rank */}
+                <div className="w-7 shrink-0 text-center">
+                  {e.rank <= 3 ? (
+                    <span className="text-lg leading-none">{MEDAL_EMOJI[e.rank - 1]}</span>
+                  ) : (
+                    <span className="text-sm font-bold text-gray-400">{e.rank}</span>
+                  )}
+                </div>
+
+                {/* Avatar */}
+                <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center text-primary font-bold text-xs shrink-0 overflow-hidden">
+                  {e.userImage ? (
+                    <img src={e.userImage} alt={e.userName} className="w-full h-full object-cover" />
+                  ) : (
+                    (e.userName?.[0] ?? "U").toUpperCase()
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate">{e.userName}</p>
+                  <p className="text-xs text-gray-400">
+                    {e.correctAnswers}/{e.totalQuestions} to'g'ri · {e.duration} daq
+                  </p>
+                </div>
+
+                {/* Score */}
+                <span className={`text-base font-black shrink-0 ${scoreColor(e.score)}`}>
+                  {Math.round(e.score)}%
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── TestTopStudents (card ichida top 3) ────────────────────────────────────
+
+function TestTopStudents({
+  testId,
+  onViewAll,
+}: {
+  testId: string;
+  onViewAll: () => void;
+}) {
+  const { data, loading } = useQuery<{ getLeaderboard: any[] }>(GET_LEADERBOARD, {
+    variables: { testId },
+  });
+  const top3 = data?.getLeaderboard?.slice(0, 3) ?? [];
+
+  if (loading) {
+    return (
+      <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-4 bg-muted rounded animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (top3.length === 0) return null;
+
+  return (
+    <div className="mt-3 pt-3 border-t border-border/50">
+      {/* Section title */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1">
+          <Trophy className="w-3 h-3 text-amber-500" />
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Top natijalar
+          </span>
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewAll();
+          }}
+          className="text-[10px] font-semibold text-primary hover:underline"
+        >
+          Barchasini ko'rish →
+        </button>
+      </div>
+
+      {/* Top 3 rows */}
+      <div className="space-y-1.5">
+        {top3.map((e: any) => (
+          <div key={e.rank} className="flex items-center gap-2">
+            <span className="text-sm leading-none w-5 shrink-0">{MEDAL_EMOJI[e.rank - 1]}</span>
+            <span className="text-xs text-foreground font-medium truncate flex-1">
+              {abbrev(e.userName)}
+            </span>
+            <span className={`text-xs font-bold shrink-0 ${scoreColor(e.score)}`}>
+              {Math.round(e.score)}%
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── constants ───────────────────────────────────────────────────────────────
 
 const testTypeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary border-primary/20",
@@ -47,11 +231,14 @@ const dtmSubTypes = [
   { key: "FULL", label: "Full DTM" },
 ];
 
+// ─── Page ────────────────────────────────────────────────────────────────────
+
 export default function TestsPage() {
   const [typeFilter, setTypeFilter] = useState("Barchasi");
   const [dtmFilter, setDtmFilter] = useState("");
   const [search, setSearch] = useState("");
   const [paymentTest, setPaymentTest] = useState<any>(null);
+  const [leaderboardModal, setLeaderboardModal] = useState<{ testId: string; testTitle: string } | null>(null);
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
 
@@ -148,11 +335,11 @@ export default function TestsPage() {
         <span><strong className="text-foreground">{filtered.filter(t => t.testAccess !== "PUBLIC").length}</strong> ta premium</span>
       </div>
 
-      {/* Tests */}
+      {/* Tests grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-muted rounded-2xl h-48 animate-pulse" />
+            <div key={i} className="bg-muted rounded-2xl h-56 animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
@@ -164,10 +351,11 @@ export default function TestsPage() {
           {filtered.map((test: any) => (
             <div
               key={test.id}
-              className={`bg-background rounded-2xl border-2 p-5 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${
+              className={`bg-background rounded-2xl border-2 p-5 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${
                 testTypeColors[test.testType] || "border-border"
               }`}
             >
+              {/* Top row: type badge + access badge */}
               <div className="flex items-start justify-between mb-3">
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
                   {getTestLabel(test)}
@@ -188,9 +376,11 @@ export default function TestsPage() {
                 )}
               </div>
 
+              {/* Title */}
               <h3 className="font-bold mb-3 text-foreground">{test.testTitle}</h3>
 
-              <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+              {/* Meta */}
+              <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <FileQuestion className="w-3 h-3" />
                   {test.totalQuestions} savol
@@ -202,9 +392,19 @@ export default function TestsPage() {
                 <span>{test.totalAttempts} urinish</span>
               </div>
 
+              {/* Top 3 leaderboard */}
+              <TestTopStudents
+                testId={test.id}
+                onViewAll={() => setLeaderboardModal({ testId: test.id, testTitle: test.testTitle })}
+              />
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Start button */}
               <button
                 onClick={() => handleStart(test)}
-                className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                className={`w-full mt-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                   test.testAccess === "PUBLIC"
                     ? "bg-primary text-white hover:bg-primary/90"
                     : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
@@ -216,8 +416,17 @@ export default function TestsPage() {
           ))}
         </div>
       )}
+
+      {/* Modals */}
       {paymentTest && (
         <PaymentModal test={paymentTest} onClose={() => setPaymentTest(null)} />
+      )}
+      {leaderboardModal && (
+        <LeaderboardModal
+          testId={leaderboardModal.testId}
+          testTitle={leaderboardModal.testTitle}
+          onClose={() => setLeaderboardModal(null)}
+        />
       )}
     </div>
   );
