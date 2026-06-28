@@ -22,6 +22,7 @@ export const GET_PUBLIC_TESTS = gql`
       totalQuestions
       duration
       totalAttempts
+      testPdfUrl
       createdAt
     }
   }
@@ -41,6 +42,7 @@ export const GET_TESTS = gql`
       duration
       totalAttempts
       groupId
+      testPdfUrl
       createdAt
     }
   }
@@ -62,6 +64,7 @@ export const GET_TEST = gql`
       totalQuestions
       duration
       groupId
+      testPdfUrl
     }
   }
 `;
@@ -94,6 +97,7 @@ export const GET_ALL_TESTS = gql`
       totalQuestions
       duration
       totalAttempts
+      testPdfUrl
       createdAt
     }
   }

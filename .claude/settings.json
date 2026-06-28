@@ -52,7 +52,9 @@
       "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/result/**)",
       "Read(//Users/nomozof/Desktop/math-academy-api/src/components/users/**)",
       "Bash(find /Users/nomozof/Desktop/math-academy-api/src -name \"results.module.ts\" -o -name \"result.module.ts\" | head -5)",
-      "Read(//Users/nomozof/Desktop/math-academy-api/src/**)"
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/**)",
+      "Bash(find /Users/nomozof/Desktop/math-academy-api/src -name \"*.ts\" | xargs grep -l \"upload\\\\|file\\\\|pdf\\\\|multer\\\\|storage\" 2>/dev/null | grep -v dist | grep -v node_modules)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/test/**)"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
@@ -67,7 +69,8 @@
       "/Users/nomozof/Desktop/math-academy-api/src/components/upload",
       "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/question",
       "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/result",
-      "/Users/nomozof/Desktop/math-academy-api/src/components/results"
+      "/Users/nomozof/Desktop/math-academy-api/src/components/results",
+      "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/test"
     ]
   }
 }

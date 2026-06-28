@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { X, Plus, Trash2, Upload, Copy, Check, Loader2, AlertCircle, Sparkles, PenLine } from "lucide-react";
+import { X, Plus, Trash2, Upload, Copy, Check, Loader2, AlertCircle, Sparkles, PenLine, FileText } from "lucide-react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { Input } from "@/components/ui/input";
-import { CREATE_TEST, ADD_QUESTION } from "@/lib/graphql/test";
+import { CREATE_TEST, ADD_QUESTION, UPDATE_TEST } from "@/lib/graphql/test";
 import { GET_ALL_GROUPS } from "@/lib/graphql/group";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { toast } from "sonner";
@@ -115,9 +115,15 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Step 2 — PDF upload
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const pdfRef = useRef<HTMLInputElement>(null);
+
   const { data: groupsData } = useQuery<{ getAllGroups: any[] }>(GET_ALL_GROUPS);
   const groups = groupsData?.getAllGroups || [];
 
+  const [updateTest] = useMutation(UPDATE_TEST);
   const [createTest, { loading: creating }] = useMutation(CREATE_TEST, {
     onCompleted: (data: any) => {
       setTestId(data.createTest.id);
@@ -278,6 +284,34 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
     toast.success(`${valid.length} ta savol saqlandi!`);
     onSuccess();
     onClose();
+  };
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !testId) return;
+    setPdfUploading(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch(`${API_BASE}/upload/pdf`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setPdfUrl(data.url);
+        await updateTest({ variables: { testId, input: { testPdfUrl: data.url } } });
+        toast.success("PDF yuklandi");
+      } else {
+        toast.error("PDF yuklanmadi");
+      }
+    } catch {
+      toast.error("PDF yuklanmadi");
+    } finally {
+      setPdfUploading(false);
+      e.target.value = "";
+    }
   };
 
   const copyPrompt = () => {
@@ -597,6 +631,46 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                   </div>
                 </div>
               )}
+
+            {/* ── Optional PDF ── */}
+            <div className="border-t border-border pt-4 space-y-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                PDF fayl (ixtiyoriy)
+              </p>
+              {pdfUrl ? (
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-green-200 bg-green-50">
+                  <FileText className="w-4 h-4 text-green-600 shrink-0" />
+                  <span className="text-xs font-medium text-green-800 flex-1 truncate">
+                    {pdfUrl.split("/").pop()}
+                  </span>
+                  <button
+                    onClick={() => setPdfUrl("")}
+                    className="p-1 rounded hover:bg-green-100 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5 text-green-700" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    ref={pdfRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={handlePdfUpload}
+                  />
+                  <button
+                    onClick={() => pdfRef.current?.click()}
+                    disabled={pdfUploading || !testId}
+                    className="w-full flex items-center justify-center gap-2 border border-dashed border-border rounded-xl py-2.5 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-40"
+                  >
+                    {pdfUploading
+                      ? <><Loader2 className="w-4 h-4 animate-spin" /> Yuklanmoqda...</>
+                      : <><Upload className="w-4 h-4" /> PDF biriktirish (max 50 MB)</>}
+                  </button>
+                </>
+              )}
+            </div>
             </div>
           )}
         </div>

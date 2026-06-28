@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { Clock, FileQuestion, Lock, Search, Trophy, X } from "lucide-react";
+import { Clock, FileQuestion, Lock, Search, Trophy, X, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
 import { GET_LEADERBOARD } from "@/lib/graphql/result";
@@ -390,6 +390,19 @@ export default function TestsPage() {
                   {test.duration} daq
                 </div>
                 <span>{test.totalAttempts} urinish</span>
+                {test.testPdfUrl && (
+                  <a
+                    href={`${process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000"}${test.testPdfUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    onClick={(e) => e.stopPropagation()}
+                    className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors font-medium"
+                  >
+                    <FileText className="w-3 h-3" />
+                    PDF
+                  </a>
+                )}
               </div>
 
               {/* Top 3 leaderboard */}

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen, FileText, Upload } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import {
@@ -45,6 +45,7 @@ interface TestData {
     testAccess?: string;
     testStatus?: string;
     testPrice?: number;
+    testPdfUrl?: string;
   };
 }
 
@@ -113,7 +114,10 @@ export default function EditTestPage() {
     testAccess: "PUBLIC",
     testStatus: "DRAFT",
     testPrice: "",
+    testPdfUrl: "",
   });
+  const [pdfUploading, setPdfUploading] = useState(false);
+  const pdfRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (test) {
@@ -128,6 +132,7 @@ export default function EditTestPage() {
         testAccess: test.testAccess ?? "PUBLIC",
         testStatus: test.testStatus ?? "DRAFT",
         testPrice: test.testPrice ? String(test.testPrice) : "",
+        testPdfUrl: test.testPdfUrl ?? "",
       });
     }
   }, [test]);
@@ -150,6 +155,30 @@ export default function EditTestPage() {
   const [deleteQuestion] = useMutation(DELETE_QUESTION, {
     onError: () => toast.error("Savol o'chirilmadi"),
   });
+
+  const uploadPdf = async (file: File) => {
+    setPdfUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_BASE}/upload/pdf`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setTestInfo((prev) => ({ ...prev, testPdfUrl: data.url }));
+        toast.success("PDF yuklandi");
+      } else {
+        toast.error("PDF yuklanmadi");
+      }
+    } catch {
+      toast.error("PDF yuklanmadi");
+    } finally {
+      setPdfUploading(false);
+    }
+  };
 
   const uploadImage = async (file: File, uid: string) => {
     setQ(uid, "uploading", true);
@@ -209,6 +238,7 @@ export default function EditTestPage() {
             testPrice: testInfo.testAccess === "PREMIUM" && testInfo.testPrice
               ? Number(testInfo.testPrice)
               : undefined,
+            testPdfUrl: testInfo.testPdfUrl || undefined,
           },
         },
       });
@@ -397,6 +427,54 @@ export default function EditTestPage() {
             <textarea className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none"
               rows={3} value={testInfo.testDesc}
               onChange={(e) => setTestInfo({ ...testInfo, testDesc: e.target.value })} />
+          </div>
+
+          {/* PDF upload */}
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">
+              PDF fayl{" "}
+              <span className="text-muted-foreground font-normal">(ixtiyoriy)</span>
+            </label>
+            {testInfo.testPdfUrl ? (
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-green-200 bg-green-50">
+                <FileText className="w-5 h-5 text-green-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-green-800 truncate">
+                    {testInfo.testPdfUrl.split("/").pop()}
+                  </p>
+                  <p className="text-xs text-green-600">PDF fayl yuklangan</p>
+                </div>
+                <button
+                  onClick={() => setTestInfo((p) => ({ ...p, testPdfUrl: "" }))}
+                  className="p-1.5 rounded-lg hover:bg-green-100 transition-colors shrink-0"
+                >
+                  <X className="w-4 h-4 text-green-700" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <input
+                  ref={pdfRef}
+                  type="file"
+                  accept=".pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadPdf(f);
+                    e.target.value = "";
+                  }}
+                />
+                <button
+                  onClick={() => pdfRef.current?.click()}
+                  disabled={pdfUploading}
+                  className="w-full flex items-center justify-center gap-2 border border-dashed border-border rounded-xl py-3 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                >
+                  {pdfUploading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Yuklanmoqda...</>
+                    : <><Upload className="w-4 h-4" /> PDF fayl tanlash (max 50 MB)</>}
+                </button>
+              </>
+            )}
           </div>
 
           <button onClick={handleSave} disabled={saving}
