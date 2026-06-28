@@ -209,7 +209,7 @@ export default function ExamPage() {
               </span>
               <span className="text-xs text-muted-foreground">•</span>
               <span className="text-xs text-muted-foreground">
-                {answeredCount}/{totalQuestions} 
+                {answeredCount}/{totalQuestions}
               </span>
             </div>
           </div>
@@ -301,9 +301,12 @@ export default function ExamPage() {
                           number: currentIndex + 1,
                         })
                       }
-                      className="p-1.5 rounded-lg transition-colors hover:bg-red-50 text-muted-foreground hover:text-red-500"
-                      title="Etiroz bildirish"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-red-200 hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-all duration-200"
+                      title="E'tiroz bildirish"
                     >
+                      <span className="text-[13px] font-medium leading-none">
+                        E'tiroz
+                      </span>
                       <TriangleAlert className="w-3.5 h-3.5" />
                     </button>
                     <button
@@ -441,7 +444,7 @@ export default function ExamPage() {
                     <p className="text-[11px] font-semibold text-center text-muted-foreground mb-1.5">
                       {sec.name}
                     </p>
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="grid grid-cols-5 gap-1.5">
                       {range.map((orderIdx) => {
                         const entry = qByOrder.get(orderIdx);
                         if (!entry) return null;
@@ -471,7 +474,7 @@ export default function ExamPage() {
                 );
               })
             ) : (
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-5 gap-1.5">
                 {questions.map((sq: any, i: number) => (
                   <button
                     key={sq.id}

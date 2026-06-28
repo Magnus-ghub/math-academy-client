@@ -618,7 +618,7 @@ function ScientificPanel() {
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Display */}
-      <div className="flex-1 min-h-[120px] px-4 pt-3 pb-3 flex flex-col justify-end overflow-hidden">
+      <div className="flex-1 min-h-30 px-4 pt-3 pb-3 flex flex-col justify-end overflow-hidden">
         <input
           ref={inputRef}
           type="text"
@@ -690,7 +690,7 @@ function ScientificPanel() {
               <button
                 key={bi}
                 onClick={btn.a}
-                className={`py-[11px] rounded text-sm transition-colors ${btn.s}`}
+                className={`py-2.75 rounded text-sm transition-colors ${btn.s}`}
               >
                 {btn.l}
               </button>
@@ -748,7 +748,7 @@ export function DesmosCalculator({ onClose }: Props) {
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`text-sm pb-[3px] capitalize transition-colors leading-none ${
+              className={`text-sm pb-0.75 capitalize transition-colors leading-none ${
                 mode === m
                   ? "text-white border-b border-white"
                   : "text-gray-500 hover:text-gray-300"

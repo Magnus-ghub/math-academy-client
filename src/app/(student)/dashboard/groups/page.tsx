@@ -104,7 +104,7 @@ export default function GroupsPage() {
                         </button>
                       </Link>
                       <Link
-                        href={`/dashboard/tests?groupId=${group.groupId}`}
+                        href={`/dashboard/groups/${group.groupId}`}
                         className="flex-1"
                       >
                         <button className="w-full bg-accent/10 text-accent py-2 rounded-xl text-sm font-medium hover:bg-accent/20 transition-colors flex items-center justify-center gap-1.5">

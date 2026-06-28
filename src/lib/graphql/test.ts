@@ -40,6 +40,7 @@ export const GET_TESTS = gql`
       totalQuestions
       duration
       totalAttempts
+      groupId
       createdAt
     }
   }

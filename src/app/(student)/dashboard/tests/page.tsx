@@ -60,6 +60,7 @@ export default function StudentTestsPage() {
   };
 
   const filtered = tests.filter((t) => {
+    if (t.testAccess === "GROUP") return false;
     const matchType = typeFilter === "Barchasi" || t.testType === typeFilter;
     const matchDtm = typeFilter !== "DTM" || !dtmFilter || t.dtmType === dtmFilter;
     return matchType && matchDtm;

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
 
-const AI_PROMPT = `Quyidagi testni JSON formatiga o'tkazing. Faqat questions massivini qaytaring.
+const AI_PROMPT_GENERAL = `Quyidagi testni JSON formatiga o'tkazing. Faqat questions massivini qaytaring.
 
 FORMAT:
 {
@@ -32,6 +32,44 @@ QOIDALAR:
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - Jadvallar: <table><tr><td>...</td></tr></table>`;
+
+const AI_PROMPT_SAT = `Quyidagi SAT Math testini JSON formatiga o'tkazing. Faqat questions massivini qaytaring.
+
+SAT MATH DA 2 XIL SAVOL TURI BOR:
+
+1) MCQ (Multiple Choice) — 4 ta variant, bitta to'g'ri javob:
+{
+  "questionText": "Savol matni. Formulalar $LaTeX$ da: $x^2 + 5x = 0$",
+  "questionImage": null,
+  "options": ["A variant", "B variant", "C variant", "D variant"],
+  "correctAnswer": 0,
+  "explanation": ""
+}
+
+2) SPR (Student-Produced Response) — raqam kiritish, variant yo'q:
+{
+  "questionText": "Savol matni. Masalan: $2x + 3 = 11$ bo'lsa, x = ?",
+  "questionImage": null,
+  "options": [],
+  "correctAnswer": 400,
+  "explanation": ""
+}
+
+QOIDALAR:
+- MCQ: correctAnswer 0=A, 1=B, 2=C, 3=D; options da 4 ta variant SHART
+- SPR: options: [] (bo'sh massiv)
+- SPR correctAnswer = to'g'ri javob × 100 (MUHIM):
+    butun son  4    → correctAnswer: 400
+    o'nlik    3.5   → correctAnswer: 350
+    kasr      1/2   → correctAnswer: 50
+    kasr      3/4   → correctAnswer: 75
+- SAT da har 22 savoldan taxminan 5-6 tasi SPR bo'ladi
+- Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing`;
+
+function getAiPrompt(testType: string): string {
+  return testType === "SAT" ? AI_PROMPT_SAT : AI_PROMPT_GENERAL;
+}
 
 interface ManualQuestion {
   questionText: string;
@@ -127,11 +165,19 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
       setJsonError('"questions" massivi topilmadi yoki bo\'sh.');
       return;
     }
+    const isSat = form.testType === "SAT";
     const invalid = questions.find(
-      (q: any) => !q.questionText || !Array.isArray(q.options) || q.options.length !== 4
+      (q: any) =>
+        !q.questionText ||
+        !Array.isArray(q.options) ||
+        (isSat ? (q.options.length !== 0 && q.options.length !== 4) : q.options.length !== 4)
     );
     if (invalid) {
-      setJsonError('Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.');
+      setJsonError(
+        isSat
+          ? 'Har bir savol "questionText" va 4 ta "options" (MCQ) yoki bo\'sh "options": [] (SPR) bo\'lishi kerak.'
+          : 'Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.'
+      );
       return;
     }
 
@@ -235,7 +281,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
   };
 
   const copyPrompt = () => {
-    navigator.clipboard.writeText(AI_PROMPT);
+    navigator.clipboard.writeText(getAiPrompt(form.testType));
     setPromptCopied(true);
     setTimeout(() => setPromptCopied(false), 2000);
   };
@@ -415,7 +461,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
 
                   <div className="relative">
                     <pre className="bg-muted rounded-xl p-4 text-xs overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed text-muted-foreground">
-                      {AI_PROMPT}
+                      {getAiPrompt(form.testType)}
                     </pre>
                     <button
                       onClick={copyPrompt}

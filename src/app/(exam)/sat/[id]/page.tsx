@@ -177,6 +177,93 @@ function RefPyramid() {
   );
 }
 
+/* ── SPR Input — real SAT Digital style ──────────────────────────────── */
+function SprInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const ALLOWED = /^-?[\d./]*$/;
+  const MAX_LEN = 6;
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    if (v.length <= MAX_LEN && ALLOWED.test(v)) onChange(v);
+  };
+
+  return (
+    <div className="mt-6">
+      {/* Input box — SAT style */}
+      <div className="flex flex-col items-start gap-4">
+        <div className="relative" style={{ width: 130 }}>
+          <input
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={MAX_LEN}
+            value={value}
+            onChange={handleChange}
+            style={{
+              width: 130,
+              height: 52,
+              fontFamily: "monospace",
+              fontSize: 22,
+              fontWeight: 600,
+              textAlign: "center",
+              border: "2px solid #6b7280",
+              background: "#fff",
+              outline: "none",
+              letterSpacing: "0.1em",
+              color: "#111827",
+              display: "block",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "#1e3a5f")}
+            onBlur={(e) => (e.target.style.borderColor = "#6b7280")}
+          />
+          {/* bottom underline like real SAT */}
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 3,
+              background: "#6b7280",
+            }}
+          />
+        </div>
+
+        {/* Clear */}
+        {value.trim() !== "" && (
+          <button
+            onClick={() => onChange("")}
+            className="text-xs text-gray-400 hover:text-red-500 transition-colors underline underline-offset-2"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* Answer Preview — like real SAT */}
+      <div className="mt-6 border-t border-gray-200 pt-4">
+        <p className="text-sm font-bold text-gray-700 mb-1">Answer Preview:</p>
+        <div style={{ minHeight: 36, fontSize: 20 }}>
+          {(() => {
+            const frac = value.match(/^(-?\d+)\/(\d+)$/);
+            if (frac) return <MathText text={`$$\\frac{${frac[1]}}{${frac[2]}}$$`} />;
+            return <span style={{ fontFamily: "monospace", fontSize: 22 }}>{value}</span>;
+          })()}
+        </div>
+      </div>
+
+      {/* Accepted formats */}
+      <p className="mt-3 text-xs text-gray-400">
+        Formatlar:{" "}
+        <span className="font-mono">3.5</span> ·{" "}
+        <span className="font-mono">7/2</span> ·{" "}
+        <span className="font-mono">-4</span>
+      </p>
+    </div>
+  );
+}
+
 export default function SatExamPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -186,7 +273,7 @@ export default function SatExamPage() {
   // Core state
   const [module, setModule] = useState<Module>(1);
   const [idx, setIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(MODULE_TIME);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -237,10 +324,16 @@ export default function SatExamPage() {
   const currentQ = moduleQuestions[idx];
   const totalLoaded = allQuestions.length;
 
-  const answeredInM1 = m1Questions.filter((q) => answers[q.id] !== undefined).length;
-  const answeredInM2 = m2Questions.filter((q) => answers[q.id] !== undefined).length;
+  const isAnswered = (q: any) => {
+    const ans = answers[q.id];
+    if (ans === undefined) return false;
+    if (!q.options || q.options.length === 0) return String(ans).trim() !== "";
+    return true;
+  };
+  const answeredInM1 = m1Questions.filter(isAnswered).length;
+  const answeredInM2 = m2Questions.filter(isAnswered).length;
   const flaggedInModule = moduleQuestions.filter((q) => flagged.has(q.id)).length;
-  const answeredInModule = moduleQuestions.filter((q) => answers[q.id] !== undefined).length;
+  const answeredInModule = moduleQuestions.filter(isAnswered).length;
   const unansweredInModule = MODULE_QUESTIONS - answeredInModule;
 
   useEffect(() => {
@@ -304,15 +397,33 @@ export default function SatExamPage() {
     setIsFinished(true);
     clearInterval(timerRef.current!);
     const duration = Math.floor((Date.now() - startTime) / 1000 / 60);
+    const parseSpr = (raw: string): number => {
+      const s = raw.trim();
+      if (!s) return -1;
+      const fraction = s.match(/^(-?\d+)\/(\d+)$/);
+      if (fraction) {
+        const den = parseInt(fraction[2], 10);
+        if (den === 0) return -1;
+        return Math.round((parseInt(fraction[1], 10) / den) * 100);
+      }
+      const n = parseFloat(s);
+      return isNaN(n) ? -1 : Math.round(n * 100);
+    };
+
     submitTest({
       variables: {
         input: {
           testId: id,
-          answers: allQuestions.map((q: any) => ({
-            questionId: q.id,
-            selectedAnswer: answers[q.id] ?? 0,
-            timeSpent: 0,
-          })),
+          answers: allQuestions.map((q: any) => {
+            const isSpr = !q.options || q.options.length === 0;
+            let selectedAnswer: number;
+            if (isSpr) {
+              selectedAnswer = parseSpr(String(answers[q.id] ?? ""));
+            } else {
+              selectedAnswer = typeof answers[q.id] === "number" ? (answers[q.id] as number) : 0;
+            }
+            return { questionId: q.id, selectedAnswer, timeSpent: 0 };
+          }),
           duration,
         },
       },
@@ -541,35 +652,53 @@ export default function SatExamPage() {
                 )}
 
                 {/* Answer choices */}
-                <div className="space-y-3 mt-2">
-                  {currentQ.options.map((opt: string, oi: number) => {
-                    const isSelected = answers[currentQ.id] === oi;
-                    return (
-                      <button
-                        key={oi}
-                        onClick={() => setAnswers((prev) => ({ ...prev, [currentQ.id]: oi }))}
-                        className={`w-full flex items-start gap-3.5 px-4 py-3.5 rounded-xl border-2 text-left transition-all group ${
-                          isSelected
-                            ? "border-[#1e3a5f] bg-[#1e3a5f]/5"
-                            : "border-gray-200 hover:border-[#1e3a5f]/40 hover:bg-gray-50"
-                        }`}
-                      >
-                        <div
-                          className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 transition-colors ${
+                {(!currentQ.options || currentQ.options.length === 0 || currentQ.options.every((o: string) => !o?.trim())) ? (
+                  /* SPR — Student-Produced Response */
+                  <SprInput
+                    value={String(answers[currentQ.id] ?? "")}
+                    onChange={(val) =>
+                      setAnswers((prev) => {
+                        if (val === "") {
+                          const next = { ...prev };
+                          delete next[currentQ.id];
+                          return next;
+                        }
+                        return { ...prev, [currentQ.id]: val };
+                      })
+                    }
+                  />
+                ) : (
+                  /* MCQ — Multiple Choice */
+                  <div className="space-y-3 mt-2">
+                    {(currentQ.options ?? []).map((opt: string, oi: number) => {
+                      const isSelected = answers[currentQ.id] === oi;
+                      return (
+                        <button
+                          key={oi}
+                          onClick={() => setAnswers((prev) => ({ ...prev, [currentQ.id]: oi }))}
+                          className={`w-full flex items-start gap-3.5 px-4 py-3.5 rounded-xl border-2 text-left transition-all group ${
                             isSelected
-                              ? "border-[#1e3a5f] bg-[#1e3a5f] text-white"
-                              : "border-gray-300 text-gray-500 group-hover:border-[#1e3a5f]/60"
+                              ? "border-[#1e3a5f] bg-[#1e3a5f]/5"
+                              : "border-gray-200 hover:border-[#1e3a5f]/40 hover:bg-gray-50"
                           }`}
                         >
-                          {OPTION_LETTERS[oi]}
-                        </div>
-                        <span className="text-sm text-gray-700 leading-relaxed pt-0.5">
-                          <MathText text={opt} />
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                          <div
+                            className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 transition-colors ${
+                              isSelected
+                                ? "border-[#1e3a5f] bg-[#1e3a5f] text-white"
+                                : "border-gray-300 text-gray-500 group-hover:border-[#1e3a5f]/60"
+                            }`}
+                          >
+                            {OPTION_LETTERS[oi]}
+                          </div>
+                          <span className="text-sm text-gray-700 leading-relaxed pt-0.5">
+                            <MathText text={opt} />
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -649,7 +778,7 @@ export default function SatExamPage() {
             <div className="max-w-5xl mx-auto">
               <div className="flex flex-wrap gap-1.5 justify-center">
                 {moduleQuestions.map((q: any, i: number) => {
-                  const isAnswered = answers[q.id] !== undefined;
+                  const isAnswered_q = isAnswered(q);
                   const isFlagged = flagged.has(q.id);
                   const isCurrent = i === idx;
                   return (
@@ -659,9 +788,9 @@ export default function SatExamPage() {
                       className={`w-8 h-8 rounded-lg text-xs font-bold transition-all border-2 ${
                         isCurrent
                           ? "border-[#1e3a5f] bg-[#1e3a5f] text-white scale-110"
-                          : isAnswered && isFlagged
+                          : isAnswered_q && isFlagged
                           ? "border-amber-400 bg-amber-50 text-amber-700"
-                          : isAnswered
+                          : isAnswered_q
                           ? "border-[#1e3a5f]/40 bg-[#1e3a5f]/10 text-[#1e3a5f]"
                           : isFlagged
                           ? "border-amber-300 bg-amber-50 text-amber-600"

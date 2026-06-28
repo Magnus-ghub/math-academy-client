@@ -77,6 +77,7 @@ export default function TestsPage() {
   const tests = data?.getPublicTests || [];
 
   const filtered = tests.filter((t) => {
+    if (t.testAccess === "GROUP") return false;
     const matchType = typeFilter === "Barchasi" || t.testType === typeFilter;
     const matchDtm = typeFilter !== "DTM" || !dtmFilter || t.dtmType === dtmFilter;
     const matchSearch = t.testTitle.toLowerCase().includes(search.toLowerCase());

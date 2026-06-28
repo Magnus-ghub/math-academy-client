@@ -42,7 +42,10 @@
       "Bash(cat /Users/nomozof/Desktop/math-academy-api/package.json | grep -E \"bcrypt|nodemailer|mailer|smtp|argon|handlebars\")",
       "Read(//Users/nomozof/Desktop/math-academy-api/src/components/auth/strategies/**)",
       "Bash(ls /Users/nomozof/Desktop/math-academy-api/src/components/auth/)",
-      "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(exam\\)/sat/[id]\")"
+      "Bash(mkdir -p \"/Users/nomozof/Desktop/math-academy-client/src/app/\\(exam\\)/sat/[id]\")",
+      "Bash(find /Users/nomozof/Desktop/math-academy-api -type f -name \"*.ts\" | grep -i \"upload\\\\|question\\\\|import\" | head -20)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/components/upload/**)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/question/**)"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
@@ -53,7 +56,9 @@
       "/Users/nomozof/Desktop/math-academy-api/src/schema",
       "/Users/nomozof/Desktop/math-academy-api/src/libs/enums",
       "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/users",
-      "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/sat"
+      "/Users/nomozof/Desktop/math-academy-client/src/app/(exam)/sat",
+      "/Users/nomozof/Desktop/math-academy-api/src/components/upload",
+      "/Users/nomozof/Desktop/math-academy-api/src/libs/dto/question"
     ]
   }
 }

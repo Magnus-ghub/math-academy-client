@@ -34,7 +34,15 @@ QOIDALAR:
 - options massivida A,B,C,D tartibida 4 ta variant bo'lishi SHART
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Agar savolda rasm/grafik bo'lsa questionImage ga null qo'ying, questionText ga "(rasmga qarang)" yozing
-- Jadvallar HTML formatida questionText ichida: <table><tr><td>...</td></tr></table>`;
+- Jadvallar HTML formatida questionText ichida: <table><tr><td>...</td></tr></table>
+
+AGAR SAT TESTI BO'LSA — qo'shimcha:
+- SAT Math da ba'zi savollar SPR (raqam kiritish) bo'ladi — variantsiz
+- SPR savol uchun: "options": [], "correctAnswer": <butun son javob>
+- Masalan: javob 4 bo'lsa → "options": [], "correctAnswer": 4
+- Kasrli javob bo'lsa 100 ga ko'paytiring: 3.5 → 350
+- MCQ savollar uchun options da 4 ta variant qoldiring`;
+
 
 const JSON_EXAMPLE = `{
   "testTitle": "Attestatsiya 2026 - Matematika",
@@ -93,11 +101,19 @@ export default function ImportTestModal({ onClose, onImported }: Props) {
       return;
     }
 
+    const isSat = parsed.testType === "SAT";
     const invalid = parsed.questions.find(
-      (q: any) => !q.questionText || !Array.isArray(q.options) || q.options.length !== 4
+      (q: any) =>
+        !q.questionText ||
+        !Array.isArray(q.options) ||
+        (isSat ? (q.options.length !== 0 && q.options.length !== 4) : q.options.length !== 4)
     );
     if (invalid) {
-      setError('Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.');
+      setError(
+        isSat
+          ? 'Har bir savol "questionText" va 4 ta "options" (MCQ) yoki bo\'sh "options": [] (SPR) bo\'lishi kerak.'
+          : 'Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.'
+      );
       return;
     }
 
