@@ -21,7 +21,9 @@ FORMAT:
       "questionImage": null,
       "options": ["A variant", "B variant", "C variant", "D variant"],
       "correctAnswer": 0,
-      "explanation": ""
+      "explanation": "",
+      "analysis": "Bu savolning to'liq tahlili yoki izoh (ixtiyoriy)",
+      "youtubeUrl": ""
     }
   ]
 }
@@ -31,7 +33,9 @@ QOIDALAR:
 - options da 4 ta variant SHART
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
-- Jadvallar: <table><tr><td>...</td></tr></table>`;
+- Jadvallar: <table><tr><td>...</td></tr></table>
+- analysis: savol bo'yicha AI tahlil matni (ixtiyoriy, bo'sh qoldirsa ham bo'ladi)
+- youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;
 
 const AI_PROMPT_SAT = `Quyidagi SAT Math testini JSON formatiga o'tkazing. Faqat questions massivini qaytaring.
 
@@ -43,7 +47,9 @@ SAT MATH DA 2 XIL SAVOL TURI BOR:
   "questionImage": null,
   "options": ["A variant", "B variant", "C variant", "D variant"],
   "correctAnswer": 0,
-  "explanation": ""
+  "explanation": "",
+  "analysis": "Bu savolning to'liq tahlili (ixtiyoriy)",
+  "youtubeUrl": ""
 }
 
 2) SPR (Student-Produced Response) — raqam kiritish, variant yo'q:
@@ -52,7 +58,9 @@ SAT MATH DA 2 XIL SAVOL TURI BOR:
   "questionImage": null,
   "options": [],
   "correctAnswer": 400,
-  "explanation": ""
+  "explanation": "",
+  "analysis": "",
+  "youtubeUrl": ""
 }
 
 QOIDALAR:
@@ -65,7 +73,9 @@ QOIDALAR:
     kasr      3/4   → correctAnswer: 75
 - SAT da har 22 savoldan taxminan 5-6 tasi SPR bo'ladi
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
-- Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing`;
+- Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
+- analysis: savol bo'yicha AI tahlil matni (ixtiyoriy)
+- youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;
 
 function getAiPrompt(testType: string): string {
   return testType === "SAT" ? AI_PROMPT_SAT : AI_PROMPT_GENERAL;
@@ -119,6 +129,10 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
   const [pdfUrl, setPdfUrl] = useState("");
   const [pdfUploading, setPdfUploading] = useState(false);
   const pdfRef = useRef<HTMLInputElement>(null);
+
+  // Step 2 — YouTube & Analysis
+  const [testYoutubeUrl, setTestYoutubeUrl] = useState("");
+  const [testAnalysis, setTestAnalysis] = useState("");
 
   const { data: groupsData } = useQuery<{ getAllGroups: any[] }>(GET_ALL_GROUPS);
   const groups = groupsData?.getAllGroups || [];
@@ -195,7 +209,12 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({ testId, questions }),
+        body: JSON.stringify({
+          testId,
+          questions,
+          testYoutubeUrl: testYoutubeUrl || undefined,
+          testAnalysis: testAnalysis || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Xatolik");
@@ -282,6 +301,12 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
       });
     }
     toast.success(`${valid.length} ta savol saqlandi!`);
+    if (testId && (testYoutubeUrl || testAnalysis)) {
+      await updateTest({ variables: { testId, input: {
+        testYoutubeUrl: testYoutubeUrl || undefined,
+        testAnalysis: testAnalysis || undefined,
+      }}});
+    }
     onSuccess();
     onClose();
   };
@@ -670,6 +695,33 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                   </button>
                 </>
               )}
+            </div>
+
+            {/* ── YouTube & AI Analysis ── */}
+            <div className="border-t border-border pt-4 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Tahlil (ixtiyoriy)
+              </p>
+              <div>
+                <label className="text-xs font-medium mb-1 block text-muted-foreground">YouTube video link</label>
+                <Input
+                  placeholder="https://youtube.com/watch?v=..."
+                  value={testYoutubeUrl}
+                  onChange={(e) => setTestYoutubeUrl(e.target.value)}
+                  disabled={!testId}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block text-muted-foreground">AI / Matn tahlili</label>
+                <textarea
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-40"
+                  rows={3}
+                  placeholder="Bu test bo'yicha umumiy tahlil yoki AI izoh..."
+                  value={testAnalysis}
+                  onChange={(e) => setTestAnalysis(e.target.value)}
+                  disabled={!testId}
+                />
+              </div>
             </div>
             </div>
           )}

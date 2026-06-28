@@ -21,15 +21,17 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "ht
 
 interface QuestionRow {
   uid: string;
-  id?: string;           // DB id (mavjud savollar uchun)
+  id?: string;
   questionText: string;
   questionImage: string;
   options: string[];
   correctAnswer: number;
   explanation: string;
+  youtubeUrl: string;
+  analysis: string;
   uploading: boolean;
-  dirty: boolean;        // o'zgartirilganmi
-  isNew: boolean;        // yangi qo'shilganmi
+  dirty: boolean;
+  isNew: boolean;
 }
 
 interface TestData {
@@ -46,6 +48,8 @@ interface TestData {
     testStatus?: string;
     testPrice?: number;
     testPdfUrl?: string;
+    testYoutubeUrl?: string;
+    testAnalysis?: string;
   };
 }
 
@@ -75,6 +79,8 @@ function makeRow(q?: any): QuestionRow {
     options: q?.options ?? ["", "", "", ""],
     correctAnswer: q?.correctAnswer ?? 0,
     explanation: q?.explanation ?? "",
+    youtubeUrl: q?.youtubeUrl ?? "",
+    analysis: q?.analysis ?? "",
     uploading: false,
     dirty: false,
     isNew: !q?.id,
@@ -115,6 +121,8 @@ export default function EditTestPage() {
     testStatus: "DRAFT",
     testPrice: "",
     testPdfUrl: "",
+    testYoutubeUrl: "",
+    testAnalysis: "",
   });
   const [pdfUploading, setPdfUploading] = useState(false);
   const pdfRef = useRef<HTMLInputElement>(null);
@@ -133,6 +141,8 @@ export default function EditTestPage() {
         testStatus: test.testStatus ?? "DRAFT",
         testPrice: test.testPrice ? String(test.testPrice) : "",
         testPdfUrl: test.testPdfUrl ?? "",
+        testYoutubeUrl: test.testYoutubeUrl ?? "",
+        testAnalysis: test.testAnalysis ?? "",
       });
     }
   }, [test]);
@@ -239,6 +249,8 @@ export default function EditTestPage() {
               ? Number(testInfo.testPrice)
               : undefined,
             testPdfUrl: testInfo.testPdfUrl || undefined,
+            testYoutubeUrl: testInfo.testYoutubeUrl || undefined,
+            testAnalysis: testInfo.testAnalysis || undefined,
           },
         },
       });
@@ -260,6 +272,8 @@ export default function EditTestPage() {
           options: q.options,
           correctAnswer: q.correctAnswer,
           explanation: q.explanation || undefined,
+          youtubeUrl: q.youtubeUrl || undefined,
+          analysis: q.analysis || undefined,
         };
 
         if (q.isNew) {
@@ -429,6 +443,34 @@ export default function EditTestPage() {
               onChange={(e) => setTestInfo({ ...testInfo, testDesc: e.target.value })} />
           </div>
 
+          {/* YouTube link */}
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">
+              YouTube video link{" "}
+              <span className="text-muted-foreground font-normal">(ixtiyoriy — umumiy tahlil uchun)</span>
+            </label>
+            <Input
+              placeholder="https://youtube.com/watch?v=..."
+              value={testInfo.testYoutubeUrl}
+              onChange={(e) => setTestInfo({ ...testInfo, testYoutubeUrl: e.target.value })}
+            />
+          </div>
+
+          {/* AI Analysis */}
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">
+              AI / Matn tahlili{" "}
+              <span className="text-muted-foreground font-normal">(ixtiyoriy — test bo'yicha umumiy tahlil)</span>
+            </label>
+            <textarea
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+              rows={5}
+              placeholder="Bu test bo'yicha tahlil, tushuntirish yoki AI tomonidan tayyorlangan izoh..."
+              value={testInfo.testAnalysis}
+              onChange={(e) => setTestInfo({ ...testInfo, testAnalysis: e.target.value })}
+            />
+          </div>
+
           {/* PDF upload */}
           <div>
             <label className="text-sm font-medium mb-1.5 block">
@@ -514,7 +556,7 @@ export default function EditTestPage() {
 function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImagePick, canRemove }: {
   q: QuestionRow;
   index: number;
-  onUpdate: (uid: string, field: keyof QuestionRow, value: any) => void;
+  onUpdate: (uid: string, field: keyof QuestionRow, value: string | number | boolean | string[]) => void;
   onUpdateOption: (uid: string, idx: number, value: string) => void;
   onRemove: () => void;
   onImagePick: (file: File) => void;
@@ -608,6 +650,22 @@ function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImag
 
         <Input placeholder="Javob izohi (ixtiyoriy)" value={q.explanation}
           onChange={(e) => onUpdate(q.uid, "explanation", e.target.value)} />
+
+        <div className="pt-1 border-t border-border/50 space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tahlil (ixtiyoriy)</p>
+          <Input
+            placeholder="YouTube link (masalan: https://youtu.be/...)"
+            value={q.youtubeUrl}
+            onChange={(e) => onUpdate(q.uid, "youtubeUrl", e.target.value)}
+          />
+          <textarea
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+            rows={2}
+            placeholder="AI tahlil matni (bu savol uchun tushuntirish)..."
+            value={q.analysis}
+            onChange={(e) => onUpdate(q.uid, "analysis", e.target.value)}
+          />
+        </div>
       </div>
     </div>
   );

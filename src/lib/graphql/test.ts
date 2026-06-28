@@ -65,6 +65,8 @@ export const GET_TEST = gql`
       duration
       groupId
       testPdfUrl
+      testYoutubeUrl
+      testAnalysis
     }
   }
 `;
@@ -79,6 +81,8 @@ export const GET_QUESTIONS = gql`
       options
       correctAnswer
       explanation
+      youtubeUrl
+      analysis
       section
       orderIndex
     }

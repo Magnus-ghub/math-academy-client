@@ -2,13 +2,56 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { CheckCircle, XCircle, Clock, ChevronLeft, TriangleAlert, Award } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ChevronLeft, TriangleAlert, Award, Play, Bot, X } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { GET_RESULT } from "@/lib/graphql/result";
-import { GET_QUESTIONS } from "@/lib/graphql/test";
+import { GET_QUESTIONS, GET_TEST } from "@/lib/graphql/test";
 import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { MathText } from "@/components/MathText";
+
+// ─── YouTube helpers ──────────────────────────────────────────────────────────
+
+function extractYoutubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function YoutubeModal({ url, onClose }: { url: string; onClose: () => void }) {
+  const vid = extractYoutubeId(url);
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-black rounded-2xl overflow-hidden w-full max-w-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-900">
+          <span className="text-white text-sm font-medium">YouTube Tahlil</span>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+        {vid ? (
+          <div className="aspect-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${vid}?autoplay=1`}
+              className="w-full h-full"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            />
+          </div>
+        ) : (
+          <div className="p-8 text-center text-white/60">
+            <p className="mb-3">Video yuklashda xatolik</p>
+            <a href={url} target="_blank" rel="noopener noreferrer" className="text-red-400 underline text-sm">
+              YouTube da ochish
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ─── Attestatsiya toifa tizimi ────────────────────────────────────────────────
 interface Toifa {
@@ -83,6 +126,9 @@ function AttestatsiyaGrid({ questions, answers }: { questions: any[]; answers: a
 export default function ResultDetailPage() {
   const { id } = useParams();
   const [reportTarget, setReportTarget] = useState<{ questionId: string; number: number } | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState<string | null>(null);
+  const [testAnalysisOpen, setTestAnalysisOpen] = useState(false);
+  const [openQuestionAnalysis, setOpenQuestionAnalysis] = useState<string | null>(null);
 
   const { data: resultData, loading: resultLoading } = useQuery<{ getResult: any }>(GET_RESULT, {
     variables: { resultId: id },
@@ -96,7 +142,13 @@ export default function ResultDetailPage() {
     skip: !result?.testId,
   });
 
+  const { data: testData } = useQuery<{ getTest: any }>(GET_TEST, {
+    variables: { testId: result?.testId },
+    skip: !result?.testId,
+  });
+
   const questions = questionsData?.getQuestions || [];
+  const test = testData?.getTest;
 
   if (resultLoading) {
     return (
@@ -115,13 +167,15 @@ export default function ResultDetailPage() {
     );
   }
 
-  // Attestatsiya: 50 savol × 2 ball = 100 ball max
   const attestPoints = isAttestatsiya ? result.correctAnswers * 2 : null;
   const toifa = isAttestatsiya && attestPoints !== null ? getAttestatsiyaToifa(attestPoints) : null;
 
   const scoreColor = result.score >= 80 ? "text-green-600" : result.score >= 60 ? "text-amber-500" : "text-red-500";
   const scoreBg   = result.score >= 80 ? "bg-green-100"  : result.score >= 60 ? "bg-amber-50"   : "bg-red-100";
   const scoreBar  = result.score >= 80 ? "bg-green-500"  : result.score >= 60 ? "bg-amber-400"  : "bg-red-500";
+
+  const hasTestAnalysis = !!test?.testAnalysis;
+  const hasTestYoutube  = !!test?.testYoutubeUrl;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -134,7 +188,7 @@ export default function ResultDetailPage() {
       </Link>
 
       {/* Score card */}
-      <div className="bg-background rounded-2xl border border-border p-6 mb-6">
+      <div className="bg-background rounded-2xl border border-border p-6 mb-4">
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-xs text-muted-foreground mb-1">
@@ -160,7 +214,6 @@ export default function ResultDetailPage() {
           )}
         </div>
 
-        {/* Toifa badge — faqat Attestatsiya */}
         {isAttestatsiya && (
           <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border mb-4 ${
             toifa ? `${toifa.bg} ${toifa.border}` : "bg-muted border-border"
@@ -194,15 +247,10 @@ export default function ResultDetailPage() {
           </div>
         )}
 
-        {/* Progress bar */}
         <div className="h-2 bg-muted rounded-full overflow-hidden mb-4">
-          <div
-            className={`h-full rounded-full transition-all ${scoreBar}`}
-            style={{ width: `${result.score}%` }}
-          />
+          <div className={`h-full rounded-full transition-all ${scoreBar}`} style={{ width: `${result.score}%` }} />
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center p-3 bg-green-50 rounded-xl">
             <CheckCircle className="w-5 h-5 text-green-600 mx-auto mb-1" />
@@ -211,9 +259,7 @@ export default function ResultDetailPage() {
           </div>
           <div className="text-center p-3 bg-red-50 rounded-xl">
             <XCircle className="w-5 h-5 text-red-500 mx-auto mb-1" />
-            <p className="text-lg font-bold text-red-500">
-              {result.totalQuestions - result.correctAnswers}
-            </p>
+            <p className="text-lg font-bold text-red-500">{result.totalQuestions - result.correctAnswers}</p>
             <p className="text-xs text-muted-foreground">Noto'g'ri</p>
           </div>
           <div className="text-center p-3 bg-primary/5 rounded-xl">
@@ -224,7 +270,45 @@ export default function ResultDetailPage() {
         </div>
       </div>
 
-      {/* Attestatsiya: section grid */}
+      {/* ── Test-level analysis ── */}
+      {(hasTestAnalysis || hasTestYoutube) && (
+        <div className="bg-background rounded-2xl border border-border p-4 mb-6">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Test tahlili
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {hasTestAnalysis && (
+              <button
+                onClick={() => setTestAnalysisOpen((v) => !v)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
+                  testAnalysisOpen
+                    ? "bg-primary text-white border-primary"
+                    : "border-border hover:border-primary hover:text-primary"
+                }`}
+              >
+                <Bot className="w-4 h-4" />
+                AI Tahlil
+              </button>
+            )}
+            {hasTestYoutube && (
+              <button
+                onClick={() => setYoutubeUrl(test.testYoutubeUrl)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+              >
+                <Play className="w-4 h-4" />
+                YouTube Tahlil
+              </button>
+            )}
+          </div>
+          {testAnalysisOpen && test?.testAnalysis && (
+            <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed">
+              <MathText text={test.testAnalysis} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Attestatsiya grid */}
       {isAttestatsiya && questions.length > 0 && result.answers?.length > 0 && (
         <AttestatsiyaGrid questions={questions} answers={result.answers} />
       )}
@@ -236,6 +320,7 @@ export default function ResultDetailPage() {
           <div className="space-y-3">
             {result.answers.map((answer: any, i: number) => {
               const question = questions.find((q: any) => q.id === answer.questionId);
+              const qAnalysisOpen = openQuestionAnalysis === answer.questionId;
               return (
                 <div
                   key={answer.questionId}
@@ -308,6 +393,42 @@ export default function ResultDetailPage() {
                           })}
                         </div>
                       )}
+
+                      {/* Per-question analysis buttons */}
+                      {(question?.analysis || question?.youtubeUrl) && (
+                        <div className="mt-3 pt-3 border-t border-border/50 flex items-center gap-2 flex-wrap">
+                          {question.analysis && (
+                            <button
+                              onClick={() =>
+                                setOpenQuestionAnalysis(qAnalysisOpen ? null : answer.questionId)
+                              }
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                                qAnalysisOpen
+                                  ? "bg-primary text-white border-primary"
+                                  : "border-border hover:border-primary hover:text-primary"
+                              }`}
+                            >
+                              <Bot className="w-3 h-3" />
+                              AI Tahlil
+                            </button>
+                          )}
+                          {question.youtubeUrl && (
+                            <button
+                              onClick={() => setYoutubeUrl(question.youtubeUrl)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                            >
+                              <Play className="w-3 h-3" />
+                              YouTube
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {qAnalysisOpen && question?.analysis && (
+                        <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs leading-relaxed">
+                          <MathText text={question.analysis} />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -338,6 +459,10 @@ export default function ResultDetailPage() {
           questionNumber={reportTarget.number}
           onClose={() => setReportTarget(null)}
         />
+      )}
+
+      {youtubeUrl && (
+        <YoutubeModal url={youtubeUrl} onClose={() => setYoutubeUrl(null)} />
       )}
     </div>
   );

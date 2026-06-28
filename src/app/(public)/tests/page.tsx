@@ -54,7 +54,7 @@ function LeaderboardModal({
             <Trophy className="w-5 h-5 text-amber-500" />
             <div>
               <p className="font-bold text-gray-900 text-sm">Top natijalar</p>
-              <p className="text-xs text-gray-400 truncate max-w-[240px]">{testTitle}</p>
+              <p className="text-xs text-gray-400 truncate max-w-60">{testTitle}</p>
             </div>
           </div>
           <button

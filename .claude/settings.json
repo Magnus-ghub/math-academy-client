@@ -54,7 +54,11 @@
       "Bash(find /Users/nomozof/Desktop/math-academy-api/src -name \"results.module.ts\" -o -name \"result.module.ts\" | head -5)",
       "Read(//Users/nomozof/Desktop/math-academy-api/src/**)",
       "Bash(find /Users/nomozof/Desktop/math-academy-api/src -name \"*.ts\" | xargs grep -l \"upload\\\\|file\\\\|pdf\\\\|multer\\\\|storage\" 2>/dev/null | grep -v dist | grep -v node_modules)",
-      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/test/**)"
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/test/**)",
+      "Bash(find /Users/nomozof/Desktop/math-academy-api/src -name \"Question*\" | grep -v dist | head -10)",
+      "Bash(find /Users/nomozof/Desktop/math-academy-api/src/libs/dto -name \"question*\" -o -name \"Question*\" | grep -v dist)",
+      "Read(//Users/nomozof/Desktop/math-academy-api/src/libs/dto/**)",
+      "Bash(node -e \"const m = require\\('/Users/nomozof/Desktop/math-academy-client/node_modules/lucide-react'\\); const keys = Object.keys\\(m\\).filter\\(k => k.toLowerCase\\(\\).includes\\('you'\\)\\); console.log\\(keys\\)\")"
     ],
     "additionalDirectories": [
       "/Users/nomozof/Desktop/math-academy-api/src/components/auth",
