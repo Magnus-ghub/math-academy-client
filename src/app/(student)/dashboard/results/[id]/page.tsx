@@ -65,8 +65,8 @@ interface Toifa {
 function getAttestatsiyaToifa(points: number): Toifa | null {
   if (points >= 86) return { label: "Oliy toifa", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-300", ustama: "+ 70% ustama" };
   if (points >= 80) return { label: "Oliy toifa", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-300" };
-  if (points >= 71) return { label: "Birinchi toifa", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-300" };
-  if (points >= 61) return { label: "Ikkinchi toifa", color: "text-cyan-700", bg: "bg-cyan-50", border: "border-cyan-300" };
+  if (points >= 70) return { label: "Birinchi toifa", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-300" };
+  if (points >= 60) return { label: "Ikkinchi toifa", color: "text-cyan-700", bg: "bg-cyan-50", border: "border-cyan-300" };
   if (points >= 56) return { label: "Mutaxassis", color: "text-green-700", bg: "bg-green-50", border: "border-green-300" };
   return null;
 }
@@ -229,12 +229,12 @@ export default function ResultDetailPage() {
                     {attestPoints! >= 86
                       ? "86 ball va undan yuqori"
                       : attestPoints! >= 80
-                      ? "80–86 ball"
+                      ? "80–84 ball"
                       : attestPoints! >= 71
-                      ? "71–79 ball"
+                      ? "70–78 ball"
                       : attestPoints! >= 61
-                      ? "61–70 ball"
-                      : "56–60 ball"}
+                      ? "60–68 ball"
+                      : "56–58 ball"}
                   </p>
                 </>
               ) : (

@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import { Search, CheckCircle, XCircle } from "lucide-react";
+import { useQuery, useMutation, useSubscription } from "@apollo/client/react";
+import { Search, CheckCircle, XCircle, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   GET_PENDING_REPORTS,
   RESOLVE_REPORT,
   REJECT_REPORT,
+  REPORT_CREATED_SUBSCRIPTION,
 } from "@/lib/graphql/report";
 
 const statusColors: Record<string, string> = {
@@ -37,8 +38,19 @@ export default function AdminReportsPage() {
   const [search, setSearch] = useState("");
 
   const { data, loading, refetch } = useQuery<{ getPendingReports: any[] }>(
-    GET_PENDING_REPORTS
+    GET_PENDING_REPORTS,
+    { fetchPolicy: "cache-and-network" }
   );
+
+  useSubscription(REPORT_CREATED_SUBSCRIPTION, {
+    onData: ({ client }) => {
+      toast("Yangi e'tiroz keldi!", {
+        icon: <Bell className="w-4 h-4 text-amber-500" />,
+        duration: 5000,
+      });
+      client.refetchQueries({ include: [GET_PENDING_REPORTS] });
+    },
+  });
   const reports = data?.getPendingReports || [];
 
   const [resolveReport] = useMutation(RESOLVE_REPORT, {

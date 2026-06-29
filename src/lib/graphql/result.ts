@@ -20,6 +20,18 @@ export const SUBMIT_TEST = gql`
   }
 `;
 
+export const CHECK_MY_ATTEMPT = gql`
+  query CheckMyAttempt($testId: String!) {
+    checkMyAttempt(testId: $testId) {
+      id
+      score
+      correctAnswers
+      totalQuestions
+      createdAt
+    }
+  }
+`;
+
 export const GET_MY_RESULTS = gql`
   query GetMyResults {
     getMyResults {

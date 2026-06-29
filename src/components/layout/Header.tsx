@@ -75,6 +75,7 @@ export default function Header() {
   };
 
   const handleLogout = () => {
+    setShowLogoutConfirm(false);
     logout();
     router.push("/");
   };

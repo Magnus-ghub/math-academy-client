@@ -36,6 +36,20 @@ export const REJECT_REPORT = gql`
   }
 `;
 
+export const REPORT_CREATED_SUBSCRIPTION = gql`
+  subscription ReportCreated {
+    reportCreated {
+      id
+      reportReason
+      reportText
+      reportStatus
+      testId
+      questionId
+      createdAt
+    }
+  }
+`;
+
 export const CREATE_REPORT = gql`
   mutation CreateReport($input: ReportInput!) {
     createReport(input: $input) {

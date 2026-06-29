@@ -18,7 +18,7 @@ import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { FloatingCalculator } from "@/components/FloatingCalculator";
 import { useRouter, useParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
-import { SUBMIT_TEST } from "@/lib/graphql/result";
+import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
 import { MathText } from "@/components/MathText";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
@@ -43,6 +43,16 @@ export default function ExamPage() {
   } | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const examActiveRef = useRef(false);
+
+  const { data: attemptData, loading: attemptLoading } = useQuery<{ checkMyAttempt: any }>(
+    CHECK_MY_ATTEMPT,
+    {
+      variables: { testId: id },
+      skip: !id || !isAuthenticated,
+      fetchPolicy: "network-only",
+    },
+  );
 
   const { data: testData, loading: testLoading } = useQuery<{ getTest: any }>(
     GET_TEST,
@@ -92,6 +102,43 @@ export default function ExamPage() {
   useEffect(() => {
     if (!isAuthenticated) router.push("/login");
   }, [isAuthenticated]);
+
+  // ref ni har render'dan keyin yangilab turadi
+  useEffect(() => {
+    examActiveRef.current =
+      !isFinished &&
+      !testLoading &&
+      !questionsLoading &&
+      !attemptLoading &&
+      !attemptData?.checkMyAttempt &&
+      !!test &&
+      totalQuestions > 0;
+  });
+
+  // browser back + tab yopishni bloklash (faqat exam aktiv bo'lganda)
+  useEffect(() => {
+    window.history.pushState(null, "", window.location.href);
+
+    const handlePopState = () => {
+      if (examActiveRef.current) {
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (examActiveRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   useEffect(() => {
     if (test?.duration && timeLeft === 0) {
@@ -150,10 +197,40 @@ export default function ExamPage() {
     });
   };
 
-  if (testLoading || questionsLoading) {
+  if (testLoading || questionsLoading || attemptLoading) {
     return (
       <div className="flex items-center justify-center flex-1">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  const existingAttempt = attemptData?.checkMyAttempt;
+
+  if (existingAttempt) {
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 text-center gap-4 px-4">
+        <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center">
+          <CheckCircle className="w-10 h-10 text-amber-600" />
+        </div>
+        <h1 className="text-2xl font-bold">Bu testni topshirgansiz</h1>
+        <p className="text-muted-foreground max-w-sm">
+          Har bir test uchun faqat <strong>1 ta urinish</strong> beriladi. Natijangizni ko'rishingiz mumkin.
+        </p>
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={() => router.back()}
+            className="px-5 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors"
+          >
+            ← Orqaga
+          </button>
+          <button
+            onClick={() => router.push(`/dashboard/results/${existingAttempt.id}`)}
+            className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            Natijani ko'rish →
+          </button>
+        </div>
       </div>
     );
   }
@@ -194,13 +271,6 @@ export default function ExamPage() {
       {/* ── HEADER ── */}
       <header className="shrink-0 bg-background border-b border-border px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 rounded-lg hover:bg-muted transition-colors shrink-0"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-
           <div className="flex-1 min-w-0">
             <h1 className="font-bold text-sm truncate">{test.testTitle}</h1>
             <div className="flex items-center gap-3 mt-1">
