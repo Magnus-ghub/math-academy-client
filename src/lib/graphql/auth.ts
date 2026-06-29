@@ -8,6 +8,7 @@ export const TELEGRAM_LOGIN = gql`
     $userName: String
     $userLastName: String
     $userImage: String
+    $telegramUsername: String
   ) {
     telegramLogin(
       telegramId: $telegramId
@@ -16,6 +17,7 @@ export const TELEGRAM_LOGIN = gql`
       userName: $userName
       userLastName: $userLastName
       userImage: $userImage
+      telegramUsername: $telegramUsername
     ) {
       accessToken
       isNewUser

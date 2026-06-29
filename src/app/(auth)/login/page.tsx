@@ -80,6 +80,7 @@ function LoginContent() {
           userName: data.first_name ?? undefined,
           userLastName: data.last_name ?? undefined,
           userImage: data.photo_url ?? undefined,
+          telegramUsername: data.username ?? undefined,
         },
       });
     };
