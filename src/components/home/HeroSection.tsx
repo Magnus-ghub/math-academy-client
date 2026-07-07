@@ -8,7 +8,7 @@ const stats = [
   { value: "95%", label: "Muvaffaqiyat", icon: Trophy },
 ];
 
-const badges = ["DTM", "SAT", "Milliy Sertifikat", "Attestatsiya"];
+const badges = ["Milliy Sertifikat", "Attestatsiya", "SAT", "DTM"];
 
 export default function HeroSection() {
   return (
