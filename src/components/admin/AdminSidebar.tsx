@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Users, BookOpen, FolderOpen, CreditCard, MessageSquare, Flag, FileText, ChevronRight, User, BookMarked } from "lucide-react";
+import { Menu, X, LayoutDashboard, Users, BookOpen, FolderOpen, CreditCard, MessageSquare, Flag, FileText, ChevronRight, User, BookMarked, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
@@ -17,6 +17,7 @@ const menuItems = [
   { href: "/admin/book", icon: BookMarked, label: "Kitob" },
   { href: "/admin/comments", icon: MessageSquare, label: "Izohlar" },
   { href: "/admin/reports", icon: Flag, label: "Reportlar" },
+  { href: "/admin/recovery", icon: LifeBuoy, label: "Tiklash so'rovlari" },
   { href: "/admin/profile", icon: User, label: "Profil" },
 ];
 

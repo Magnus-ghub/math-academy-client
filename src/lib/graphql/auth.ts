@@ -70,6 +70,48 @@ export const TELEGRAM_BOT_LOGIN = gql`
   }
 `;
 
+export const CREATE_QR_SESSION = gql`
+  mutation CreateQrSession {
+    createQrSession
+  }
+`;
+
+export const CHECK_QR_SESSION = gql`
+  query CheckQrSession($sessionId: String!) {
+    checkQrSession(sessionId: $sessionId) {
+      status
+      session {
+        accessToken
+        isNewUser
+        user {
+          id
+          userName
+          userLastName
+          userRole
+          userStatus
+          userAuthType
+          telegramId
+          userImage
+        }
+        groups {
+          id
+          groupId
+          groupType
+          groupName
+          expiresAt
+          joinedAt
+        }
+      }
+    }
+  }
+`;
+
+export const ADMIN_GENERATE_LOGIN_LINK = gql`
+  mutation AdminGenerateLoginLink($userId: String!) {
+    adminGenerateLoginLink(userId: $userId)
+  }
+`;
+
 export const GOOGLE_LOGIN = gql`
   mutation GoogleLogin(
     $googleId: String!

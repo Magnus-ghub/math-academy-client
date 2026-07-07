@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Search, Ban, Pencil, ShieldCheck } from "lucide-react";
+import { Search, Ban, Pencil, ShieldCheck, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GET_ALL_USERS, ADMIN_UPDATE_USER } from "@/lib/graphql/user";
+import { ADMIN_GENERATE_LOGIN_LINK } from "@/lib/graphql/auth";
 import { toast } from "sonner";
 import EditUserModal from "@/components/admin/EditUserModal";
 
@@ -49,6 +50,17 @@ export default function AdminUsersPage() {
     },
     onError: () => toast.error("Xatolik yuz berdi"),
   });
+
+  const [adminGenerateLoginLink] = useMutation<{ adminGenerateLoginLink: string }>(
+    ADMIN_GENERATE_LOGIN_LINK,
+    {
+      onCompleted: (data) => {
+        navigator.clipboard.writeText(data.adminGenerateLoginLink);
+        toast.success("Havola nusxalandi — foydalanuvchiga yuboring");
+      },
+      onError: () => toast.error("Havola yaratishda xatolik"),
+    }
+  );
 
   const filtered = users.filter((u) => {
     const matchSearch =
@@ -174,6 +186,15 @@ export default function AdminUsersPage() {
                       >
                         <Pencil className="w-3.5 h-3.5 text-blue-600" />
                       </button>
+                      {user.telegramId && (
+                        <button
+                          onClick={() => adminGenerateLoginLink({ variables: { userId: user.id } })}
+                          className="p-1.5 rounded-lg hover:bg-purple-50 transition-colors"
+                          title="Kirish havolasi yaratish (nusxalanadi)"
+                        >
+                          <Link2 className="w-3.5 h-3.5 text-purple-600" />
+                        </button>
+                      )}
                       {user.userStatus === "BLOCKED" ? (
                         <button
                           onClick={() => adminUpdateUser({ variables: { userId: user.id, input: { userStatus: "ACTIVE" } } })}

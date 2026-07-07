@@ -29,6 +29,7 @@ const pageTitles: Record<string, string> = {
   "/admin/book": "Kitob",
   "/admin/comments": "Izohlar",
   "/admin/reports": "Reportlar",
+  "/admin/recovery": "Tiklash so'rovlari",
   "/admin/profile": "Profil",
 };
 
