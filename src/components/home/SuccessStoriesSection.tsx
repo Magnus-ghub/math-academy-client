@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery } from "@apollo/client/react";
 import { ChevronLeft, ChevronRight, Trophy, Award } from "lucide-react";
 import { GET_SUCCESS_STORIES } from "@/lib/graphql/content";
@@ -22,13 +22,44 @@ interface Story {
 
 export default function SuccessStoriesSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const resumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { data, loading } = useQuery<{ getSuccessStories: Story[] }>(GET_SUCCESS_STORIES);
   const stories: Story[] = data?.getSuccessStories ?? [];
+  const canLoop = stories.length > 2;
+  const renderedStories = canLoop ? [...stories, ...stories] : stories;
+
+  // Uzluksiz avtomatik aylanish (marquee)
+  useEffect(() => {
+    if (!canLoop) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    let frame: number;
+    const step = () => {
+      if (!pausedRef.current) {
+        el.scrollLeft += 0.6;
+        const half = el.scrollWidth / 2;
+        if (el.scrollLeft >= half) el.scrollLeft -= half;
+      }
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [canLoop, stories.length]);
+
+  const pauseThenResume = () => {
+    pausedRef.current = true;
+    if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
+    resumeTimeout.current = setTimeout(() => {
+      pausedRef.current = false;
+    }, 2500);
+  };
 
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
+    pauseThenResume();
     const cardWidth = el.querySelector("div")?.offsetWidth ?? 320;
     el.scrollBy({ left: dir === "right" ? cardWidth + 16 : -(cardWidth + 16), behavior: "smooth" });
   };
@@ -82,14 +113,22 @@ export default function SuccessStoriesSection() {
           <>
             <div
               ref={scrollRef}
+              onMouseEnter={() => (pausedRef.current = true)}
+              onMouseLeave={() => (pausedRef.current = false)}
+              onTouchStart={() => (pausedRef.current = true)}
+              onTouchEnd={pauseThenResume}
               className="flex gap-4 overflow-x-auto pb-4 scroll-smooth"
-              style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
+              style={{
+                scrollSnapType: canLoop ? undefined : "x mandatory",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
             >
-              {stories.map((story) => (
+              {renderedStories.map((story, i) => (
                 <div
-                  key={story.id}
+                  key={`${story.id}-${i}`}
                   className="shrink-0 w-[72vw] sm:w-56 md:w-64 group"
-                  style={{ scrollSnapAlign: "start" }}
+                  style={{ scrollSnapAlign: canLoop ? undefined : "start" }}
                 >
                   {/* A4 certificate image */}
                   <div

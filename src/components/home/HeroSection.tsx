@@ -52,7 +52,7 @@ export default function HeroSection() {
 
             {/* Description */}
             <p className="text-lg text-muted-foreground mb-6 max-w-xl lg:mx-0 mx-auto leading-relaxed">
-              DTM, SAT, Milliy Sertifikat va Attestatsiya uchun real testlar, batafsil tahlil va shaxsiy statistika — hammasi bir joyda.
+              Milliy Sertifikat, Attestatsiya, SAT va DTM uchun real testlar, batafsil tahlil va shaxsiy statistika — hammasi bir joyda.
             </p>
 
             {/* Exam type badges */}

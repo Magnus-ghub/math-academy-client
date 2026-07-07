@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery } from "@apollo/client/react";
 import { CalendarDays, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { GET_EVENTS } from "@/lib/graphql/content";
@@ -67,14 +67,45 @@ function EventCard({ event }: { event: Event }) {
 
 export default function EventsSection() {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+  const resumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data, loading } = useQuery<EventsData>(GET_EVENTS);
   const events: Event[] = data?.getEvents ?? [];
+  const canLoop = events.length > 2;
+  const renderedEvents = canLoop ? [...events, ...events] : events;
 
   if (!loading && events.length === 0) return null;
+
+  // Uzluksiz avtomatik aylanish (marquee)
+  useEffect(() => {
+    if (!canLoop) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    let frame: number;
+    const step = () => {
+      if (!pausedRef.current) {
+        el.scrollLeft += 0.6;
+        const half = el.scrollWidth / 2;
+        if (el.scrollLeft >= half) el.scrollLeft -= half;
+      }
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [canLoop, events.length]);
+
+  const pauseThenResume = () => {
+    pausedRef.current = true;
+    if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
+    resumeTimeout.current = setTimeout(() => {
+      pausedRef.current = false;
+    }, 2500);
+  };
 
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
+    pauseThenResume();
     const card = el.querySelector<HTMLElement>("div[style]");
     const step = (card?.offsetWidth ?? 300) + 20;
     el.scrollBy({ left: dir === "right" ? step : -step, behavior: "smooth" });
@@ -115,11 +146,19 @@ export default function EventsSection() {
           <>
             <div
               ref={scrollRef}
+              onMouseEnter={() => (pausedRef.current = true)}
+              onMouseLeave={() => (pausedRef.current = false)}
+              onTouchStart={() => (pausedRef.current = true)}
+              onTouchEnd={pauseThenResume}
               className="flex gap-4 md:gap-5 overflow-x-auto pb-2"
-              style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
+              style={{
+                scrollSnapType: canLoop ? undefined : "x mandatory",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+              }}
             >
-              {events.map((event) => (
-                <EventCard key={event.id} event={event} />
+              {renderedEvents.map((event, i) => (
+                <EventCard key={`${event.id}-${i}`} event={event} />
               ))}
             </div>
 
@@ -141,7 +180,7 @@ export default function EventsSection() {
             href="https://t.me/QabulAdmin"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-primary border border-border hover:border-primary/40 px-5 py-2.5 rounded-xl transition-colors duration-200"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-[#2AABEE] hover:bg-[#229ED9] px-5 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-all duration-200"
           >
             <MessageCircle className="w-4 h-4" />
             Admin bilan bog'lanish
