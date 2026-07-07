@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { CREATE_TEST, ADD_QUESTION, UPDATE_TEST } from "@/lib/graphql/test";
 import { GET_ALL_GROUPS } from "@/lib/graphql/group";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { countWords, limitWords } from "@/lib/utils";
 import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
+const MAX_DESC_WORDS = 40;
 
 const AI_PROMPT_GENERAL = `Quyidagi testni JSON formatiga o'tkazing. Faqat questions massivini qaytaring.
 
@@ -461,13 +463,18 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Tavsif</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium">Tavsif</label>
+                  <span className="text-xs text-muted-foreground">
+                    {countWords(form.testDesc)}/{MAX_DESC_WORDS} so'z
+                  </span>
+                </div>
                 <textarea
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none"
                   rows={2}
                   placeholder="Test haqida..."
                   value={form.testDesc}
-                  onChange={(e) => setForm({ ...form, testDesc: e.target.value })}
+                  onChange={(e) => setForm({ ...form, testDesc: limitWords(e.target.value, MAX_DESC_WORDS) })}
                 />
               </div>
 

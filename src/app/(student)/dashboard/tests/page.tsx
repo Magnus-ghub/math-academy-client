@@ -320,7 +320,12 @@ export default function StudentTestsPage() {
               </div>
 
               {/* Title */}
-              <h3 className="font-bold mb-3 text-foreground">{test.testTitle}</h3>
+              <h3 className="font-bold mb-1.5 text-foreground">{test.testTitle}</h3>
+
+              {/* Description — bo'sh bo'lsa ham joy band qilib turadi */}
+              <p className="text-xs text-muted-foreground mb-3 line-clamp-2 min-h-8">
+                {test.testDesc}
+              </p>
 
               {/* Meta */}
               <div className="flex items-center gap-4 text-xs text-muted-foreground">

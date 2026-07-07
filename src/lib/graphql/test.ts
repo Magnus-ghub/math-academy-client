@@ -14,6 +14,7 @@ export const GET_PUBLIC_TESTS = gql`
     getPublicTests {
       id
       testTitle
+      testDesc
       testType
       dtmType
       testAccess
@@ -33,6 +34,7 @@ export const GET_TESTS = gql`
     getTests {
       id
       testTitle
+      testDesc
       testType
       dtmType
       testAccess
