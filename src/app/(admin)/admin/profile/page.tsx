@@ -2,10 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Save, CheckCircle, Shield, Camera, Eye, EyeOff, Lock, Mail, KeyRound } from "lucide-react";
+import { Save, CheckCircle, Shield, Camera, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GET_ME, UPDATE_USER } from "@/lib/graphql/user";
-import { CHANGE_PASSWORD } from "@/lib/graphql/auth";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { toast } from "sonner";
 
@@ -25,6 +24,13 @@ function authTypeLabel(type: string) {
   return type;
 }
 
+const TOIFA_LABELS: Record<string, string> = {
+  MUTAXASSIS: "Mutaxassis toifasi",
+  IKKINCHI_TOIFA: "Ikkinchi toifa",
+  BIRINCHI_TOIFA: "Birinchi toifa",
+  OLIY_TOIFA: "Oliy toifa",
+};
+
 export default function AdminProfilePage() {
   const { updateUser, accessToken } = useAuthStore();
   const [saved, setSaved] = useState(false);
@@ -37,11 +43,6 @@ export default function AdminProfilePage() {
     userAddress: "",
     userDesc: "",
   });
-
-  // Parol o'zgartirish holati
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
-  const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
 
   const { data, loading } = useQuery<{ getMe: any }>(GET_ME);
   const user = data?.getMe;
@@ -66,18 +67,6 @@ export default function AdminProfilePage() {
       toast.success("Profil saqlandi!");
     },
     onError: () => toast.error("Xatolik yuz berdi"),
-  });
-
-  const [changePassword, { loading: changingPw }] = useMutation(CHANGE_PASSWORD, {
-    onCompleted: () => {
-      toast.success("Parol muvaffaqiyatli o'zgartirildi!");
-      setPwForm({ current: "", newPw: "", confirm: "" });
-      setShowPasswordSection(false);
-    },
-    onError: (err: any) => {
-      const msg = err.graphQLErrors?.[0]?.message;
-      toast.error(msg ?? "Parolni o'zgartirishda xatolik");
-    },
   });
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,24 +105,6 @@ export default function AdminProfilePage() {
           userAddress: form.userAddress || undefined,
           userDesc: form.userDesc || undefined,
         },
-      },
-    });
-  };
-
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pwForm.newPw.length < 6) {
-      toast.error("Parol kamida 6 ta belgidan iborat bo'lishi kerak");
-      return;
-    }
-    if (pwForm.newPw !== pwForm.confirm) {
-      toast.error("Parollar bir xil emas");
-      return;
-    }
-    changePassword({
-      variables: {
-        newPassword: pwForm.newPw,
-        currentPassword: user?.hasPassword ? pwForm.current : undefined,
       },
     });
   };
@@ -253,6 +224,14 @@ export default function AdminProfilePage() {
           </div>
         )}
 
+        {user?.teacherCategory && (
+          <div className="p-3 bg-purple-50 rounded-xl">
+            <p className="text-xs text-purple-700">
+              🏅 Toifa: <span className="font-bold">{TOIFA_LABELS[user.teacherCategory] ?? user.teacherCategory}</span>
+            </p>
+          </div>
+        )}
+
         <button
           onClick={handleSave}
           disabled={updating}
@@ -265,96 +244,6 @@ export default function AdminProfilePage() {
           )}
         </button>
       </div>
-
-      {/* Password section */}
-      {user?.userEmail && (
-        <div className="bg-background rounded-2xl border border-border p-6">
-          <button
-            onClick={() => setShowPasswordSection(!showPasswordSection)}
-            className="w-full flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium text-sm">
-                {user?.hasPassword ? "Parolni o'zgartirish" : "Parol o'rnatish"}
-              </span>
-            </div>
-            <span className="text-xs text-muted-foreground">
-              {showPasswordSection ? "Yopish ↑" : "Ochish ↓"}
-            </span>
-          </button>
-
-          {showPasswordSection && (
-            <form onSubmit={handleChangePassword} className="mt-4 space-y-3 pt-4 border-t border-border">
-              {user?.hasPassword && (
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">Joriy parol</label>
-                  <div className="relative">
-                    <input
-                      type={showPw.current ? "text" : "password"}
-                      value={pwForm.current}
-                      onChange={(e) => setPwForm({ ...pwForm, current: e.target.value })}
-                      placeholder="Joriy parolingiz"
-                      className="w-full border border-border rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background"
-                      required
-                    />
-                    <button type="button" onClick={() => setShowPw({ ...showPw, current: !showPw.current })} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                      {showPw.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Yangi parol</label>
-                <div className="relative">
-                  <input
-                    type={showPw.newPw ? "text" : "password"}
-                    value={pwForm.newPw}
-                    onChange={(e) => setPwForm({ ...pwForm, newPw: e.target.value })}
-                    placeholder="Kamida 6 ta belgi"
-                    className="w-full border border-border rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background"
-                    required
-                    minLength={6}
-                  />
-                  <button type="button" onClick={() => setShowPw({ ...showPw, newPw: !showPw.newPw })} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    {showPw.newPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">Yangi parolni tasdiqlang</label>
-                <div className="relative">
-                  <input
-                    type={showPw.confirm ? "text" : "password"}
-                    value={pwForm.confirm}
-                    onChange={(e) => setPwForm({ ...pwForm, confirm: e.target.value })}
-                    placeholder="Qayta kiriting"
-                    className="w-full border border-border rounded-xl px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 bg-background"
-                    required
-                  />
-                  <button type="button" onClick={() => setShowPw({ ...showPw, confirm: !showPw.confirm })} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    {showPw.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                {pwForm.confirm && pwForm.newPw !== pwForm.confirm && (
-                  <p className="text-xs text-red-500 mt-1">Parollar bir xil emas</p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={changingPw || pwForm.newPw !== pwForm.confirm || pwForm.newPw.length < 6}
-                className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl font-medium hover:bg-primary/90 disabled:opacity-40 transition-colors"
-              >
-                <Lock className="w-4 h-4" />
-                {changingPw ? "Saqlanmoqda..." : user?.hasPassword ? "Parolni o'zgartirish" : "Parol o'rnatish"}
-              </button>
-            </form>
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -43,6 +43,33 @@ export const TELEGRAM_LOGIN = gql`
   }
 `;
 
+export const TELEGRAM_BOT_LOGIN = gql`
+  mutation TelegramBotLogin($token: String!) {
+    telegramBotLogin(token: $token) {
+      accessToken
+      isNewUser
+      user {
+        id
+        userName
+        userLastName
+        userRole
+        userStatus
+        userAuthType
+        telegramId
+        userImage
+      }
+      groups {
+        id
+        groupId
+        groupType
+        groupName
+        expiresAt
+        joinedAt
+      }
+    }
+  }
+`;
+
 export const GOOGLE_LOGIN = gql`
   mutation GoogleLogin(
     $googleId: String!

@@ -18,6 +18,8 @@ export const GET_ME = gql`
       telegramId
       googleId
       premiumExpiresAt
+      examPrepType
+      teacherCategory
       createdAt
     }
   }
