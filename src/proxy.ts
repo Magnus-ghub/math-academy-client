@@ -50,7 +50,7 @@ export function proxy(req: NextRequest) {
     }
   }
 
-  if (pathname.startsWith("/dashboard") || pathname.startsWith("/exam")) {
+  if (pathname.startsWith("/dashboard") || pathname.startsWith("/exam") || pathname.startsWith("/sat")) {
     if (!isAuth) {
       const loginUrl = new URL("/login", req.url);
       loginUrl.searchParams.set("callbackUrl", pathname);

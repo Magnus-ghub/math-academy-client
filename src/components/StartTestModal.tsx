@@ -81,7 +81,7 @@ export function StartTestModal({ test, onStart, onCancel }: Props) {
       <div className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
 
         {/* Top gradient accent */}
-        <div className={`h-1 w-full bg-gradient-to-r ${colors.glow} opacity-60`} />
+        <div className={`h-1 w-full bg-linear-to-r ${colors.glow} opacity-60`} />
 
         {/* Header */}
         <div className="px-6 pt-5 pb-4 flex items-start justify-between gap-3">

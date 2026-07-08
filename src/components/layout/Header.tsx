@@ -34,7 +34,7 @@ const navLinks = [
   { href: "/", label: "Bosh sahifa" },
   { href: "/", label: "Kurslar", section: "events" },
   { href: "/tests", label: "Testlar" },
-  { href: "/about", label: "Biz Haqimizda" },
+  { href: "/about", label: "Biz haqimizda" },
   { href: "/contact", label: "Aloqa" },
   { href: "/", label: "FAQ", section: "faq" },
 ];

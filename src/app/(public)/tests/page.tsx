@@ -250,7 +250,7 @@ export default function TestsPage() {
       return;
     }
     if (!isAuthenticated) {
-      const dest = `/exam/${test.id}`;
+      const dest = test.testType === "SAT" ? `/sat/${test.id}` : `/exam/${test.id}`;
       router.push(`/login?callbackUrl=${encodeURIComponent(dest)}`);
       return;
     }
@@ -259,7 +259,7 @@ export default function TestsPage() {
 
   const handleConfirmStart = (test: any) => {
     setStartModal(null);
-    router.push(`/exam/${test.id}`);
+    router.push(test.testType === "SAT" ? `/sat/${test.id}` : `/exam/${test.id}`);
   };
 
   const handleMainFilter = (key: string) => {

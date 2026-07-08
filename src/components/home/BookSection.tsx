@@ -72,8 +72,8 @@ export default function BookSection() {
                   <img
                     src={imgSrc(book.contentImage)}
                     alt={book.contentTitle}
-                    className="relative w-110 md:w-105 rounded-2xl shadow-[0_40px_80px_rgba(0,0,0,0.5)] object-cover"
-                    style={{ aspectRatio: "4/4" }}
+                    className="relative w-56 md:w-72 rounded-2xl shadow-[0_40px_80px_rgba(0,0,0,0.5)] object-cover"
+                    style={{ aspectRatio: "3/4" }}
                   />
                 ) : (
                   <div

@@ -567,7 +567,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                   </button>
 
                   {/* DOCX divider */}
-                  <div className="flex items-center gap-3">
+                  {/* <div className="flex items-center gap-3">
                     <div className="flex-1 h-px bg-border" />
                     <span className="text-xs text-muted-foreground">yoki Word fayl</span>
                     <div className="flex-1 h-px bg-border" />
@@ -581,7 +581,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                   >
                     <Upload className="w-4 h-4" />
                     {uploading ? "Yuklanmoqda..." : ".docx fayldan yuklash"}
-                  </button>
+                  </button> */}
                 </div>
               )}
 
@@ -665,7 +665,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
               )}
 
             {/* ── Optional PDF ── */}
-            <div className="border-t border-border pt-4 space-y-2">
+            {/* <div className="border-t border-border pt-4 space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 PDF fayl (ixtiyoriy)
               </p>
@@ -702,7 +702,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                   </button>
                 </>
               )}
-            </div>
+            </div> */}
 
             {/* ── YouTube & AI Analysis ── */}
             <div className="border-t border-border pt-4 space-y-3">
