@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { CheckCircle, XCircle, Clock, ChevronLeft, TriangleAlert, Award, Play, Bot, X } from "lucide-react";
+import { CheckCircle, XCircle, Clock, ChevronLeft, TriangleAlert, Award, Bot, X } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { GET_RESULT } from "@/lib/graphql/result";
@@ -12,6 +12,14 @@ import { MathText } from "@/components/MathText";
 
 // ─── YouTube helpers ──────────────────────────────────────────────────────────
 
+function YoutubeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+    </svg>
+  );
+}
+
 function extractYoutubeId(url: string): string | null {
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
   return m ? m[1] : null;
@@ -19,13 +27,51 @@ function extractYoutubeId(url: string): string | null {
 
 function YoutubeModal({ url, onClose }: { url: string; onClose: () => void }) {
   const vid = extractYoutubeId(url);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const dragState = useRef<{
+    startX: number;
+    startY: number;
+    origX: number;
+    origY: number;
+    rect: DOMRect;
+  } | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    const rect = modalRef.current!.getBoundingClientRect();
+    dragState.current = { startX: e.clientX, startY: e.clientY, origX: pos.x, origY: pos.y, rect };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const ds = dragState.current;
+    if (!ds) return;
+    const dx = Math.min(Math.max(e.clientX - ds.startX, -ds.rect.left), window.innerWidth - ds.rect.right);
+    const dy = Math.min(Math.max(e.clientY - ds.startY, -ds.rect.top), window.innerHeight - ds.rect.bottom);
+    setPos({ x: ds.origX + dx, y: ds.origY + dy });
+  };
+
+  const handlePointerUp = () => {
+    dragState.current = null;
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-black rounded-2xl overflow-hidden w-full max-w-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-900">
+      <div
+        ref={modalRef}
+        className="bg-black rounded-2xl overflow-hidden w-full max-w-2xl shadow-2xl"
+        style={{ transform: `translate(${pos.x}px, ${pos.y}px)` }}
+      >
+        <div
+          className="flex items-center justify-between px-4 py-3 bg-gray-900 cursor-move select-none touch-none"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+        >
           <span className="text-white text-sm font-medium">YouTube Tahlil</span>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
             <X className="w-4 h-4 text-white" />
@@ -178,7 +224,7 @@ export default function ResultDetailPage() {
   const hasTestYoutube  = !!test?.testYoutubeUrl;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="font-cmu-serif max-w-2xl mx-auto">
       {/* Back */}
       <Link href="/dashboard/results">
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
@@ -295,13 +341,13 @@ export default function ResultDetailPage() {
                 onClick={() => setYoutubeUrl(test.testYoutubeUrl)}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
               >
-                <Play className="w-4 h-4" />
+                <YoutubeIcon className="w-4 h-4" />
                 YouTube Tahlil
               </button>
             )}
           </div>
           {testAnalysisOpen && test?.testAnalysis && (
-            <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed">
+            <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed wrap-break-word overflow-x-auto">
               <MathText text={test.testAnalysis} />
             </div>
           )}
@@ -417,7 +463,7 @@ export default function ResultDetailPage() {
                               onClick={() => setYoutubeUrl(question.youtubeUrl)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
                             >
-                              <Play className="w-3 h-3" />
+                              <YoutubeIcon className="w-3 h-3" />
                               YouTube
                             </button>
                           )}
@@ -425,7 +471,7 @@ export default function ResultDetailPage() {
                       )}
 
                       {qAnalysisOpen && question?.analysis && (
-                        <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs leading-relaxed">
+                        <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs leading-relaxed wrap-break-word overflow-x-auto">
                           <MathText text={question.analysis} />
                         </div>
                       )}

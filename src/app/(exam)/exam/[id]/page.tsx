@@ -15,6 +15,7 @@ import {
   Calculator,
 } from "lucide-react";
 import { ReportQuestionModal } from "@/components/ReportQuestionModal";
+import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { FloatingCalculator } from "@/components/FloatingCalculator";
 import { useRouter, useParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
@@ -41,6 +42,7 @@ export default function ExamPage() {
     questionId: string;
     number: number;
   } | null>(null);
+  const [showRetakeRequest, setShowRetakeRequest] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const examActiveRef = useRef(false);
@@ -140,6 +142,22 @@ export default function ExamPage() {
     };
   }, []);
 
+  // Klaviaturaning chap/o'ng strelkalari — Oldingi/Keyingi tugmalariga bog'langan
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!examActiveRef.current || showConfirm || showGrid || showCalc || reportTarget) return;
+
+      if (e.key === "ArrowLeft") {
+        setCurrentIndex((i) => Math.max(0, i - 1));
+      } else if (e.key === "ArrowRight" && !isLast) {
+        setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showConfirm, showGrid, showCalc, reportTarget, isLast, totalQuestions]);
+
   useEffect(() => {
     if (test?.duration && timeLeft === 0) {
       setTimeLeft(test.duration * 60);
@@ -231,6 +249,15 @@ export default function ExamPage() {
             Natijani ko'rish →
           </button>
         </div>
+        <button
+          onClick={() => setShowRetakeRequest(true)}
+          className="text-sm text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors"
+        >
+          Xato bilan topshirib qo'ydingizmi? Qayta topshirishni so'rang
+        </button>
+        {showRetakeRequest && (
+          <RequestRetakeModal testId={id} onClose={() => setShowRetakeRequest(false)} />
+        )}
       </div>
     );
   }
@@ -443,7 +470,7 @@ export default function ExamPage() {
                 <button
                   onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
                   disabled={isFirst}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ChevronLeft className="w-4 h-4" />
                   <span className="hidden sm:inline">Oldingi</span>
@@ -528,10 +555,10 @@ export default function ExamPage() {
                                 ? "ring-2 ring-primary scale-105"
                                 : ""
                             } ${
-                              answers[sq.id] !== undefined
-                                ? "bg-primary text-white"
-                                : flagged.has(sq.id)
-                                  ? "bg-amber-100 text-amber-700"
+                              flagged.has(sq.id)
+                                ? "bg-amber-100 text-amber-700"
+                                : answers[sq.id] !== undefined
+                                  ? "bg-primary text-white"
                                   : "bg-muted text-muted-foreground hover:bg-muted/80"
                             }`}
                           >
@@ -552,10 +579,10 @@ export default function ExamPage() {
                     className={`aspect-square rounded-lg text-xs font-bold transition-all hover:scale-105 ring-offset-1 ${
                       i === currentIndex ? "ring-2 ring-primary scale-105" : ""
                     } ${
-                      answers[sq.id] !== undefined
-                        ? "bg-primary text-white"
-                        : flagged.has(sq.id)
-                          ? "bg-amber-100 text-amber-700"
+                      flagged.has(sq.id)
+                        ? "bg-amber-100 text-amber-700"
+                        : answers[sq.id] !== undefined
+                          ? "bg-primary text-white"
                           : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
@@ -664,10 +691,10 @@ export default function ExamPage() {
                                   ? "ring-2 ring-primary scale-105"
                                   : ""
                               } ${
-                                answers[sq.id] !== undefined
-                                  ? "bg-primary text-white"
-                                  : flagged.has(sq.id)
-                                    ? "bg-amber-100 text-amber-700"
+                                flagged.has(sq.id)
+                                  ? "bg-amber-100 text-amber-700"
+                                  : answers[sq.id] !== undefined
+                                    ? "bg-primary text-white"
                                     : "bg-muted text-muted-foreground"
                               }`}
                             >
@@ -693,10 +720,10 @@ export default function ExamPage() {
                           ? "ring-2 ring-primary scale-105"
                           : ""
                       } ${
-                        answers[sq.id] !== undefined
-                          ? "bg-primary text-white"
-                          : flagged.has(sq.id)
-                            ? "bg-amber-100 text-amber-700"
+                        flagged.has(sq.id)
+                          ? "bg-amber-100 text-amber-700"
+                          : answers[sq.id] !== undefined
+                            ? "bg-primary text-white"
                             : "bg-muted text-muted-foreground"
                       }`}
                     >

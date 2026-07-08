@@ -8,8 +8,21 @@ interface MathTextProps {
   className?: string;
 }
 
-// $...$ yoki $$...$$ ichida bo'lmagan \pi, \sqrt{x}, \frac{a}{b} kabi
-// LaTeX buyruqlarini avtomatik $...$ bilan o'raydi, KaTeX o'qiy olsin.
+// AI tahlil matnlarida paragraf ajratish uchun asl "\n" (backslash+n, ikkita
+// belgi) qatorlar orasiga tushib qoladi — masalan "...natija:\nBerilgan...".
+// Bu haqiqiy qator ko'chirish emas, shuning uchun pastdagi LaTeX-buyruq
+// regexi uni "\nBerilgan" kabi noto'g'ri buyruq deb o'qib, butun matnni
+// buzadi. Faqat katta harf, "$" yoki qator oxiri bilan davom etsa (ya'ni
+// paragraf chegarasi bo'lsa), haqiqiy qator ko'chirishga almashtiramiz —
+// \nabla kabi haqiqiy LaTeX buyruqlar (kichik harf bilan davom etadi)
+// tegilmay qoladi.
+function normalizeLiteralNewlines(text: string): string {
+  return text.replace(/\\n(?=[A-Z]|\$|$)/g, "\n");
+}
+
+// $...$ yoki $$...$$ ichida bo'lmagan \pi, \sqrt{x}, \frac{a}{b} kabi LaTeX
+// buyruqlarini, shuningdek x^2, b^2 kabi $ belgisiz darajalarni (AI tahlil
+// matnlarida ko'p uchraydi) avtomatik $...$ bilan o'raydi, KaTeX o'qiy olsin.
 function preprocessText(text: string): string {
   const DELIM = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
   const parts = text.split(DELIM);
@@ -17,7 +30,7 @@ function preprocessText(text: string): string {
     .map((part, i) => {
       if (i % 2 === 1) return part; // allaqachon math delimiters ichida
       return part.replace(
-        /\\[a-zA-Z]+(?:\{[^}]*\}(?:\{[^}]*\})?)?/g,
+        /\\[a-zA-Z]+(?:\{[^}]*\}(?:\{[^}]*\})?)?|[A-Za-z0-9)\]]\^\{?-?[A-Za-z0-9]+\}?/g,
         (match) => `$${match}$`
       );
     })
@@ -30,7 +43,7 @@ export function MathText({ text, className }: MathTextProps) {
   const html = useMemo(() => {
     if (!text) return "";
 
-    const processed = preprocessText(text);
+    const processed = preprocessText(normalizeLiteralNewlines(text));
 
     // Avval block formulalarni ($$...$$) ajratamiz
     const blockSplit = processed.split(/\$\$(.+?)\$\$/g);
@@ -62,7 +75,11 @@ export function MathText({ text, className }: MathTextProps) {
                 if (/^<[^>]*>$/.test(chunk)) {
                   return SAFE.test(chunk) ? chunk : chunk.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 }
-                return chunk.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                return chunk
+                  .replace(/&/g, "&amp;")
+                  .replace(/</g, "&lt;")
+                  .replace(/>/g, "&gt;")
+                  .replace(/\n/g, "<br/>");
               }).join("");
             }
             try {

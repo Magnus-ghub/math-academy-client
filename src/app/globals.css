@@ -2,6 +2,39 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@font-face {
+  font-family: "Computer Modern Serif";
+  font-style: normal;
+  font-weight: normal;
+  font-display: swap;
+  src: url("/fonts/cmu-serif/CMUSerif-Roman.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Computer Modern Serif";
+  font-style: normal;
+  font-weight: bold;
+  font-display: swap;
+  src: url("/fonts/cmu-serif/CMUSerif-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Computer Modern Serif";
+  font-style: italic;
+  font-weight: normal;
+  font-display: swap;
+  src: url("/fonts/cmu-serif/CMUSerif-Italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Computer Modern Serif";
+  font-style: italic;
+  font-weight: bold;
+  font-display: swap;
+  src: url("/fonts/cmu-serif/CMUSerif-BoldItalic.woff2") format("woff2");
+}
+
+.font-cmu-serif {
+  font-family: "Computer Modern Serif", "CMU Serif", Georgia, "Times New Roman", serif;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -127,5 +160,14 @@
   }
   .math-text th {
     @apply bg-muted font-semibold;
+  }
+
+  /* Uzun KaTeX formulalar mobil ekranda konteynerdan chiqib ketmasligi uchun —
+     formula o'zi siqilmaydi, shuning uchun kerak bo'lsa ichida gorizontal scroll beramiz */
+  .math-text .katex-display {
+    @apply overflow-x-auto overflow-y-hidden max-w-full;
+  }
+  .math-text .katex {
+    @apply overflow-x-auto max-w-full;
   }
 }

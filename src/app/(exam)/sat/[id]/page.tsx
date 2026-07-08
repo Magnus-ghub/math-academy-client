@@ -19,9 +19,10 @@ import {
   Minimize2,
 } from "lucide-react";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
-import { SUBMIT_TEST } from "@/lib/graphql/result";
+import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
 import { MathText } from "@/components/MathText";
 import { DesmosCalculator } from "@/components/DesmosCalculator";
+import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
 
@@ -291,6 +292,16 @@ export default function SatExamPage() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);    // confirm final submit
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [showRetakeRequest, setShowRetakeRequest] = useState(false);
+
+  const { data: attemptData, loading: attemptLoading } = useQuery<{ checkMyAttempt: any }>(
+    CHECK_MY_ATTEMPT,
+    {
+      variables: { testId: id },
+      skip: !id || !isAuthenticated,
+      fetchPolicy: "network-only",
+    },
+  );
 
   const { data: testData, loading: testLoading } = useQuery<{ getTest: any }>(GET_TEST, {
     variables: { testId: id },
@@ -362,6 +373,33 @@ export default function SatExamPage() {
     return () => clearInterval(timerRef.current!);
   }, [module, isFinished, showModuleBreak]);
 
+  // Klaviaturaning chap/o'ng strelkalari — Back/Next tugmalariga bog'langan
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        isFinished ||
+        showModuleBreak ||
+        showCalc ||
+        showRef ||
+        showMore ||
+        showGrid ||
+        showModuleFinish ||
+        showSubmitModal
+      ) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft") {
+        setIdx((i) => Math.max(0, i - 1));
+      } else if (e.key === "ArrowRight" && idx !== MODULE_QUESTIONS - 1) {
+        setIdx((i) => Math.min(MODULE_QUESTIONS - 1, i + 1));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isFinished, showModuleBreak, showCalc, showRef, showMore, showGrid, showModuleFinish, showSubmitModal, idx]);
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, "0");
     const sec = (s % 60).toString().padStart(2, "0");
@@ -431,11 +469,50 @@ export default function SatExamPage() {
   };
 
   // ── LOADING ──
-  if (testLoading || questionsLoading) {
+  if (testLoading || questionsLoading || attemptLoading) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-[#f8f9fa] gap-4">
         <div className="w-10 h-10 border-4 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
         <p className="text-[#1e3a5f] font-medium text-sm">Loading your test...</p>
+      </div>
+    );
+  }
+
+  const existingAttempt = attemptData?.checkMyAttempt;
+
+  if (existingAttempt) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-[#f8f9fa] text-center gap-4 px-4">
+        <div className="w-20 h-20 rounded-full bg-[#1e3a5f]/10 flex items-center justify-center">
+          <CheckCircle className="w-10 h-10 text-[#1e3a5f]" />
+        </div>
+        <h1 className="text-2xl font-bold text-[#1e3a5f]">Bu testni topshirgansiz</h1>
+        <p className="text-gray-500 max-w-sm">
+          Har bir test uchun faqat <strong>1 ta urinish</strong> beriladi. Natijangizni ko'rishingiz mumkin.
+        </p>
+        <div className="flex gap-3 mt-2">
+          <button
+            onClick={() => router.back()}
+            className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors"
+          >
+            ← Orqaga
+          </button>
+          <button
+            onClick={() => router.push(`/dashboard/results/${existingAttempt.id}`)}
+            className="px-5 py-2.5 rounded-xl bg-[#1e3a5f] text-white text-sm font-medium hover:bg-[#162d4a] transition-colors"
+          >
+            Natijani ko'rish →
+          </button>
+        </div>
+        <button
+          onClick={() => setShowRetakeRequest(true)}
+          className="text-sm text-gray-500 hover:text-[#1e3a5f] underline underline-offset-2 transition-colors"
+        >
+          Xato bilan topshirib qo'ydingizmi? Qayta topshirishni so'rang
+        </button>
+        {showRetakeRequest && (
+          <RequestRetakeModal testId={id} onClose={() => setShowRetakeRequest(false)} />
+        )}
       </div>
     );
   }
@@ -712,7 +789,7 @@ export default function SatExamPage() {
           <button
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
             disabled={idx === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1e3a5f] text-white text-sm font-semibold hover:bg-[#162d4a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             Back

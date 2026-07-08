@@ -31,6 +31,7 @@ const reasonLabels: Record<string, string> = {
   WRONG_QUESTION: "Noto'g'ri savol",
   TYPO: "Imlo xatosi",
   UNCLEAR: "Tushunarsiz",
+  RETAKE_REQUEST: "Qayta topshirish so'rovi",
   OTHER: "Boshqa",
 };
 
@@ -141,6 +142,11 @@ export default function AdminReportsPage() {
                   {report.reportText && (
                     <p className="text-sm text-muted-foreground mb-2">
                       {report.reportText}
+                    </p>
+                  )}
+                  {report.reportReason === "RETAKE_REQUEST" && (
+                    <p className="text-xs text-amber-600 mb-2">
+                      "Hal qilindi" bosilsa, talabaning avvalgi urinishi o'chiriladi va u testni darhol qayta topshira oladi.
                     </p>
                   )}
                   <div className="flex flex-wrap gap-2 mt-1">

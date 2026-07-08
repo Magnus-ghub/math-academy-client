@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen, FileText, Upload } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen, FileText, Upload, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/lib/graphql/test";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { countWords, limitWords } from "@/lib/utils";
+import { JsonReplaceQuestionsModal } from "@/components/admin/JsonReplaceQuestionsModal";
 import { toast } from "sonner";
 
 const MAX_DESC_WORDS = 40;
@@ -73,6 +74,16 @@ interface AddQuestionData {
   };
 }
 
+function dataUrlToFile(dataUrl: string, filename = "pasted-image.png"): File | null {
+  const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!match) return null;
+  const [, mime, base64] = match;
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new File([bytes], filename, { type: mime });
+}
+
 function makeRow(q?: any): QuestionRow {
   return {
     uid: q?.id ?? `new-${Date.now()}-${Math.random()}`,
@@ -98,13 +109,14 @@ export default function EditTestPage() {
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "questions">("questions");
+  const [showJsonReplace, setShowJsonReplace] = useState(false);
 
   const { data: testData, loading: testLoading } = useQuery<TestData, { testId: string }>(GET_TEST, {
     variables: { testId },
     skip: !testId,
   });
 
-  const { data: questionsData, loading: questionsLoading } = useQuery<QuestionsData, { testId: string }>(GET_QUESTIONS, {
+  const { data: questionsData, loading: questionsLoading, refetch: refetchQuestions } = useQuery<QuestionsData, { testId: string }>(GET_QUESTIONS, {
     variables: { testId },
     skip: !testId,
     fetchPolicy: "network-only",
@@ -535,6 +547,16 @@ export default function EditTestPage() {
         </div>
       ) : (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              onClick={() => setShowJsonReplace(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              JSON orqali qayta yaratish
+            </button>
+          </div>
+
           {questions.map((q, i) => (
             <EditQuestionCard
               key={q.uid}
@@ -557,6 +579,16 @@ export default function EditTestPage() {
           </button>
         </div>
       )}
+
+      {showJsonReplace && testId && (
+        <JsonReplaceQuestionsModal
+          testId={testId}
+          testType={testInfo.testType}
+          currentQuestionCount={questions.length}
+          onClose={() => setShowJsonReplace(false)}
+          onSuccess={() => refetchQuestions()}
+        />
+      )}
     </div>
   );
 }
@@ -573,13 +605,48 @@ function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImag
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handlePaste = (e: React.ClipboardEvent) => {
-    const imageItem = Array.from(e.clipboardData?.items ?? []).find(
-      (item) => item.type.startsWith("image/")
+    const items = Array.from(e.clipboardData?.items ?? []);
+
+    // Oddiy holat: skrinshot, brauzer yoki Paint'dan nusxalangan rasm
+    // to'g'ridan-to'g'ri "image/*" clipboard item sifatida keladi.
+    const imageItem = items.find((item) => item.type.startsWith("image/"));
+    if (imageItem) {
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (file) onImagePick(file);
+      return;
+    }
+
+    // Ba'zi brauzerlarda rasm faqat `files` ro'yxatida keladi (items emas)
+    const fileFromList = Array.from(e.clipboardData?.files ?? []).find((f) =>
+      f.type.startsWith("image/")
     );
-    if (!imageItem) return;
-    e.preventDefault();
-    const file = imageItem.getAsFile();
-    if (file) onImagePick(file);
+    if (fileFromList) {
+      e.preventDefault();
+      onImagePick(fileFromList);
+      return;
+    }
+
+    // MS Word rasmni odatda "image/*" sifatida emas, balki HTML fragmentida
+    // <img> tegi orqali (ba'zan base64, ko'pincha esa faqat mahalliy
+    // "file://" yo'l) taqdim qiladi. Brauzer xavfsizlik sababli "file://"
+    // manzilidan o'qiy olmaydi, shuning uchun faqat base64 holatini tiklab
+    // olamiz, aks holda foydalanuvchiga sababini tushuntiramiz.
+    const htmlItem = items.find((item) => item.type === "text/html");
+    if (htmlItem) {
+      e.preventDefault();
+      htmlItem.getAsString((html) => {
+        const match = html.match(/<img[^>]+src=["'](data:image\/[^"']+)["']/i);
+        const file = match ? dataUrlToFile(match[1]) : null;
+        if (file) {
+          onImagePick(file);
+        } else {
+          toast.error(
+            "Word'dan nusxalangan rasmni to'g'ridan-to'g'ri joylashtirib bo'lmadi. Avval rasmni kompyuteringizga saqlang va \"Fayl tanlash\" orqali yuklang."
+          );
+        }
+      });
+    }
   };
 
   return (

@@ -15,5 +15,6 @@ export enum ReportReason {
   WRONG_QUESTION = "WRONG_QUESTION",
   TYPO = "TYPO",
   UNCLEAR = "UNCLEAR",
+  RETAKE_REQUEST = "RETAKE_REQUEST",
   OTHER = "OTHER",
 }
