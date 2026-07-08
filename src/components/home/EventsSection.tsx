@@ -74,8 +74,6 @@ export default function EventsSection() {
   const canLoop = events.length > 2;
   const renderedEvents = canLoop ? [...events, ...events] : events;
 
-  if (!loading && events.length === 0) return null;
-
   // Uzluksiz avtomatik aylanish (marquee)
   useEffect(() => {
     if (!canLoop) return;
@@ -93,6 +91,8 @@ export default function EventsSection() {
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
   }, [canLoop, events.length]);
+
+  if (!loading && events.length === 0) return null;
 
   const pauseThenResume = () => {
     pausedRef.current = true;
