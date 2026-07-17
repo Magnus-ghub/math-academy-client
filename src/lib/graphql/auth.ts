@@ -199,3 +199,29 @@ export const CHANGE_PASSWORD = gql`
     changePassword(newPassword: $newPassword, currentPassword: $currentPassword)
   }
 `;
+
+export const REFRESH_MY_GROUPS = gql`
+  mutation RefreshMyGroups {
+    refreshMyGroups {
+      accessToken
+      user {
+        id
+        userName
+        userLastName
+        userRole
+        userStatus
+        userAuthType
+        telegramId
+        userImage
+      }
+      groups {
+        id
+        groupId
+        groupType
+        groupName
+        expiresAt
+        joinedAt
+      }
+    }
+  }
+`;

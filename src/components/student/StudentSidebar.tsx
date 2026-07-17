@@ -84,7 +84,7 @@ export default function StudentSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 min-h-screen bg-background border-r border-border flex-col">
+      <aside className="hidden md:flex w-64 h-screen shrink-0 bg-background border-r border-border flex-col overflow-y-auto">
         <SidebarContent />
       </aside>
 

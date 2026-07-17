@@ -61,7 +61,7 @@ export default function TestTypesSection() {
           <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">
             Test turlari
           </h2>
-          <p className="text-muted-foreground text-sm md:text-lg max-w-2xl mx-auto hidden sm:block">
+          <p className="text-muted-foreground text-sm md:text-lg max-w-3xl mx-auto hidden sm:block whitespace-nowrap">
             Qaysi imtihonga tayyorlanayotgan bo'lsangiz — bizda siz uchun maxsus testlar bor
           </p>
         </div>

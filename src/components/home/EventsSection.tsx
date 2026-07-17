@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { CalendarDays, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { GET_EVENTS } from "@/lib/graphql/content";
+import { cn } from "@/lib/utils";
 
 interface Event {
   id: string;
@@ -23,17 +24,23 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "ht
 const imgSrc = (path?: string | null) =>
   !path ? "" : path.startsWith("http") ? path : `${API_BASE}${path}`;
 
-function EventCard({ event }: { event: Event }) {
+const DURATION = 3000;
+const TICK = 16;
+
+function EventCard({ event, active }: { event: Event; active: boolean }) {
   return (
     <div
-      className="shrink-0 w-[72vw] sm:w-72 md:w-80 rounded-3xl overflow-hidden relative group shadow-md hover:shadow-xl transition-shadow duration-500"
-      style={{ aspectRatio: "3/4", scrollSnapAlign: "start" }}
+      className={cn(
+        "w-full rounded-3xl overflow-hidden relative shadow-md",
+        active && "shadow-xl"
+      )}
+      style={{ aspectRatio: "3/4" }}
     >
       {event.contentImage ? (
         <img
           src={imgSrc(event.contentImage)}
           alt={event.contentTitle}
-          className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700"
+          className="w-full h-full object-cover"
         />
       ) : (
         <div className="w-full h-full bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center">
@@ -49,11 +56,12 @@ function EventCard({ event }: { event: Event }) {
             {event.contentTitle}
           </h3>
         )}
-        {event.contentVideo && (
+        {active && event.contentVideo && (
           <a
             href={event.contentVideo}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             className="self-start inline-flex items-center gap-1.5 bg-white text-primary text-xs font-semibold px-3.5 py-2 rounded-xl hover:bg-primary hover:text-white transition-colors duration-200 shadow"
           >
             <MessageCircle className="w-3.5 h-3.5" />
@@ -65,51 +73,69 @@ function EventCard({ event }: { event: Event }) {
   );
 }
 
+function SideCard({
+  event,
+  onClick,
+  sizeClass,
+  dimClass,
+}: {
+  event: Event;
+  onClick: () => void;
+  sizeClass: string;
+  dimClass: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn("group relative shrink-0", sizeClass)}
+      aria-label={event.contentTitle || "Boshqa e'lon"}
+    >
+      <EventCard event={event} active={false} />
+      <div className={cn("absolute inset-0 rounded-3xl pointer-events-none transition-colors duration-300", dimClass)} />
+    </button>
+  );
+}
+
 export default function EventsSection() {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const pausedRef = useRef(false);
-  const resumeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { data, loading } = useQuery<EventsData>(GET_EVENTS);
   const events: Event[] = data?.getEvents ?? [];
-  const canLoop = events.length > 2;
-  const renderedEvents = canLoop ? [...events, ...events] : events;
+  const hasMultiple = events.length > 1;
 
-  // Uzluksiz avtomatik aylanish (marquee)
+  const [active, setActive] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  const goTo = (index: number) => {
+    const len = events.length;
+    if (len === 0) return;
+    setActive(((index % len) + len) % len);
+    setProgress(0);
+  };
+
+  // Progress bar avtomatik to'lib, DURATION tugaganda keyingi cardga o'tadi
   useEffect(() => {
-    if (!canLoop) return;
-    const el = scrollRef.current;
-    if (!el) return;
-    let frame: number;
-    const step = () => {
-      if (!pausedRef.current) {
-        el.scrollLeft += 0.6;
-        const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half) el.scrollLeft -= half;
-      }
-      frame = requestAnimationFrame(step);
-    };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
-  }, [canLoop, events.length]);
+    if (paused || !hasMultiple) return;
+    const id = setInterval(() => {
+      setProgress((p) => {
+        const next = p + (TICK / DURATION) * 100;
+        if (next >= 100) {
+          setActive((a) => (a + 1) % events.length);
+          return 0;
+        }
+        return next;
+      });
+    }, TICK);
+    return () => clearInterval(id);
+  }, [paused, hasMultiple, events.length]);
 
   if (!loading && events.length === 0) return null;
 
-  const pauseThenResume = () => {
-    pausedRef.current = true;
-    if (resumeTimeout.current) clearTimeout(resumeTimeout.current);
-    resumeTimeout.current = setTimeout(() => {
-      pausedRef.current = false;
-    }, 2500);
-  };
-
-  const scroll = (dir: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    pauseThenResume();
-    const card = el.querySelector<HTMLElement>("div[style]");
-    const step = (card?.offsetWidth ?? 300) + 20;
-    el.scrollBy({ left: dir === "right" ? step : -step, behavior: "smooth" });
-  };
+  const leftIndex = (active - 1 + events.length) % events.length;
+  const rightIndex = (active + 1) % events.length;
+  const farLeftIndex = (active - 2 + events.length) % events.length;
+  const farRightIndex = (active + 2) % events.length;
+  const showNear = events.length >= 3;
+  const showFar = events.length >= 5;
 
   return (
     <section id="events" className="py-12 md:py-20">
@@ -123,55 +149,106 @@ export default function EventsSection() {
             Akademiyaning so'nggi kurs e'lonlari va yangiliklari
           </p>
 
-          {events.length > 0 && (
+          {hasMultiple && (
             <div className="hidden sm:flex gap-2 absolute right-0 top-0">
-              <button onClick={() => scroll("left")} className="w-10 h-10 rounded-full border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors shadow-sm">
+              <button onClick={() => goTo(active - 1)} className="w-10 h-10 rounded-full border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors shadow-sm" aria-label="Oldingi">
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button onClick={() => scroll("right")} className="w-10 h-10 rounded-full border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors shadow-sm">
+              <button onClick={() => goTo(active + 1)} className="w-10 h-10 rounded-full border border-border bg-background hover:bg-muted flex items-center justify-center transition-colors shadow-sm" aria-label="Keyingi">
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           )}
         </div>
 
-        {/* Cards */}
+        {/* Carousel */}
         {loading ? (
-          <div className="flex gap-5 overflow-hidden">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="shrink-0 w-72 md:w-80 rounded-3xl bg-muted animate-pulse" style={{ aspectRatio: "3/4" }} />
-            ))}
+          <div className="flex justify-center">
+            <div className="w-[72vw] sm:w-64 md:w-80 rounded-3xl bg-muted animate-pulse" style={{ aspectRatio: "3/4" }} />
           </div>
         ) : (
-          <>
-            <div
-              ref={scrollRef}
-              onMouseEnter={() => (pausedRef.current = true)}
-              onMouseLeave={() => (pausedRef.current = false)}
-              onTouchStart={() => (pausedRef.current = true)}
-              onTouchEnd={pauseThenResume}
-              className="flex gap-4 md:gap-5 overflow-x-auto pb-2"
-              style={{
-                scrollSnapType: canLoop ? undefined : "x mandatory",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-              }}
-            >
-              {renderedEvents.map((event, i) => (
-                <EventCard key={`${event.id}-${i}`} event={event} />
-              ))}
+          <div
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onTouchStart={() => setPaused(true)}
+            onTouchEnd={() => setPaused(false)}
+          >
+            <div className="flex items-center justify-center gap-2 sm:gap-3 lg:gap-4">
+              {showFar && (
+                <SideCard
+                  event={events[farLeftIndex]}
+                  onClick={() => goTo(farLeftIndex)}
+                  sizeClass="hidden lg:block w-24 xl:w-50"
+                  dimClass="bg-black/55 group-hover:bg-black/35"
+                />
+              )}
+
+              {showNear && (
+                <SideCard
+                  event={events[leftIndex]}
+                  onClick={() => goTo(leftIndex)}
+                  sizeClass="hidden sm:block w-40 md:w-64"
+                  dimClass="bg-black/40 group-hover:bg-black/20"
+                />
+              )}
+
+              <div className="shrink-0 z-10 w-[72vw] sm:w-64 md:w-72 xl:w-80">
+                <EventCard event={events[active]} active />
+                {hasMultiple && (
+                  <div className="mt-3 w-full h-1 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full bg-primary rounded-full" style={{ width: `${progress}%` }} />
+                  </div>
+                )}
+              </div>
+
+              {showNear && (
+                <SideCard
+                  event={events[rightIndex]}
+                  onClick={() => goTo(rightIndex)}
+                  sizeClass="hidden sm:block w-40 md:w-64"
+                  dimClass="bg-black/40 group-hover:bg-black/20"
+                />
+              )}
+
+              {showFar && (
+                <SideCard
+                  event={events[farRightIndex]}
+                  onClick={() => goTo(farRightIndex)}
+                  sizeClass="hidden lg:block w-24 xl:w-50"
+                  dimClass="bg-black/55 group-hover:bg-black/35"
+                />
+              )}
             </div>
 
-            {/* Mobile arrows */}
-            <div className="flex sm:hidden justify-center gap-3 mt-4">
-              <button onClick={() => scroll("left")} className="w-10 h-10 rounded-full border border-border bg-background flex items-center justify-center">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button onClick={() => scroll("right")} className="w-10 h-10 rounded-full border border-border bg-background flex items-center justify-center">
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </>
+            {/* Dots */}
+            {hasMultiple && (
+              <div className="flex justify-center gap-2 mt-6">
+                {events.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    className={cn(
+                      "h-2 rounded-full transition-all duration-300",
+                      i === active ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                    )}
+                    aria-label={`${i + 1}-slayd`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Mobile prev/next */}
+            {hasMultiple && (
+              <div className="flex sm:hidden justify-center gap-3 mt-4">
+                <button onClick={() => goTo(active - 1)} className="w-10 h-10 rounded-full border border-border bg-background flex items-center justify-center">
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button onClick={() => goTo(active + 1)} className="w-10 h-10 rounded-full border border-border bg-background flex items-center justify-center">
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Footer CTA */}

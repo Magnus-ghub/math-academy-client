@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
-import { useQuery } from "@apollo/client/react";
-import { Users, Calendar, BookOpen, FlaskConical } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQuery, useMutation } from "@apollo/client/react";
+import { Users, Calendar, BookOpen, FlaskConical, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useAuthStore, UserGroup } from "@/lib/store/auth.store";
 import { GET_MY_GROUPS } from "@/lib/graphql/group";
+import { REFRESH_MY_GROUPS } from "@/lib/graphql/auth";
 
 const groupTypeLabels: Record<string, string> = {
   DTM: "DTM",
@@ -23,6 +25,7 @@ const groupTypeColors: Record<string, string> = {
 
 export default function GroupsPage() {
   const { groups: storeGroups, setAuth, user, accessToken } = useAuthStore();
+  const [refreshing, setRefreshing] = useState(false);
 
   const { data, loading } = useQuery<{ getMyGroups: UserGroup[] }>(GET_MY_GROUPS, {
     fetchPolicy: "network-only",
@@ -34,6 +37,24 @@ export default function GroupsPage() {
     }
   }, [data]);
 
+  const [refreshMyGroups] = useMutation(REFRESH_MY_GROUPS, {
+    onCompleted: (res: any) => {
+      const { user: freshUser, accessToken: freshToken, groups: freshGroups } = res.refreshMyGroups;
+      setAuth(freshUser, freshToken, freshGroups);
+      setRefreshing(false);
+      toast.success("Guruhlar yangilandi!");
+    },
+    onError: (err) => {
+      setRefreshing(false);
+      toast.error(err.message || "Guruhlarni yangilashda xatolik");
+    },
+  });
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    refreshMyGroups();
+  };
+
   const groups = data?.getMyGroups ?? storeGroups;
 
   const activeGroups = groups.filter((g) => new Date(g.expiresAt) > new Date());
@@ -41,9 +62,21 @@ export default function GroupsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Guruhlarim</h1>
-        <p className="text-muted-foreground text-sm">A'zo bo'lgan guruhlaringiz</p>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Guruhlarim</h1>
+          <p className="text-muted-foreground text-sm">A'zo bo'lgan guruhlaringiz</p>
+        </div>
+        {user?.telegramId && (
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-border hover:bg-muted transition-colors disabled:opacity-50 shrink-0"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            Guruhlarni yangilash
+          </button>
+        )}
       </div>
 
       {groups.length === 0 ? (
@@ -51,13 +84,24 @@ export default function GroupsPage() {
           <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
           <p className="font-medium mb-1">Hali guruhga a'zo emassiz</p>
           <p className="text-sm text-muted-foreground mb-4">
-            Telegram guruhga a'zo bo'lib, qaytadan tizimga kiring
+            Telegram guruhga a'zo bo'lib, "Guruhlarni yangilash" tugmasini bosing
           </p>
-          <Link href="/login">
-            <button className="bg-primary text-white px-6 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors">
-              Telegram orqali kirish
+          {user?.telegramId ? (
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="bg-primary text-white px-6 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+              Guruhlarni yangilash
             </button>
-          </Link>
+          ) : (
+            <Link href="/login">
+              <button className="bg-primary text-white px-6 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors">
+                Telegram orqali kirish
+              </button>
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
