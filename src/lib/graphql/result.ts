@@ -87,3 +87,24 @@ export const GET_LEADERBOARD = gql`
     }
   }
 `;
+
+export const GET_ALL_RESULTS_FOR_TEST = gql`
+  query GetAllResultsForTest($testId: String!) {
+    getAllResultsForTest(testId: $testId) {
+      id
+      userId
+      testTitle
+      userName
+      userLastName
+      userPhone
+      userEmail
+      resultStatus
+      totalQuestions
+      correctAnswers
+      score
+      duration
+      finishedAt
+      createdAt
+    }
+  }
+`;

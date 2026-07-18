@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
               // dev: localhost + har qanday HTTPS; prod: faqat real API
               isProd
                 ? `connect-src 'self' ${API_ORIGIN} https://oauth.telegram.org`
-                : "connect-src 'self' http://localhost:4000 http://localhost:3000 http://127.0.0.1:4000 http://127.0.0.1:3000 https://oauth.telegram.org https:",
+                : "connect-src 'self' http://localhost:4000 http://localhost:3002 http://127.0.0.1:4000 http://127.0.0.1:3002 https://oauth.telegram.org https:",
               isProd
                 ? "img-src 'self' data: https: blob:"
                 : "img-src 'self' data: https: blob: http://localhost:4000 http://127.0.0.1:4000",

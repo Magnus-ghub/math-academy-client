@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Plus, Search, Clock, FileQuestion, Eye, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Clock, FileQuestion, Eye, Pencil, Trash2, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -271,6 +271,13 @@ export default function AdminTestsPage() {
                   <button className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors">
                     <Pencil className="w-3 h-3" />
                     Tahrirlash
+                  </button>
+                </Link>
+
+                <Link href={`/admin/tests/${test.id}/results`} className="flex-1">
+                  <button className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors">
+                    <BarChart3 className="w-3 h-3" />
+                    Natijalar
                   </button>
                 </Link>
 
