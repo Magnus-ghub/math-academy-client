@@ -10,7 +10,7 @@ import "katex/dist/katex.min.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const siteUrl = "https://edufly.uz";
+const siteUrl = "https://saidxonov.academy";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
