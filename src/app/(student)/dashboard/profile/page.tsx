@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { Camera, Save, CheckCircle, Mail } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { GET_ME, UPDATE_USER } from "@/lib/graphql/user";
+import { GET_ME, UPDATE_USER, GET_UZ_REGIONS } from "@/lib/graphql/user";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { toast } from "sonner";
 
@@ -33,12 +33,19 @@ export default function ProfilePage() {
     userName: "",
     userLastName: "",
     userPhone: "",
-    userAddress: "",
+    userRegion: "",
+    userDistrict: "",
     userDesc: "",
   });
 
   const { data, loading } = useQuery<{ getMe: any }>(GET_ME);
   const user = data?.getMe;
+
+  const { data: regionsData } = useQuery<{ getUzbekistanRegions: { code: string; name: string; districts: string[] }[] }>(
+    GET_UZ_REGIONS
+  );
+  const regions = regionsData?.getUzbekistanRegions ?? [];
+  const selectedRegion = regions.find((r) => r.name === form.userRegion);
 
   useEffect(() => {
     if (user) {
@@ -46,7 +53,8 @@ export default function ProfilePage() {
         userName: user.userName || "",
         userLastName: user.userLastName || "",
         userPhone: user.userPhone || "",
-        userAddress: user.userAddress || "",
+        userRegion: user.userRegion || "",
+        userDistrict: user.userDistrict || "",
         userDesc: user.userDesc || "",
       });
     }
@@ -95,7 +103,8 @@ export default function ProfilePage() {
           userName: form.userName || undefined,
           userLastName: form.userLastName || undefined,
           userPhone: form.userPhone || undefined,
-          userAddress: form.userAddress || undefined,
+          userRegion: form.userRegion || undefined,
+          userDistrict: form.userDistrict || undefined,
           userDesc: form.userDesc || undefined,
         },
       },
@@ -190,13 +199,40 @@ export default function ProfilePage() {
             />
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Manzil</label>
-            <Input
-              placeholder="Shahar, tuman"
-              value={form.userAddress}
-              onChange={(e) => setForm({ ...form, userAddress: e.target.value })}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Viloyat</label>
+              <select
+                className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={form.userRegion}
+                onChange={(e) =>
+                  setForm({ ...form, userRegion: e.target.value, userDistrict: "" })
+                }
+              >
+                <option value="">Tanlanmagan</option>
+                {regions.map((r) => (
+                  <option key={r.code} value={r.name}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">Tuman</label>
+              <select
+                className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                value={form.userDistrict}
+                onChange={(e) => setForm({ ...form, userDistrict: e.target.value })}
+                disabled={!selectedRegion}
+              >
+                <option value="">Tanlanmagan</option>
+                {selectedRegion?.districts.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>

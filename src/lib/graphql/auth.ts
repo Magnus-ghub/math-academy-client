@@ -57,6 +57,9 @@ export const TELEGRAM_BOT_LOGIN = gql`
         userAuthType
         telegramId
         userImage
+        userPhone
+        userRegion
+        userDistrict
       }
       groups {
         id

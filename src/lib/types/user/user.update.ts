@@ -4,5 +4,7 @@ export interface UserUpdate {
   userPhone?: string;
   userImage?: string;
   userAddress?: string;
+  userRegion?: string;
+  userDistrict?: string;
   userDesc?: string;
 }

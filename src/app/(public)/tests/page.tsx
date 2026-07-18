@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { Clock, FileQuestion, Lock, Search, Trophy, X, FileText } from "lucide-react";
+import { Clock, FileQuestion, Lock, Search, Trophy, X, FileText, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
 import { GET_LEADERBOARD, GET_MY_RESULTS } from "@/lib/graphql/result";
 import { useAuthStore } from "@/lib/store/auth.store";
 import PaymentModal from "@/components/PaymentModal";
 import { StartTestModal } from "@/components/StartTestModal";
+import { RetakeExplainModal } from "@/components/RetakeExplainModal";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -193,13 +194,6 @@ function TestTopStudents({
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
-const testTypeColors: Record<string, string> = {
-  DTM: "bg-primary/10 text-primary border-primary/20",
-  SAT: "bg-accent/10 text-accent border-accent/20",
-  MILLIY_SERTIFIKAT: "bg-green-100/80 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700",
-  ATTESTATSIYA: "bg-purple-100/80 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700",
-};
-
 const dtmTypeLabels: Record<string, string> = {
   MAJBURIY: "DTM Majburiy",
   ASOSIY: "DTM Asosiy",
@@ -241,6 +235,7 @@ export default function TestsPage() {
   const [paymentTest, setPaymentTest] = useState<any>(null);
   const [startModal, setStartModal] = useState<any>(null);
   const [leaderboardModal, setLeaderboardModal] = useState<{ testId: string; testTitle: string } | null>(null);
+  const [retakeTest, setRetakeTest] = useState<any>(null);
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
 
@@ -370,21 +365,19 @@ export default function TestsPage() {
           {filtered.map((test: any) => (
             <div
               key={test.id}
-              className={`bg-background rounded-2xl border-2 p-5 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${
-                testTypeColors[test.testType] || "border-border"
-              }`}
+              className="bg-background rounded-2xl border border-border p-5 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
             >
               {/* Top row: type badge + access badge */}
               <div className="flex items-start justify-between mb-3">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground border border-border">
                   {getTestLabel(test)}
                 </span>
                 {test.testAccess === "PUBLIC" ? (
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-100 border border-green-300 dark:bg-green-900/40 dark:text-green-400 dark:border-green-700 px-3 py-1.5 rounded-full">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full">
                     ✓ Bepul
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-full font-semibold">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted border border-border px-2 py-1 rounded-full font-semibold">
                     <Lock className="w-3 h-3" />
                     {test.testAccess === "PREMIUM"
                       ? test.testPrice
@@ -421,7 +414,7 @@ export default function TestsPage() {
                     rel="noopener noreferrer"
                     download
                     onClick={(e) => e.stopPropagation()}
-                    className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors font-medium"
+                    className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted border border-border text-muted-foreground hover:bg-muted/70 transition-colors font-medium"
                   >
                     <FileText className="w-3 h-3" />
                     PDF
@@ -440,19 +433,28 @@ export default function TestsPage() {
 
               {/* Start button */}
               {test.testAccess === "PUBLIC" && attemptedTestIds.has(test.id) ? (
-                <button
-                  onClick={() => router.push(`/dashboard/results/${resultByTestId.get(test.id)}`)}
-                  className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors"
-                >
-                  ✓ Natijani ko'rish
-                </button>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => router.push(`/dashboard/results/${resultByTestId.get(test.id)}`)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-muted text-foreground border border-border hover:bg-muted/70 transition-colors"
+                  >
+                    ✓ Natijani ko'rish
+                  </button>
+                  <button
+                    onClick={() => setRetakeTest(test)}
+                    title="Qayta ishlash"
+                    className="shrink-0 px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-muted text-muted-foreground border border-border hover:bg-muted/70 transition-colors flex items-center justify-center"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                </div>
               ) : (
                 <button
                   onClick={() => handleStart(test)}
                   className={`w-full mt-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                     test.testAccess === "PUBLIC"
                       ? "bg-primary text-white hover:bg-primary/90"
-                      : "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                      : "bg-muted text-muted-foreground border border-border hover:bg-muted/70"
                   }`}
                 >
                   {test.testAccess === "PUBLIC" ? "Boshlash →" : test.testAccess === "PREMIUM" ? "🔒 Premium" : "🔒 Guruh"}
@@ -479,6 +481,13 @@ export default function TestsPage() {
           testId={leaderboardModal.testId}
           testTitle={leaderboardModal.testTitle}
           onClose={() => setLeaderboardModal(null)}
+        />
+      )}
+      {retakeTest && (
+        <RetakeExplainModal
+          testId={retakeTest.id}
+          testType={retakeTest.testType}
+          onClose={() => setRetakeTest(null)}
         />
       )}
     </div>

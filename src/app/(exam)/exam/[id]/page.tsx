@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   Clock,
@@ -17,16 +17,19 @@ import {
 import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { FloatingCalculator } from "@/components/FloatingCalculator";
-import { useRouter, useParams } from "next/navigation";
+import { PracticeResultScreen } from "@/components/PracticeResultScreen";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
 import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
 import { MathText } from "@/components/MathText";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
 
-export default function ExamPage() {
+function ExamPageContent() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRetake = searchParams.get("retake") === "1";
   const { isAuthenticated } = useAuthStore();
 
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -43,6 +46,7 @@ export default function ExamPage() {
     number: number;
   } | null>(null);
   const [showRetakeRequest, setShowRetakeRequest] = useState(false);
+  const [practiceDuration, setPracticeDuration] = useState(0);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const examActiveRef = useRef(false);
@@ -51,7 +55,7 @@ export default function ExamPage() {
     CHECK_MY_ATTEMPT,
     {
       variables: { testId: id },
-      skip: !id || !isAuthenticated,
+      skip: !id || !isAuthenticated || isRetake,
       fetchPolicy: "network-only",
     },
   );
@@ -192,13 +196,20 @@ export default function ExamPage() {
     setIsFinished(true);
     clearInterval(timerRef.current!);
     const duration = Math.floor((Date.now() - startTime) / 1000 / 60);
+
+    if (isRetake) {
+      // Qayta ishlash — natija hech qayerga yuborilmaydi, faqat mahalliy hisoblanadi
+      setPracticeDuration(duration);
+      return;
+    }
+
     submitTest({
       variables: {
         input: {
           testId: id,
           answers: questions.map((q: any) => ({
             questionId: q.id,
-            selectedAnswer: answers[q.id] ?? 0,
+            selectedAnswer: answers[q.id] ?? -1,
             timeSpent: 0,
           })),
           duration,
@@ -277,6 +288,16 @@ export default function ExamPage() {
   }
 
   if (isFinished) {
+    if (isRetake) {
+      return (
+        <PracticeResultScreen
+          questions={questions}
+          answers={answers}
+          duration={practiceDuration}
+          onClose={() => router.push("/dashboard/tests")}
+        />
+      );
+    }
     return (
       <div className="flex flex-col items-center justify-center flex-1 text-center gap-4">
         <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
@@ -828,5 +849,19 @@ export default function ExamPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function ExamPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center flex-1">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+      }
+    >
+      <ExamPageContent />
+    </Suspense>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
   BookmarkIcon,
   ChevronLeft,
@@ -23,6 +23,8 @@ import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
 import { MathText } from "@/components/MathText";
 import { DesmosCalculator } from "@/components/DesmosCalculator";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
+import { PracticeResultScreen } from "@/components/PracticeResultScreen";
+import { parseSprAnswer } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
 
@@ -265,11 +267,14 @@ function SprInput({ value, onChange }: { value: string; onChange: (v: string) =>
   );
 }
 
-export default function SatExamPage() {
+function SatExamPageContent() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRetake = searchParams.get("retake") === "1";
   const { isAuthenticated } = useAuthStore();
   const [startTime] = useState(Date.now());
+  const [practiceDuration, setPracticeDuration] = useState(0);
 
   // Core state
   const [module, setModule] = useState<Module>(1);
@@ -298,7 +303,7 @@ export default function SatExamPage() {
     CHECK_MY_ATTEMPT,
     {
       variables: { testId: id },
-      skip: !id || !isAuthenticated,
+      skip: !id || !isAuthenticated || isRetake,
       fetchPolicy: "network-only",
     },
   );
@@ -431,23 +436,17 @@ export default function SatExamPage() {
 
   const doSubmit = () => {
     if (isSubmitting || isFinished) return;
-    setIsSubmitting(true);
     setIsFinished(true);
     clearInterval(timerRef.current!);
     const duration = Math.floor((Date.now() - startTime) / 1000 / 60);
-    const parseSpr = (raw: string): number => {
-      const s = raw.trim();
-      if (!s) return -1;
-      const fraction = s.match(/^(-?\d+)\/(\d+)$/);
-      if (fraction) {
-        const den = parseInt(fraction[2], 10);
-        if (den === 0) return -1;
-        return Math.round((parseInt(fraction[1], 10) / den) * 100);
-      }
-      const n = parseFloat(s);
-      return isNaN(n) ? -1 : Math.round(n * 100);
-    };
 
+    if (isRetake) {
+      // Qayta ishlash — natija hech qayerga yuborilmaydi, faqat mahalliy hisoblanadi
+      setPracticeDuration(duration);
+      return;
+    }
+
+    setIsSubmitting(true);
     submitTest({
       variables: {
         input: {
@@ -456,9 +455,9 @@ export default function SatExamPage() {
             const isSpr = !q.options || q.options.length === 0;
             let selectedAnswer: number;
             if (isSpr) {
-              selectedAnswer = parseSpr(String(answers[q.id] ?? ""));
+              selectedAnswer = parseSprAnswer(String(answers[q.id] ?? ""));
             } else {
-              selectedAnswer = typeof answers[q.id] === "number" ? (answers[q.id] as number) : 0;
+              selectedAnswer = typeof answers[q.id] === "number" ? (answers[q.id] as number) : -1;
             }
             return { questionId: q.id, selectedAnswer, timeSpent: 0 };
           }),
@@ -530,6 +529,18 @@ export default function SatExamPage() {
 
   // ── FINISHED ──
   if (isFinished) {
+    if (isRetake) {
+      return (
+        <div className="h-screen flex flex-col bg-[#f8f9fa]">
+          <PracticeResultScreen
+            questions={allQuestions}
+            answers={answers}
+            duration={practiceDuration}
+            onClose={() => router.push("/dashboard/tests")}
+          />
+        </div>
+      );
+    }
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-5 bg-[#f8f9fa]">
         <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
@@ -1173,5 +1184,20 @@ export default function SatExamPage() {
         </div>
       )}
     </>
+  );
+}
+
+export default function SatExamPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="h-screen flex flex-col items-center justify-center bg-[#f8f9fa] gap-4">
+          <div className="w-10 h-10 border-4 border-[#1e3a5f] border-t-transparent rounded-full animate-spin" />
+          <p className="text-[#1e3a5f] font-medium text-sm">Loading your test...</p>
+        </div>
+      }
+    >
+      <SatExamPageContent />
+    </Suspense>
   );
 }

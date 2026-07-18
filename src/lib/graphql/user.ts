@@ -14,6 +14,8 @@ export const GET_ME = gql`
       userPhone
       userImage
       userAddress
+      userRegion
+      userDistrict
       userDesc
       telegramId
       googleId
@@ -33,6 +35,18 @@ export const UPDATE_USER = gql`
       userLastName
       userPhone
       userImage
+      userRegion
+      userDistrict
+    }
+  }
+`;
+
+export const GET_UZ_REGIONS = gql`
+  query GetUzbekistanRegions {
+    getUzbekistanRegions {
+      code
+      name
+      districts
     }
   }
 `;

@@ -10,8 +10,6 @@ const testTypes = [
     icon: Award,
     title: "Milliy Sertifikat",
     description: "Milliy Sertifikat imtihoniga maxsus tayyorlangan test to'plamlari.",
-    color: "bg-green-500/10 text-green-600",
-    border: "border-green-200 hover:border-green-500",
     href: "/tests?type=MILLIY_SERTIFIKAT",
     key: "MILLIY_SERTIFIKAT",
   },
@@ -19,8 +17,6 @@ const testTypes = [
     icon: GraduationCap,
     title: "Attestatsiya",
     description: "O'qituvchilar uchun attestatsiya imtihoniga tayyorgarlik testlari.",
-    color: "bg-purple-500/10 text-purple-600",
-    border: "border-purple-200 hover:border-purple-500",
     href: "/tests?type=ATTESTATSIYA",
     key: "ATTESTATSIYA",
   },
@@ -28,8 +24,6 @@ const testTypes = [
     icon: BookOpen,
     title: "SAT",
     description: "SAT imtihoniga yo'naltirilgan matematika testlari. Xalqaro standartlar asosida.",
-    color: "bg-accent/10 text-accent",
-    border: "border-accent/20 hover:border-accent",
     href: "/tests?type=SAT",
     key: "SAT",
   },
@@ -37,8 +31,6 @@ const testTypes = [
     icon: Calculator,
     title: "DTM",
     description: "Davlat Test Markazi imtihoniga to'liq tayyorgarlik. Majburiy matematika bloki va fan testlari.",
-    color: "bg-primary/10 text-primary",
-    border: "border-primary/20 hover:border-primary",
     href: "/tests?type=DTM",
     key: "DTM",
   },
@@ -72,8 +64,8 @@ export default function TestTypesSection() {
             const count = countByType(type.key);
             return (
               <Link href={type.href} key={type.title}>
-                <div className={`bg-background rounded-2xl border-2 p-4 md:p-6 h-full transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-1 ${type.border}`}>
-                  <div className={`w-9 h-9 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 md:mb-4 ${type.color}`}>
+                <div className="bg-background rounded-2xl border border-border p-4 md:p-6 h-full transition-all duration-200 cursor-pointer hover:shadow-lg hover:-translate-y-1 hover:border-primary/40">
+                  <div className="w-9 h-9 md:w-12 md:h-12 rounded-xl flex items-center justify-center mb-3 md:mb-4 bg-muted text-foreground">
                     <type.icon className="w-4 h-4 md:w-6 md:h-6" />
                   </div>
                   <h3 className="text-sm md:text-xl font-bold mb-1 md:mb-2 leading-tight">{type.title}</h3>

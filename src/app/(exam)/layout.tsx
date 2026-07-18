@@ -3,7 +3,7 @@
 export default function ExamLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="font-cmu-serif h-screen flex flex-col overflow-hidden bg-muted/10"
+      className="h-screen flex flex-col overflow-hidden bg-muted/10"
       onContextMenu={(e) => e.preventDefault()}
     >
       {children}

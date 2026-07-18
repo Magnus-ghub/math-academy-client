@@ -98,7 +98,7 @@ export function MathText({ text, className }: MathTextProps) {
 
   return (
     <span
-      className={`math-text ${className ?? ""}`}
+      className={`math-text font-cmu-serif ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

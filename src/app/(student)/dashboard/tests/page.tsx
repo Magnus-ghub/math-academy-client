@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { Clock, FileQuestion, Lock, Trophy, X, FileText } from "lucide-react";
+import { Clock, FileQuestion, Lock, Trophy, X, FileText, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GET_TESTS } from "@/lib/graphql/test";
 import { GET_LEADERBOARD, GET_MY_RESULTS } from "@/lib/graphql/result";
 import PaymentModal from "@/components/PaymentModal";
 import { StartTestModal } from "@/components/StartTestModal";
+import { RetakeExplainModal } from "@/components/RetakeExplainModal";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
 
@@ -163,13 +164,6 @@ function TestTopStudents({ testId, onViewAll }: { testId: string; onViewAll: () 
 
 // ─── constants ───────────────────────────────────────────────────────────────
 
-const testTypeColors: Record<string, string> = {
-  DTM: "bg-primary/10 text-primary border-primary/20",
-  SAT: "bg-accent/10 text-accent border-accent/20",
-  MILLIY_SERTIFIKAT: "bg-green-100/80 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700",
-  ATTESTATSIYA: "bg-purple-100/80 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700",
-};
-
 const dtmTypeLabels: Record<string, string> = {
   MAJBURIY: "DTM Majburiy",
   ASOSIY: "DTM Asosiy",
@@ -207,6 +201,7 @@ export default function StudentTestsPage() {
   const [paymentTest, setPaymentTest] = useState<any>(null);
   const [startModal, setStartModal] = useState<any>(null);
   const [leaderboardModal, setLeaderboardModal] = useState<{ testId: string; testTitle: string } | null>(null);
+  const [retakeTest, setRetakeTest] = useState<any>(null);
 
   const router = useRouter();
   const { data, loading } = useQuery<{ getTests: any[] }>(GET_TESTS, {
@@ -294,21 +289,19 @@ export default function StudentTestsPage() {
           {filtered.map((test: any) => (
             <div
               key={test.id}
-              className={`bg-background rounded-2xl border-2 p-5 flex flex-col hover:shadow-md transition-all hover:-translate-y-0.5 ${
-                testTypeColors[test.testType] || "border-border"
-              }`}
+              className="bg-background rounded-2xl border border-border p-5 flex flex-col hover:shadow-md transition-all hover:-translate-y-0.5"
             >
               {/* Badges */}
               <div className="flex items-start justify-between mb-3">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}>
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground border border-border">
                   {getTestLabel(test)}
                 </span>
                 {test.testAccess === "PUBLIC" ? (
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-100 border border-green-300 dark:bg-green-900/40 dark:text-green-400 dark:border-green-700 px-3 py-1.5 rounded-full">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full">
                     ✓ Bepul
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 px-2.5 py-1 rounded-full">
+                  <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full">
                     <Lock className="w-3 h-3" />
                     {test.testAccess === "PREMIUM"
                       ? test.testPrice
@@ -345,7 +338,7 @@ export default function StudentTestsPage() {
                     rel="noopener noreferrer"
                     download
                     onClick={(e) => e.stopPropagation()}
-                    className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 border border-blue-300 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors font-medium"
+                    className="ml-auto flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted border border-border text-muted-foreground hover:bg-muted/70 transition-colors font-medium"
                   >
                     <FileText className="w-3 h-3" />
                     PDF
@@ -364,11 +357,20 @@ export default function StudentTestsPage() {
 
               {/* Start button */}
               {test.testAccess === "PUBLIC" && attemptedTestIds.has(test.id) ? (
-                <Link href={`/dashboard/results/${resultByTestId.get(test.id)}`}>
-                  <button className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors">
-                    ✓ Natijani ko'rish
+                <div className="flex gap-2 mt-4">
+                  <Link href={`/dashboard/results/${resultByTestId.get(test.id)}`} className="flex-1">
+                    <button className="w-full py-2.5 rounded-xl text-sm font-semibold bg-muted text-foreground border border-border hover:bg-muted/70 transition-colors">
+                      ✓ Natijani ko'rish
+                    </button>
+                  </Link>
+                  <button
+                    onClick={() => setRetakeTest(test)}
+                    title="Qayta ishlash"
+                    className="shrink-0 px-3.5 py-2.5 rounded-xl text-sm font-semibold bg-muted text-muted-foreground hover:bg-muted/80 transition-colors flex items-center justify-center"
+                  >
+                    <RotateCcw className="w-4 h-4" />
                   </button>
-                </Link>
+                </div>
               ) : test.testAccess === "PUBLIC" ? (
                 <button
                   onClick={() => setStartModal(test)}
@@ -379,7 +381,7 @@ export default function StudentTestsPage() {
               ) : (
                 <button
                   onClick={() => setPaymentTest(test)}
-                  className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700 hover:bg-amber-200 dark:hover:bg-amber-900/30 transition-colors"
+                  className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold bg-muted text-muted-foreground border border-border hover:bg-muted/70 transition-colors"
                 >
                   {test.testAccess === "PREMIUM" ? "🔒 Premium" : "🔒 Guruh"}
                 </button>
@@ -408,6 +410,13 @@ export default function StudentTestsPage() {
           testId={leaderboardModal.testId}
           testTitle={leaderboardModal.testTitle}
           onClose={() => setLeaderboardModal(null)}
+        />
+      )}
+      {retakeTest && (
+        <RetakeExplainModal
+          testId={retakeTest.id}
+          testType={retakeTest.testType}
+          onClose={() => setRetakeTest(null)}
         />
       )}
     </div>

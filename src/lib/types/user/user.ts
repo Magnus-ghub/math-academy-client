@@ -10,6 +10,8 @@ export interface User {
   userPhone?: string;
   userImage?: string;
   userAddress?: string;
+  userRegion?: string;
+  userDistrict?: string;
   userDesc?: string;
   telegramId?: string;
   googleId?: string;

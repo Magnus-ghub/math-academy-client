@@ -224,7 +224,7 @@ export default function ResultDetailPage() {
   const hasTestYoutube  = !!test?.testYoutubeUrl;
 
   return (
-    <div className="font-cmu-serif max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto">
       {/* Back */}
       <Link href="/dashboard/results">
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
