@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Sun, Moon, House, LogOut } from "lucide-react";
+import { Bell, Sun, Moon, House, LogOut, LayoutDashboard } from "lucide-react";
 import { useQuery } from "@apollo/client/react";
 import { gql } from "@apollo/client";
 import { useTheme } from "next-themes";
@@ -88,6 +88,16 @@ export default function AdminHeader() {
                 {pendingCount > 99 ? "99+" : pendingCount}
               </span>
             )}
+          </Link>
+
+          {/* Student dashboard — admin ham talaba panelini tekshirishi uchun */}
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title="Talaba panelini ko'rish"
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            <span className="hidden sm:inline">Talaba paneli</span>
           </Link>
 
           {/* Back to site */}

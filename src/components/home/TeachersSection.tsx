@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { useQuery } from "@apollo/client/react";
-import { ChevronLeft, ChevronRight, UserCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, UserCircle, Star } from "lucide-react";
 import { GET_TEACHERS } from "@/lib/graphql/content";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
@@ -83,31 +83,37 @@ export default function TeachersSection() {
                 return (
                   <div
                     key={teacher.id}
-                    className="shrink-0 w-[72vw] sm:w-64 md:w-auto group bg-background rounded-2xl border border-border overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+                    className="shrink-0 w-[72vw] sm:w-64 md:w-auto group bg-background rounded-3xl border border-border/60 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 hover:border-primary/30 transition-all duration-300"
                     style={{ scrollSnapAlign: "start" }}
                   >
                     {/* Image */}
-                    <div className="relative w-full aspect-square bg-muted">
+                    <div className="relative w-full aspect-4/5 bg-muted overflow-hidden">
                       {teacher.contentImage ? (
                         <img
                           src={imgSrc(teacher.contentImage)}
                           alt={teacher.contentTitle}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <UserCircle className="w-20 h-20 text-muted-foreground/20" />
                         </div>
                       )}
+                      <div className="absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-black/15 to-transparent pointer-events-none" />
                     </div>
 
                     {/* Info */}
                     <div className="p-4">
-                      <h3 className="font-bold text-base mb-0.5">{teacher.contentTitle}</h3>
-                      {role && <p className="text-accent text-xs font-medium mb-1">{role}</p>}
+                      <h3 className="font-bold text-base mb-1.5">{teacher.contentTitle}</h3>
+                      {role && (
+                        <span className="inline-block bg-accent/10 text-accent text-xs font-semibold px-2.5 py-1 rounded-full mb-2">
+                          {role}
+                        </span>
+                      )}
                       {subject && <p className="text-muted-foreground text-xs mb-3">{subject}</p>}
                       {stat && (
-                        <div className="text-xs text-muted-foreground border-t border-border pt-3">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-primary border-t border-border/60 pt-3">
+                          <Star className="w-3 h-3 fill-primary shrink-0" />
                           {stat}
                         </div>
                       )}

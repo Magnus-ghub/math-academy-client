@@ -33,14 +33,15 @@ export default function SuccessStoriesSection() {
   // Uzluksiz avtomatik aylanish (marquee)
   useEffect(() => {
     if (!canLoop) return;
-    const el = scrollRef.current;
-    if (!el) return;
     let frame: number;
+    // `el` har bir frame'da qayta olinadi — effekt ishga tushgan paytda
+    // ref hali DOM'ga ulanmagan bo'lsa ham, keyingi frame'da o'zi tuzaladi
     const step = () => {
-      if (!pausedRef.current) {
+      const el = scrollRef.current;
+      if (el && !pausedRef.current) {
         el.scrollLeft += 0.6;
         const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half) el.scrollLeft -= half;
+        if (half > 0 && el.scrollLeft >= half) el.scrollLeft -= half;
       }
       frame = requestAnimationFrame(step);
     };
