@@ -88,6 +88,19 @@ export const GET_LEADERBOARD = gql`
   }
 `;
 
+export const GET_TOP_STUDENTS = gql`
+  query GetTopStudents($period: LeaderboardPeriod!) {
+    getTopStudents(period: $period) {
+      rank
+      userId
+      userName
+      userImage
+      avgScore
+      totalTests
+    }
+  }
+`;
+
 export const GET_ALL_RESULTS_FOR_TEST = gql`
   query GetAllResultsForTest($testId: String!) {
     getAllResultsForTest(testId: $testId) {

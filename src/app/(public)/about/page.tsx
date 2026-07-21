@@ -25,7 +25,7 @@ export default function AboutPage() {
             Saidxonov Academy haqida
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            Biz 2019-yildan buyon O'zbekiston talabalariga DTM, SAT, Milliy Sertifikat
+            Biz 2023-yildan buyon O'zbekiston talabalariga DTM, SAT, Milliy Sertifikat
             va Attestatsiya imtihonlariga tayyorgarlik ko'rishda yordam berib kelmoqdamiz.
             Minglab talabalar bizning platformamiz orqali o'z maqsadlariga erishdi.
           </p>
@@ -55,7 +55,7 @@ export default function AboutPage() {
           <h2 className="text-3xl font-bold mb-6 text-center">Bizning tarix</h2>
           <div className="prose prose-gray max-w-none text-muted-foreground leading-relaxed space-y-4">
             <p>
-              Saidxonov Academy 2019-yilda Jamshid Saidxonov tomonidan tashkil etilgan.
+              Saidxonov Academy 2023-yilda Jamshid Saidxonov tomonidan tashkil etilgan.
               Dastlab kichik Telegram guruhlaridan boshlangan faoliyat bugun minglab
               talabalarni birlashtirgan yirik onlayn platformaga aylandi.
             </p>

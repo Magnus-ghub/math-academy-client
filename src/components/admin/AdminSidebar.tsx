@@ -78,7 +78,7 @@ export default function AdminSidebar() {
       {/* Mobile toggle button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-gray-950 text-white rounded-xl shadow-lg"
+        className="md:hidden fixed top-2.5 left-4 z-40 p-2 bg-gray-950 text-white rounded-xl shadow-lg"
       >
         <Menu className="w-5 h-5" />
       </button>

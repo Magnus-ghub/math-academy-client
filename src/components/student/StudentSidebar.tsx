@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, BookOpen, Trophy, Users, User,
+  LayoutDashboard, BookOpen, Trophy, BarChart3, Users, User,
   ChevronRight, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ import { useAuthStore } from "@/lib/store/auth.store";
 const menuItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/dashboard/tests", icon: BookOpen, label: "Testlar" },
-  { href: "/dashboard/results", icon: Trophy, label: "Natijalarim" },
+  { href: "/dashboard/results", icon: BarChart3, label: "Natijalarim" },
   { href: "/dashboard/leaderboard", icon: Trophy, label: "Reyting" },
   { href: "/dashboard/groups", icon: Users, label: "Guruhlarim" },
   { href: "/dashboard/profile", icon: User, label: "Profil" },
@@ -91,7 +91,7 @@ export default function StudentSidebar() {
       {/* Mobile toggle */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background border border-border rounded-xl shadow-lg"
+        className="md:hidden fixed top-2.5 left-4 z-40 p-2 bg-background border border-border rounded-xl shadow-lg"
       >
         <Menu className="w-5 h-5" />
       </button>
