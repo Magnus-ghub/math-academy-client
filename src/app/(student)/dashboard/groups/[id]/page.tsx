@@ -7,6 +7,7 @@ import { useAuthStore, UserGroup } from "@/lib/store/auth.store";
 import { GET_GROUP_MATERIALS } from "@/lib/graphql/content";
 import { GET_MY_GROUPS } from "@/lib/graphql/group";
 import { GET_TESTS } from "@/lib/graphql/test";
+import { testTypeStyles } from "@/lib/testTypeStyles";
 import {
   BookOpen,
   Play,
@@ -92,13 +93,6 @@ function MaterialCard({ material }: { material: any }) {
   );
 }
 
-const testTypeColors: Record<string, string> = {
-  DTM: "bg-primary/10 text-primary border-primary/20",
-  SAT: "bg-accent/10 text-accent border-accent/20",
-  MILLIY_SERTIFIKAT: "bg-green-50 text-green-700 border-green-200",
-  ATTESTATSIYA: "bg-purple-50 text-purple-700 border-purple-200",
-};
-
 const dtmTypeLabels: Record<string, string> = {
   MAJBURIY: "DTM Majburiy",
   ASOSIY: "DTM Asosiy",
@@ -117,13 +111,14 @@ function getTestLabel(test: any): string {
 }
 
 function TestCard({ test }: { test: any }) {
+  const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
   return (
     <div
-      className={`bg-background rounded-2xl border-2 p-5 hover:shadow-md transition-all hover:-translate-y-0.5 ${testTypeColors[test.testType] || "border-border"}`}
+      className={`rounded-2xl border-2 p-5 hover:shadow-md transition-all hover:-translate-y-0.5 ${style?.cardBg ?? "bg-background border-border"}`}
     >
       <div className="flex items-start justify-between mb-3">
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${testTypeColors[test.testType]}`}
+          className={`px-2 py-1 rounded-full text-xs font-medium ${style?.badge ?? "bg-muted text-foreground"}`}
         >
           {getTestLabel(test)}
         </span>

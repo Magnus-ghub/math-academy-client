@@ -20,7 +20,7 @@ export default function CTASection() {
             </Button>
           </Link>
           <Link href="/tests">
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 px-8">
+            <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white/10 px-8">
               Testlarni ko'rish
             </Button>
           </Link>

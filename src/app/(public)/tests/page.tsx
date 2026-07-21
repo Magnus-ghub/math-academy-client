@@ -10,6 +10,7 @@ import { useAuthStore } from "@/lib/store/auth.store";
 import PaymentModal from "@/components/PaymentModal";
 import { StartTestModal } from "@/components/StartTestModal";
 import { RetakeExplainModal } from "@/components/RetakeExplainModal";
+import { testTypeStyles } from "@/lib/testTypeStyles";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -362,14 +363,16 @@ export default function TestsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((test: any) => (
+          {filtered.map((test: any) => {
+            const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
+            return (
             <div
               key={test.id}
-              className="bg-background rounded-2xl border border-border p-5 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200"
+              className={`rounded-2xl border p-5 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${style?.cardBg ?? "bg-background border-border"} ${style?.ring ?? ""}`}
             >
               {/* Top row: type badge + access badge */}
               <div className="flex items-start justify-between mb-3">
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground border border-border">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${style?.badge ?? "bg-muted text-foreground border border-border"}`}>
                   {getTestLabel(test)}
                 </span>
                 {test.testAccess === "PUBLIC" ? (
@@ -461,7 +464,8 @@ export default function TestsPage() {
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

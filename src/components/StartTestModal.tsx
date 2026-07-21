@@ -1,37 +1,12 @@
 "use client";
 
 import { Clock, FileQuestion, AlertTriangle, X, ChevronRight, ShieldAlert, Ban, RotateCcw, CheckCircle2 } from "lucide-react";
-
-const TYPE_LABELS: Record<string, string> = {
-  DTM: "DTM",
-  SAT: "SAT",
-  MILLIY_SERTIFIKAT: "Milliy Sertifikat",
-  ATTESTATSIYA: "Attestatsiya",
-};
+import { testTypeStyles } from "@/lib/testTypeStyles";
 
 const DTM_LABELS: Record<string, string> = {
   MAJBURIY: "DTM — Majburiy blok",
   ASOSIY: "DTM — Asosiy blok",
   FULL: "DTM — Full",
-};
-
-const TYPE_COLORS: Record<string, { badge: string; glow: string }> = {
-  DTM: {
-    badge: "bg-primary/10 text-primary border-primary/30 dark:bg-primary/20",
-    glow: "from-primary/5 to-transparent",
-  },
-  SAT: {
-    badge: "bg-accent/10 text-accent border-accent/30 dark:bg-accent/20",
-    glow: "from-accent/5 to-transparent",
-  },
-  MILLIY_SERTIFIKAT: {
-    badge: "bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-400 dark:border-green-700",
-    glow: "from-green-500/5 to-transparent",
-  },
-  ATTESTATSIYA: {
-    badge: "bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/40 dark:text-purple-400 dark:border-purple-700",
-    glow: "from-purple-500/5 to-transparent",
-  },
 };
 
 interface Test {
@@ -64,13 +39,15 @@ const WARNINGS = [
 ];
 
 export function StartTestModal({ test, onStart, onCancel }: Props) {
-  const typeLabel = test.dtmType
-    ? DTM_LABELS[test.dtmType] ?? TYPE_LABELS[test.testType]
-    : TYPE_LABELS[test.testType] ?? test.testType;
+  const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
 
-  const colors = TYPE_COLORS[test.testType] ?? {
-    badge: "bg-muted text-muted-foreground border-border",
-    glow: "from-muted/30 to-transparent",
+  const typeLabel = test.dtmType
+    ? DTM_LABELS[test.dtmType] ?? style?.label ?? test.testType
+    : style?.label ?? test.testType;
+
+  const colors = {
+    badge: style?.badgeBordered ?? "bg-muted text-muted-foreground border-border",
+    glow: style?.glow ?? "from-muted/30 to-transparent",
   };
 
   return (

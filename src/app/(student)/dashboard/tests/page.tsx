@@ -10,6 +10,7 @@ import { GET_LEADERBOARD, GET_MY_RESULTS } from "@/lib/graphql/result";
 import PaymentModal from "@/components/PaymentModal";
 import { StartTestModal } from "@/components/StartTestModal";
 import { RetakeExplainModal } from "@/components/RetakeExplainModal";
+import { testTypeStyles } from "@/lib/testTypeStyles";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
 
@@ -286,14 +287,16 @@ export default function StudentTestsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((test: any) => (
+          {filtered.map((test: any) => {
+            const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
+            return (
             <div
               key={test.id}
-              className="bg-background rounded-2xl border border-border p-5 flex flex-col hover:shadow-md transition-all hover:-translate-y-0.5"
+              className={`rounded-2xl border p-5 flex flex-col hover:shadow-md transition-all hover:-translate-y-0.5 ${style?.cardBg ?? "bg-background border-border"} ${style?.ring ?? ""}`}
             >
               {/* Badges */}
               <div className="flex items-start justify-between mb-3">
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground border border-border">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${style?.badge ?? "bg-muted text-foreground border border-border"}`}>
                   {getTestLabel(test)}
                 </span>
                 {test.testAccess === "PUBLIC" ? (
@@ -387,7 +390,8 @@ export default function StudentTestsPage() {
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

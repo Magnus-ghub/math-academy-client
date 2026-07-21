@@ -8,13 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { GET_ALL_TESTS, UPDATE_TEST, DELETE_TEST } from "@/lib/graphql/test";
 import CreateTestModal from "@/components/admin/CreateTestModal";
-
-const testTypeColors: Record<string, string> = {
-  MILLIY_SERTIFIKAT: "bg-green-100 text-green-700",
-  ATTESTATSIYA: "bg-purple-100 text-purple-700",
-  SAT: "bg-accent/10 text-accent",
-  DTM: "bg-primary/10 text-primary",
-};
+import { testTypeStyles } from "@/lib/testTypeStyles";
 
 const dtmTypeLabels: Record<string, string> = {
   MAJBURIY: "DTM Majburiy",
@@ -224,11 +218,13 @@ export default function AdminTestsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {paginated.map((test: any) => (
-            <div key={test.id} className="bg-background border border-border rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/30 hover:shadow-sm transition-all">
+          {paginated.map((test: any) => {
+            const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
+            return (
+            <div key={test.id} className={`border rounded-2xl p-5 flex flex-col gap-3 hover:shadow-sm transition-all ${style?.cardBg ?? "bg-background border-border"} ${style?.ring ?? "hover:border-primary/30"}`}>
               {/* Top badges */}
               <div className="flex items-center justify-between">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${testTypeColors[test.testType] ?? "bg-muted text-muted-foreground"}`}>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${style?.badge ?? "bg-muted text-muted-foreground"}`}>
                   {testTypeLabel(test)}
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[test.testStatus]}`}>
@@ -306,7 +302,8 @@ export default function AdminTestsPage() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
