@@ -9,6 +9,7 @@ import { GET_RESULT } from "@/lib/graphql/result";
 import { GET_QUESTIONS, GET_TEST } from "@/lib/graphql/test";
 import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { MathText } from "@/components/MathText";
+import { ReviewPrompt } from "@/components/ReviewPrompt";
 
 // ─── YouTube helpers ──────────────────────────────────────────────────────────
 
@@ -315,6 +316,8 @@ export default function ResultDetailPage() {
           </div>
         </div>
       </div>
+
+      <ReviewPrompt />
 
       {/* ── Test-level analysis ── */}
       {(hasTestAnalysis || hasTestYoutube) && (

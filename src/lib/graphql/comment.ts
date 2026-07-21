@@ -9,6 +9,8 @@ export const GET_PENDING_COMMENTS = gql`
       text
       rating
       userId
+      userName
+      userImage
       testId
       createdAt
     }
@@ -24,6 +26,8 @@ export const GET_PUBLIC_COMMENTS = gql`
       text
       rating
       userId
+      userName
+      userImage
       createdAt
     }
   }

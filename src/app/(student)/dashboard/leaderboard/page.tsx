@@ -2,10 +2,16 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { Trophy, Clock, Medal, Flame } from "lucide-react";
+import { Trophy, Clock, Medal, Flame, ChevronDown } from "lucide-react";
 import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
 import { GET_LEADERBOARD, GET_TOP_STUDENTS } from "@/lib/graphql/result";
 import { useAuthStore } from "@/lib/store/auth.store";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type Period = "WEEK" | "MONTH";
 
@@ -213,18 +219,21 @@ export default function LeaderboardPage() {
             {loading ? (
               <div className="w-full sm:w-80 h-10.5 bg-muted rounded-xl animate-pulse" />
             ) : (
-              <select
-                className="w-full sm:w-80 border border-border rounded-xl px-3 py-2.5 text-sm bg-background"
-                value={selectedTest}
-                onChange={(e) => setSelectedTest(e.target.value)}
-              >
-                <option value="">Test tanlang...</option>
-                {tests.map((test: any) => (
-                  <option key={test.id} value={test.id}>
-                    {test.testTitle}
-                  </option>
-                ))}
-              </select>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="w-full sm:w-80 flex items-center justify-between gap-2 border border-border rounded-xl px-3 py-2.5 text-sm bg-background text-left">
+                  <span className={selectedTest ? "" : "text-muted-foreground"}>
+                    {tests.find((t: any) => t.id === selectedTest)?.testTitle ?? "Test tanlang..."}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="max-h-80">
+                  {tests.map((test: any) => (
+                    <DropdownMenuItem key={test.id} onClick={() => setSelectedTest(test.id)}>
+                      {test.testTitle}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
 

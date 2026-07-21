@@ -26,10 +26,10 @@ export default function DashboardPage() {
   ];
 
   const quickLinks = [
-    { href: "/dashboard/tests", label: "Testlarni boshlash", desc: "DTM, SAT, Milliy Sertifikat", color: "bg-primary text-white" },
+    { href: "/dashboard/tests", label: "Testlarni boshlash", desc: "Milliy Sertifikat, Attestatsiya, SAT, DTM", color: "bg-primary text-white" },
+    { href: "/dashboard/results", label: "Natijalarim", desc: "Tahlil va statistika", color: "bg-emerald-600 text-white" },
+    { href: "/dashboard/profile", label: "Profilim", desc: "Ma'lumotlarni tahrirlash", color: "bg-violet-600 text-white" },
     { href: "/dashboard/groups", label: "Guruh testlari", desc: "Haftalik maxsus testlar", color: "bg-accent text-white" },
-    { href: "/dashboard/results", label: "Natijalarim", desc: "Tahlil va statistika", color: "bg-muted text-foreground" },
-    { href: "/dashboard/profile", label: "Profilim", desc: "Ma'lumotlarni tahrirlash", color: "bg-muted text-foreground" },
   ];
 
   return (

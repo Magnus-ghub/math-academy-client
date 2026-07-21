@@ -96,9 +96,14 @@ export default function AdminCommentsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
-                      U
+                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0 overflow-hidden">
+                      {comment.userImage ? (
+                        <img src={comment.userImage} alt={comment.userName} className="w-full h-full object-cover" />
+                      ) : (
+                        (comment.userName?.[0] ?? "U").toUpperCase()
+                      )}
                     </div>
+                    <span className="text-sm font-semibold">{comment.userName ?? "Foydalanuvchi"}</span>
                     <div className="flex items-center gap-0.5">
                       {[...Array(5)].map((_, i) => (
                         <Star

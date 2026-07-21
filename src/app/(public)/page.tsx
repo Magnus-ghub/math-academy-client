@@ -2,6 +2,7 @@
 import CTASection from "@/components/home/CTASection";
 import HeroSection from "@/components/home/HeroSection";
 import SuccessStoriesSection from "@/components/home/SuccessStoriesSection";
+import TestimonialsSection from "@/components/home/TestimonialsSection";
 import TeachersSection from "@/components/home/TeachersSection";
 import SocialMediaSection from "@/components/home/SocialMediaSection";
 import TestTypesSection from "@/components/home/TestTypesSection";
@@ -21,6 +22,7 @@ export default function HomePage() {
       <TeachersSection />
       <HowItWorksSection />
       <SuccessStoriesSection />
+      <TestimonialsSection />
       <FAQSection />
       <CTASection />
     </>
