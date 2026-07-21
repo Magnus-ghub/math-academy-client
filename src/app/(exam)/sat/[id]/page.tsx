@@ -24,6 +24,7 @@ import { MathText } from "@/components/MathText";
 import { DesmosCalculator } from "@/components/DesmosCalculator";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { PracticeResultScreen } from "@/components/PracticeResultScreen";
+import ExamWatermark from "@/components/ExamWatermark";
 import { parseSprAnswer } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
@@ -697,8 +698,9 @@ function SatExamPageContent() {
       </header>
 
       {/* ══ BODY ══ */}
-      <div className="flex-1 overflow-y-auto bg-[#f8f9fa] pb-24">
-        <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="relative flex-1 overflow-y-auto bg-[#f8f9fa] pb-24">
+        <ExamWatermark mode="absolute" />
+        <div className="relative max-w-3xl mx-auto px-4 py-6">
           {currentQ && (
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               {/* Question header */}

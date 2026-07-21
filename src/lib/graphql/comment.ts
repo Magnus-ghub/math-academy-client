@@ -17,6 +17,29 @@ export const GET_PENDING_COMMENTS = gql`
   }
 `;
 
+export const GET_ALL_COMMENTS = gql`
+  query GetAllComments {
+    getAllComments {
+      id
+      commentType
+      commentStatus
+      text
+      rating
+      userId
+      userName
+      userImage
+      testId
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_COMMENT = gql`
+  mutation DeleteComment($commentId: String!) {
+    deleteComment(commentId: $commentId)
+  }
+`;
+
 export const GET_PUBLIC_COMMENTS = gql`
   query GetPublicComments {
     getPublicComments {

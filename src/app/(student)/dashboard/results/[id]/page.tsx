@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { GET_RESULT } from "@/lib/graphql/result";
 import { GET_QUESTIONS, GET_TEST } from "@/lib/graphql/test";
 import { ReportQuestionModal } from "@/components/ReportQuestionModal";
+import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { MathText } from "@/components/MathText";
 import { ReviewPrompt } from "@/components/ReviewPrompt";
 
@@ -176,6 +177,7 @@ export default function ResultDetailPage() {
   const [youtubeUrl, setYoutubeUrl] = useState<string | null>(null);
   const [testAnalysisOpen, setTestAnalysisOpen] = useState(false);
   const [openQuestionAnalysis, setOpenQuestionAnalysis] = useState<string | null>(null);
+  const [showRetakeRequest, setShowRetakeRequest] = useState(false);
 
   const { data: resultData, loading: resultLoading } = useQuery<{ getResult: any }>(GET_RESULT, {
     variables: { resultId: id },
@@ -184,7 +186,7 @@ export default function ResultDetailPage() {
   const result = resultData?.getResult;
   const isAttestatsiya = result?.testType === "ATTESTATSIYA";
 
-  const { data: questionsData } = useQuery<{ getQuestions: any[] }>(GET_QUESTIONS, {
+  const { data: questionsData, loading: questionsLoading } = useQuery<{ getQuestions: any[] }>(GET_QUESTIONS, {
     variables: { testId: result?.testId },
     skip: !result?.testId,
   });
@@ -322,11 +324,24 @@ export default function ResultDetailPage() {
       {/* ── Test-level analysis ── */}
       {(hasTestAnalysis || hasTestYoutube) && (
         <div className="bg-background rounded-2xl border border-border p-4 mb-6">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 text-center">
             Test tahlili
           </p>
-          <div className="flex gap-2 flex-wrap">
-            {hasTestAnalysis && (
+
+          {hasTestYoutube && (
+            <div className="flex flex-col items-center justify-center py-3 mb-3">
+              <button
+                onClick={() => setYoutubeUrl(test.testYoutubeUrl)}
+                className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center shadow-lg shadow-red-600/25 transition-all hover:scale-105"
+              >
+                <YoutubeIcon className="w-8 h-8 text-white" />
+              </button>
+              <span className="text-sm font-semibold text-red-600 mt-2">Video tahlilni ko'rish</span>
+            </div>
+          )}
+
+          {hasTestAnalysis && (
+            <div className="flex justify-center">
               <button
                 onClick={() => setTestAnalysisOpen((v) => !v)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${
@@ -338,17 +353,9 @@ export default function ResultDetailPage() {
                 <Bot className="w-4 h-4" />
                 AI Tahlil
               </button>
-            )}
-            {hasTestYoutube && (
-              <button
-                onClick={() => setYoutubeUrl(test.testYoutubeUrl)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-              >
-                <YoutubeIcon className="w-4 h-4" />
-                YouTube Tahlil
-              </button>
-            )}
-          </div>
+            </div>
+          )}
+
           {testAnalysisOpen && test?.testAnalysis && (
             <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed wrap-break-word overflow-x-auto">
               <MathText text={test.testAnalysis} />
@@ -398,7 +405,9 @@ export default function ResultDetailPage() {
                       <p className="text-sm font-medium mb-3 leading-relaxed">
                         {i + 1}. {question
                           ? <MathText text={question.questionText} />
-                          : "Savol yuklanmoqda..."}
+                          : questionsLoading
+                            ? "Savol yuklanmoqda..."
+                            : <span className="text-muted-foreground italic">Bu savol testdan olib tashlangan yoki o'zgartirilgan</span>}
                       </p>
                       {question?.questionImage && (
                         <img
@@ -500,6 +509,19 @@ export default function ResultDetailPage() {
           </button>
         </Link>
       </div>
+
+      <div className="text-center mb-6">
+        <button
+          onClick={() => setShowRetakeRequest(true)}
+          className="text-sm text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors"
+        >
+          Xato bilan topshirib qo'ydingizmi? Qayta topshirishni so'rang
+        </button>
+      </div>
+
+      {showRetakeRequest && result && (
+        <RequestRetakeModal testId={result.testId} onClose={() => setShowRetakeRequest(false)} />
+      )}
 
       {reportTarget && result && (
         <ReportQuestionModal

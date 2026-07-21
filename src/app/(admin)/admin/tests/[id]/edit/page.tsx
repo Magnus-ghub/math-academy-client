@@ -74,10 +74,28 @@ interface AddQuestionData {
   };
 }
 
+// Brauzer <img> sifatida ko'rsata oladigan formatlar. MS Word rasmni
+// ko'pincha shu ro'yxatdan tashqari — EMF/WMF (Windows vektor formati) —
+// sifatida base64'ga qo'shadi; bunday holda fayl "muvaffaqiyatli"
+// yaratilgandek ko'rinadi-yu, aslida brauzer uni hech qachon ko'rsata olmaydi
+// (singan rasm bo'lib qoladi, xato ham chiqmaydi) — shuning uchun alohida
+// tekshiramiz.
+const BROWSER_SAFE_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/jpg",
+  "image/gif",
+  "image/webp",
+  "image/bmp",
+  "image/svg+xml",
+]);
+
 function dataUrlToFile(dataUrl: string, filename = "pasted-image.png"): File | null {
   const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
   if (!match) return null;
-  const [, mime, base64] = match;
+  const [, mime] = match;
+  if (!BROWSER_SAFE_IMAGE_TYPES.has(mime.toLowerCase())) return null;
+  const [, , base64] = match;
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);

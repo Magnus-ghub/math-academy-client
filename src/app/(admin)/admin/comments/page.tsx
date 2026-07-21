@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Search, CheckCircle, XCircle, Star } from "lucide-react";
+import { Search, CheckCircle, XCircle, Star, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
-  GET_PENDING_COMMENTS,
+  GET_ALL_COMMENTS,
   APPROVE_COMMENT,
   REJECT_COMMENT,
+  DELETE_COMMENT,
 } from "@/lib/graphql/comment";
+import ConfirmModal from "@/components/admin/ConfirmModal";
 
 const statusColors: Record<string, string> = {
   PENDING: "bg-yellow-100 text-yellow-700",
@@ -25,11 +27,12 @@ const statusLabels: Record<string, string> = {
 
 export default function AdminCommentsPage() {
   const [search, setSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  const { data, loading, refetch } = useQuery<{ getPendingComments: any[] }>(
-    GET_PENDING_COMMENTS
+  const { data, loading, refetch } = useQuery<{ getAllComments: any[] }>(
+    GET_ALL_COMMENTS
   );
-  const comments = data?.getPendingComments || [];
+  const comments = data?.getAllComments || [];
 
   const [approveComment] = useMutation(APPROVE_COMMENT, {
     onCompleted: () => {
@@ -42,6 +45,15 @@ export default function AdminCommentsPage() {
   const [rejectComment] = useMutation(REJECT_COMMENT, {
     onCompleted: () => {
       toast.success("Izoh rad etildi");
+      refetch();
+    },
+    onError: () => toast.error("Xatolik yuz berdi"),
+  });
+
+  const [deleteComment] = useMutation(DELETE_COMMENT, {
+    onCompleted: () => {
+      toast.success("Izoh o'chirildi");
+      setDeleteTarget(null);
       refetch();
     },
     onError: () => toast.error("Xatolik yuz berdi"),
@@ -67,7 +79,7 @@ export default function AdminCommentsPage() {
         <div>
           <h1 className="text-2xl font-bold">Izohlar</h1>
           <p className="text-muted-foreground text-sm">
-            {filtered.length} ta kutilmoqda
+            {filtered.length} ta izoh
           </p>
         </div>
       </div>
@@ -84,7 +96,7 @@ export default function AdminCommentsPage() {
 
       {filtered.length === 0 ? (
         <div className="bg-background rounded-2xl border border-border p-12 text-center text-muted-foreground">
-          <p>Kutilayotgan izohlar yo'q</p>
+          <p>Izohlar yo'q</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -133,17 +145,30 @@ export default function AdminCommentsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2 shrink-0">
+                  {comment.commentStatus === "PENDING" && (
+                    <>
+                      <button
+                        onClick={() => approveComment({ variables: { commentId: comment.id } })}
+                        className="p-2 rounded-xl bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                        title="Tasdiqlash"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => rejectComment({ variables: { commentId: comment.id } })}
+                        className="p-2 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                        title="Rad etish"
+                      >
+                        <XCircle className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
                   <button
-                    onClick={() => approveComment({ variables: { commentId: comment.id } })}
-                    className="p-2 rounded-xl bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                    onClick={() => setDeleteTarget(comment.id)}
+                    className="p-2 rounded-xl bg-muted text-muted-foreground hover:bg-red-100 hover:text-red-600 transition-colors"
+                    title="O'chirish"
                   >
-                    <CheckCircle className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => rejectComment({ variables: { commentId: comment.id } })}
-                    className="p-2 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
-                  >
-                    <XCircle className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -151,6 +176,15 @@ export default function AdminCommentsPage() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Izohni o'chirmoqchimisiz?"
+        description="Bu amalni ortga qaytarib bo'lmaydi — izoh butunlay o'chiriladi."
+        confirmLabel="Ha, o'chirish"
+        onConfirm={() => deleteTarget && deleteComment({ variables: { commentId: deleteTarget } })}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

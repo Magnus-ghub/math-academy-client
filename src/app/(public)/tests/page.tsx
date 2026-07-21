@@ -270,6 +270,7 @@ export default function TestsPage() {
 
   const { data: myResultsData } = useQuery<{ getMyResults: any[] }>(GET_MY_RESULTS, {
     skip: !isAuthenticated,
+    fetchPolicy: "cache-and-network",
   });
   const attemptedTestIds = new Set(
     (myResultsData?.getMyResults ?? []).map((r: any) => r.testId)

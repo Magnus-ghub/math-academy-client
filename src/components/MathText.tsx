@@ -17,7 +17,18 @@ interface MathTextProps {
 // \nabla kabi haqiqiy LaTeX buyruqlar (kichik harf bilan davom etadi)
 // tegilmay qoladi.
 function normalizeLiteralNewlines(text: string): string {
-  return text.replace(/\\n(?=[A-Z]|\$|$)/g, "\n");
+  return text.replace(/\\n(?=[A-Z0-9]|\$|$)/g, "\n");
+}
+
+// Word/MathType'dan copy-paste qilingan formulalarda ko'rinmas Unicode
+// operatorlar qoladi (function application, invisible times/plus/separator,
+// zero-width space) — ko'zga ko'rinmaydi, lekin KaTeX ularni tushunmay,
+// butun formulani "ln⁡ln8x" kabi buzib qo'yadi. Har qanday ishlovdan oldin
+// olib tashlaymiz.
+function stripInvisibleMathOperators(text: string): string {
+  // U+2061 FUNCTION APPLICATION, U+2062 INVISIBLE TIMES, U+2063 INVISIBLE
+  // SEPARATOR, U+2064 INVISIBLE PLUS, U+200B ZERO WIDTH SPACE, U+FEFF BOM
+  return text.replace(/[⁡⁢⁣⁤​﻿]/g, "");
 }
 
 // $...$ yoki $$...$$ ichida bo'lmagan \pi, \sqrt{x}, \frac{a}{b} kabi LaTeX
@@ -43,7 +54,7 @@ export function MathText({ text, className }: MathTextProps) {
   const html = useMemo(() => {
     if (!text) return "";
 
-    const processed = preprocessText(normalizeLiteralNewlines(text));
+    const processed = preprocessText(normalizeLiteralNewlines(stripInvisibleMathOperators(text)));
 
     // Avval block formulalarni ($$...$$) ajratamiz
     const blockSplit = processed.split(/\$\$(.+?)\$\$/g);
@@ -98,7 +109,7 @@ export function MathText({ text, className }: MathTextProps) {
 
   return (
     <span
-      className={`math-text font-cmu-serif ${className ?? ""}`}
+      className={`math-text font-cmu-serif inline-block max-w-full overflow-x-auto wrap-anywhere ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

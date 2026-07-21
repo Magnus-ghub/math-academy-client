@@ -18,6 +18,7 @@ import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { FloatingCalculator } from "@/components/FloatingCalculator";
 import { PracticeResultScreen } from "@/components/PracticeResultScreen";
+import ExamWatermark from "@/components/ExamWatermark";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
 import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
@@ -316,6 +317,8 @@ function ExamPageContent() {
 
   return (
     <>
+      <ExamWatermark />
+
       {/* ── HEADER ── */}
       <header className="shrink-0 bg-background border-b border-border px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-4">
@@ -326,7 +329,7 @@ function ExamPageContent() {
                 {test.testType?.replace("_", " ")}
               </span>
               <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                 {answeredCount}/{totalQuestions}
               </span>
             </div>
@@ -375,14 +378,16 @@ function ExamPageContent() {
             <Clock className="w-4 h-4" />
             {formatTime(timeLeft)}
           </div>
-          {/* Submit — desktop only */}
-          <button
-            onClick={() => setShowConfirm(true)}
-            className="hidden md:flex shrink-0 items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-          >
-            <CheckCircle className="w-4 h-4" />
-            Tugatish
-          </button>
+          {/* Submit — desktop only, faqat oxirgi savolda */}
+          {isLast && (
+            <button
+              onClick={() => setShowConfirm(true)}
+              className="hidden md:flex shrink-0 items-center gap-2 px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Tugatish
+            </button>
+          )}
         </div>
       </header>
 
@@ -419,7 +424,7 @@ function ExamPageContent() {
                           number: currentIndex + 1,
                         })
                       }
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-red-200 hover:bg-red-50 text-muted-foreground hover:text-red-500 transition-all duration-200"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300 transition-all duration-200"
                       title="E'tiroz bildirish"
                     >
                       <span className="text-[13px] font-medium leading-none">
@@ -510,13 +515,15 @@ function ExamPageContent() {
 
                 <div className="flex-1" />
 
-                {/* Mobile: Tugatish (har doim ko'rinadi) */}
-                <button
-                  onClick={() => setShowConfirm(true)}
-                  className="md:hidden flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-                >
-                  <p>Yakunlash</p>
-                </button>
+                {/* Mobile: Yakunlash — faqat oxirgi savolda */}
+                {isLast && (
+                  <button
+                    onClick={() => setShowConfirm(true)}
+                    className="md:hidden flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+                  >
+                    <p>Yakunlash</p>
+                  </button>
+                )}
 
                 {/* Keyingi / Tugatish (oxirgi savolda) */}
                 {isLast ? (

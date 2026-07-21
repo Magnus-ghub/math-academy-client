@@ -210,7 +210,9 @@ export default function StudentTestsPage() {
   });
   const tests = data?.getTests || [];
 
-  const { data: myResultsData } = useQuery<{ getMyResults: any[] }>(GET_MY_RESULTS);
+  const { data: myResultsData } = useQuery<{ getMyResults: any[] }>(GET_MY_RESULTS, {
+    fetchPolicy: "cache-and-network",
+  });
   const attemptedTestIds = new Set(
     (myResultsData?.getMyResults ?? []).map((r: any) => r.testId)
   );

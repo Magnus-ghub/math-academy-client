@@ -18,6 +18,7 @@ export const GET_ALL_GROUPS = gql`
     getAllGroups {
       id
       groupName
+      groupDesc
       groupType
       groupStatus
       telegramChatId
@@ -46,8 +47,10 @@ export const UPDATE_GROUP = gql`
     updateGroup(groupId: $groupId, input: $input) {
       id
       groupName
+      groupDesc
       groupStatus
       durationMonths
+      telegramChatId
     }
   }
 `;

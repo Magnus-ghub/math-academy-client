@@ -10,7 +10,9 @@ import { useAuthStore } from "@/lib/store/auth.store";
 export default function DashboardPage() {
   const { user } = useAuthStore();
   
-  const { data: resultsData } = useQuery<{ getMyResults: any[] }>(GET_MY_RESULTS);
+  const { data: resultsData } = useQuery<{ getMyResults: any[] }>(GET_MY_RESULTS, {
+    fetchPolicy: "cache-and-network",
+  });
   
   const results = resultsData?.getMyResults || [];
   const avgScore = results.length > 0

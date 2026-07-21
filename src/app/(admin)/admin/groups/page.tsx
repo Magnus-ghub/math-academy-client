@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Plus, Users, Calendar, Power, UserPlus } from "lucide-react";
+import { Plus, Users, Calendar, Power, UserPlus, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   GET_ALL_GROUPS,
@@ -10,6 +10,7 @@ import {
   UPDATE_GROUP,
 } from "@/lib/graphql/group";
 import CreateGroupModal from "@/components/admin/CreateGroupModal";
+import EditGroupModal from "@/components/admin/EditGroupModal";
 import AddUserToGroupModal from "@/components/admin/AddUserToGroupModal";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 
@@ -25,6 +26,7 @@ export default function AdminGroupsPage() {
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [showModal, setShowModal] = useState(false);
   const [addMemberGroup, setAddMemberGroup] = useState<any>(null);
+  const [editGroup, setEditGroup] = useState<any>(null);
   const [confirmGroupId, setConfirmGroupId] = useState<string | null>(null);
   const [form, setForm] = useState({
     groupName: "",
@@ -182,6 +184,13 @@ export default function AdminGroupsPage() {
                     className={`w-2 h-2 rounded-full ${group.groupStatus === "ACTIVE" ? "bg-green-500" : "bg-gray-300"}`}
                   />
                   <button
+                    onClick={() => setEditGroup(group)}
+                    className="p-1 rounded-lg hover:bg-muted transition-colors"
+                    title="Tahrirlash"
+                  >
+                    <Pencil className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                  <button
                     onClick={() => group.groupStatus === "ACTIVE"
                       ? setConfirmGroupId(group.id)
                       : handleToggleStatus(group)
@@ -232,6 +241,14 @@ export default function AdminGroupsPage() {
         onClose={() => setAddMemberGroup(null)}
         onAdded={() => refetch()}
       />
+
+      {editGroup && (
+        <EditGroupModal
+          group={editGroup}
+          onClose={() => setEditGroup(null)}
+          onSuccess={() => refetch()}
+        />
+      )}
 
       <ConfirmModal
         open={!!confirmGroupId}

@@ -385,10 +385,13 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                   <label className="text-sm font-medium mb-1.5 block">Vaqt (daqiqada) *</label>
                   <Input
                     type="number"
+                    inputMode="numeric"
                     min={5}
                     max={180}
                     value={form.duration}
                     onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                 </div>
               </div>
