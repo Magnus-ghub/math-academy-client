@@ -5,7 +5,25 @@ export default function HeroBookVisual() {
   return (
     <div className="relative shrink-0 w-full max-w-xs lg:max-w-sm hidden sm:flex items-center justify-center">
       {/* Glow */}
-      <div className="absolute inset-0 blur-3xl bg-primary/15 rounded-full scale-90 pointer-events-none" />
+      <div className="absolute inset-0 blur-3xl bg-primary/15 dark:bg-primary/25 rounded-full scale-90 pointer-events-none" />
+
+      {/* Backdrop arch */}
+      <div className="absolute inset-x-4 top-4 bottom-10 -z-10 bg-linear-to-br from-primary/12 via-accent/8 to-transparent dark:from-primary/20 dark:via-accent/12 rounded-[3rem] pointer-events-none" />
+
+      {/* Decorative ring */}
+      <div className="absolute top-2 left-0 w-12 h-12 rounded-full border-2 border-primary/25 hidden lg:block" />
+
+      {/* Sparkle */}
+      <svg className="absolute top-10 -right-6 w-5 h-5 text-accent/70 hidden lg:block" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 0 L14 9 L24 12 L14 15 L12 24 L10 15 L0 12 L10 9 Z" />
+      </svg>
+
+      {/* Small floating dot */}
+      <div className="absolute bottom-28 -left-5 w-3.5 h-3.5 rounded-full bg-primary/40 shadow-md hidden lg:block" />
+
+      {/* Pedestal platform */}
+      <div className="absolute bottom-3 w-60 h-12 rounded-full bg-card/80 dark:bg-card/50 border border-border/60 backdrop-blur-sm shadow-[0_18px_36px_-12px_rgba(0,0,0,0.18)] pointer-events-none" />
+      <div className="absolute bottom-6 w-52 h-8 bg-primary/15 dark:bg-primary/25 rounded-full blur-lg pointer-events-none" />
 
       {/* Book wrapper — 3D tilt */}
       <div

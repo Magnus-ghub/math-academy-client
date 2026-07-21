@@ -1,31 +1,20 @@
 import Link from "next/link";
 import { ArrowRight, Users, Star, CheckCircle, TrendingUp, Trophy } from "lucide-react";
 import HeroBookVisual from "./HeroBookVisual";
+import HeroBackground from "../HeroBackground";
 
 const stats = [
-  { value: "50K+", label: "Obunachi", icon: Users },
-  { value: "35M+", label: "Ko'rishlar", icon: TrendingUp },
-  { value: "95%", label: "Muvaffaqiyat", icon: Trophy },
+  { value: "50K+", label: "Obunachi", icon: Users, color: "text-primary bg-primary/12" },
+  { value: "35M+", label: "Ko'rishlar", icon: TrendingUp, color: "text-emerald-600 bg-emerald-500/12" },
+  { value: "95%", label: "Muvaffaqiyat", icon: Trophy, color: "text-accent bg-accent/12" },
 ];
 
 const badges = ["Milliy Sertifikat", "Attestatsiya", "SAT", "DTM"];
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-linear-to-br from-primary/5 via-background to-accent/5 pt-16 pb-12 md:pt-24 md:pb-20">
-      {/* Background blobs */}
-      <div className="absolute inset-0 -z-10 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/8 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-accent/8 rounded-full blur-3xl" />
-        {/* Dot grid */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: "radial-gradient(circle, currentColor 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-          }}
-        />
-      </div>
+    <section className="relative overflow-hidden pt-16 pb-12 md:pt-24 md:pb-20">
+      <HeroBackground />
 
       <div className="container mx-auto px-4">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
@@ -51,7 +40,7 @@ export default function HeroSection() {
             </h1>
 
             {/* Description */}
-            <p className="text-lg text-muted-foreground mb-6 max-w-xl lg:mx-0 mx-auto leading-relaxed">
+            <p className="text-lg font-medium text-muted-foreground mb-6 max-w-xl lg:mx-0 mx-auto leading-relaxed">
               Milliy Sertifikat, Attestatsiya, SAT va DTM uchun real testlar, batafsil tahlil va shaxsiy statistika — hammasi bir joyda.
             </p>
 
@@ -76,20 +65,23 @@ export default function HeroSection() {
               </Link>
               <Link
                 href="/login"
-                className="inline-flex items-center justify-center gap-2 bg-background border border-border text-sm font-semibold px-7 py-3.5 rounded-2xl hover:bg-muted transition-all shadow-sm"
+                className="inline-flex items-center justify-center gap-2 bg-background border border-primary/30 text-primary text-sm font-semibold px-7 py-3.5 rounded-2xl hover:bg-primary/10 transition-all shadow-sm"
               >
                 Bepul ro'yxatdan o'tish
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
 
             {/* Stats row */}
-            <div className="flex gap-8 justify-center lg:justify-start">
-              {stats.map(({ value, label, icon: Icon }) => (
-                <div key={label} className="text-center lg:text-left">
-                  <div className="text-2xl font-black text-primary">{value}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1 justify-center lg:justify-start mt-0.5">
-                    <Icon className="w-3 h-3" />
-                    {label}
+            <div className="flex gap-6 justify-center lg:justify-start">
+              {stats.map(({ value, label, icon: Icon, color }) => (
+                <div key={label} className="flex items-center gap-2.5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${color}`}>
+                    <Icon className="w-4.5 h-4.5" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-lg font-black text-foreground leading-none">{value}</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">{label}</div>
                   </div>
                 </div>
               ))}

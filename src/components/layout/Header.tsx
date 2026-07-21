@@ -96,6 +96,9 @@ export default function Header() {
             height={40}
             className="rounded-md"
           />
+          <span className="font-bold text-sm text-primary leading-tight sm:hidden">
+            Saidxonov<br />Academy
+          </span>
           <span className="font-bold text-lg text-primary hidden sm:block">
             Saidxonov Academy
           </span>
