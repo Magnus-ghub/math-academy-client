@@ -167,7 +167,4 @@
   .math-text .katex-display {
     @apply overflow-x-auto overflow-y-hidden max-w-full;
   }
-  .math-text .katex {
-    @apply overflow-x-auto max-w-full;
-  }
 }

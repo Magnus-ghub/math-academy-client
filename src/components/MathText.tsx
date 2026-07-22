@@ -109,7 +109,7 @@ export function MathText({ text, className }: MathTextProps) {
 
   return (
     <span
-      className={`math-text font-cmu-serif inline-block max-w-full overflow-x-auto wrap-anywhere ${className ?? ""}`}
+      className={`math-text font-cmu-serif inline-block max-w-full wrap-anywhere ${className ?? ""}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
