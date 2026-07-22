@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
+import Image from "next/image";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   Clock,
@@ -18,7 +19,6 @@ import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { FloatingCalculator } from "@/components/FloatingCalculator";
 import { PracticeResultScreen } from "@/components/PracticeResultScreen";
-import ExamWatermark from "@/components/ExamWatermark";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
 import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
@@ -317,8 +317,6 @@ function ExamPageContent() {
 
   return (
     <>
-      <ExamWatermark />
-
       {/* ── HEADER ── */}
       <header className="shrink-0 bg-background border-b border-border px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-4">
@@ -399,12 +397,28 @@ function ExamPageContent() {
             <div className="flex-1">
               {/* Question card */}
               <div
-                className={`bg-background rounded-2xl border p-5 transition-colors ${
+                className={`relative overflow-hidden bg-background rounded-2xl border transition-colors ${
                   answers[q.id] !== undefined
                     ? "border-primary/30"
                     : "border-border"
                 }`}
               >
+                {/* Orqa fondagi logo — katta, juda hira */}
+                <Image
+                  src="/logo.jpg"
+                  alt=""
+                  fill
+                  aria-hidden
+                  className="object-contain opacity-[0.04] pointer-events-none select-none"
+                />
+                <span
+                  aria-hidden
+                  className="absolute inset-x-0 bottom-4 text-center text-lg font-bold tracking-wide text-primary/5 pointer-events-none select-none"
+                >
+                  SAIDXONOV ACADEMY
+                </span>
+
+                <div className="relative p-5">
                 {/* Question header */}
                 <div className="flex items-center justify-between mb-4">
                   <span
@@ -488,6 +502,7 @@ function ExamPageContent() {
                       </span>
                     </button>
                   ))}
+                </div>
                 </div>
               </div>
 
