@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from "@/lib/store/auth.store";
 import { countWords, limitWords } from "@/lib/utils";
 import { JsonReplaceQuestionsModal } from "@/components/admin/JsonReplaceQuestionsModal";
+import { LatexPreview } from "@/components/admin/LatexPreview";
 import { toast } from "sonner";
 
 const MAX_DESC_WORDS = 40;
@@ -694,6 +695,8 @@ function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImag
           onChange={(e) => onUpdate(q.uid, "questionText", e.target.value)}
         />
 
+        <LatexPreview text={q.questionText} />
+
         <div>
           {q.questionImage ? (
             <div className="relative inline-block">
@@ -726,17 +729,24 @@ function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImag
 
         <div className="space-y-2">
           {q.options.map((opt, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <button
-                onClick={() => onUpdate(q.uid, "correctAnswer", i)}
-                className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
-                  q.correctAnswer === i ? "border-primary bg-primary text-white" : "border-border hover:border-primary"
-                }`}
-              >
-                {["A", "B", "C", "D"][i]}
-              </button>
-              <Input placeholder={`${["A", "B", "C", "D"][i]} variant`} value={opt}
-                onChange={(e) => onUpdateOption(q.uid, i, e.target.value)} />
+            <div key={i} className="space-y-1">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onUpdate(q.uid, "correctAnswer", i)}
+                  className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                    q.correctAnswer === i ? "border-primary bg-primary text-white" : "border-border hover:border-primary"
+                  }`}
+                >
+                  {["A", "B", "C", "D"][i]}
+                </button>
+                <Input placeholder={`${["A", "B", "C", "D"][i]} variant`} value={opt}
+                  onChange={(e) => onUpdateOption(q.uid, i, e.target.value)} />
+              </div>
+              {opt && (
+                <div className="pl-9">
+                  <LatexPreview text={opt} />
+                </div>
+              )}
             </div>
           ))}
         </div>

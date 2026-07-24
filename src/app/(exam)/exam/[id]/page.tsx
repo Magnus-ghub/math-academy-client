@@ -409,11 +409,11 @@ function ExamPageContent() {
                   alt=""
                   fill
                   aria-hidden
-                  className="object-contain opacity-[0.04] pointer-events-none select-none"
+                  className="object-contain opacity-[0.09] pointer-events-none select-none"
                 />
                 <span
                   aria-hidden
-                  className="absolute inset-x-0 bottom-4 text-center text-lg font-bold tracking-wide text-primary/5 pointer-events-none select-none"
+                  className="absolute inset-x-0 bottom-4 text-center text-lg font-bold tracking-wide text-primary/15 pointer-events-none select-none"
                 >
                   SAIDXONOV ACADEMY
                 </span>

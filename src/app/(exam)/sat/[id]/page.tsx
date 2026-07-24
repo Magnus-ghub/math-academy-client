@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
+import Image from "next/image";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
@@ -24,7 +25,6 @@ import { MathText } from "@/components/MathText";
 import { DesmosCalculator } from "@/components/DesmosCalculator";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { PracticeResultScreen } from "@/components/PracticeResultScreen";
-import ExamWatermark from "@/components/ExamWatermark";
 import { parseSprAnswer } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
@@ -699,10 +699,24 @@ function SatExamPageContent() {
 
       {/* ══ BODY ══ */}
       <div className="relative flex-1 overflow-y-auto bg-[#f8f9fa] pb-24">
-        <ExamWatermark mode="absolute" />
         <div className="relative max-w-3xl mx-auto px-4 py-6">
           {currentQ && (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="relative bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              {/* Orqa fondagi logo — katta, juda hira */}
+              <Image
+                src="/logo.jpg"
+                alt=""
+                fill
+                aria-hidden
+                className="object-contain opacity-[0.09] pointer-events-none select-none"
+              />
+              <span
+                aria-hidden
+                className="absolute inset-x-0 bottom-4 text-center text-lg font-bold tracking-wide text-primary/15 pointer-events-none select-none"
+              >
+                SAIDXONOV ACADEMY
+              </span>
+
               {/* Question header */}
               <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50">
                 <div className="flex items-center gap-2">

@@ -31,21 +31,136 @@ function stripInvisibleMathOperators(text: string): string {
   return text.replace(/[⁡⁢⁣⁤​﻿]/g, "");
 }
 
-// $...$ yoki $$...$$ ichida bo'lmagan \pi, \sqrt{x}, \frac{a}{b} kabi LaTeX
-// buyruqlarini, shuningdek x^2, b^2 kabi $ belgisiz darajalarni (AI tahlil
-// matnlarida ko'p uchraydi) avtomatik $...$ bilan o'raydi, KaTeX o'qiy olsin.
+// "{" dan boshlab qavslarni chuqurligini hisoblab, mos yopiluvchi "}" ni
+// topadi — \dfrac{8x^{7}}{9} kabi ichma-ich qavsli argumentlarni bitta oddiy
+// regex bilan (masalan {[^}]*}) to'g'ri o'qib bo'lmaydi, chunki u birinchi
+// uchragan "}" da (ya'ni ichki x^{7} ning yopilishida) to'xtab qoladi.
+function readBraceGroup(text: string, start: number): number | null {
+  if (text[start] !== "{") return null;
+  let depth = 0;
+  for (let j = start; j < text.length; j++) {
+    if (text[j] === "{") depth++;
+    else if (text[j] === "}") {
+      depth--;
+      if (depth === 0) return j + 1;
+    }
+  }
+  return null; // qavs yopilmagan
+}
+
+// $...$ tashqarisidagi \pi, \sqrt{x}, \dfrac{a^{n}}{b} kabi LaTeX
+// buyruqlarini, shuningdek x^2, b^{-2} kabi $ belgisiz darajalarni (AI
+// tahlil matnlarida ko'p uchraydi) avtomatik $...$ bilan o'raydi, KaTeX
+// o'qiy olsin. Qavslarni readBraceGroup orqali muvozanatlab o'qiydi.
+function wrapBareLatex(text: string): string {
+  let result = "";
+  let i = 0;
+  const n = text.length;
+
+  while (i < n) {
+    const ch = text[i];
+
+    // \komanda{arg1}{arg2} — \frac, \dfrac, \sqrt va h.k.
+    if (ch === "\\" && /[a-zA-Z]/.test(text[i + 1] ?? "")) {
+      let end = i + 1;
+      while (end < n && /[a-zA-Z]/.test(text[end])) end++;
+      for (let g = 0; g < 2; g++) {
+        const closeIdx = readBraceGroup(text, end);
+        if (closeIdx === null) break;
+        end = closeIdx;
+      }
+      result += `$${text.slice(i, end)}$`;
+      i = end;
+      continue;
+    }
+
+    // x^{n}, x^2, x^-2 kabi $ belgisiz darajalar
+    if (/[A-Za-z0-9)\]]/.test(ch) && text[i + 1] === "^") {
+      let end = i + 2;
+      if (text[end] === "{") {
+        end = readBraceGroup(text, end) ?? end;
+      } else {
+        if (text[end] === "-") end++;
+        while (end < n && /[A-Za-z0-9]/.test(text[end])) end++;
+      }
+      result += `$${text.slice(i, end)}$`;
+      i = end;
+      continue;
+    }
+
+    result += ch;
+    i++;
+  }
+
+  return result;
+}
+
 function preprocessText(text: string): string {
   const DELIM = /(\$\$[\s\S]+?\$\$|\$[^$\n]+?\$)/g;
   const parts = text.split(DELIM);
   return parts
-    .map((part, i) => {
-      if (i % 2 === 1) return part; // allaqachon math delimiters ichida
-      return part.replace(
-        /\\[a-zA-Z]+(?:\{[^}]*\}(?:\{[^}]*\})?)?|[A-Za-z0-9)\]]\^\{?-?[A-Za-z0-9]+\}?/g,
-        (match) => `$${match}$`
-      );
-    })
+    .map((part, i) => (i % 2 === 1 ? part : wrapBareLatex(part))) // toq indeks — allaqachon math delimiters ichida
     .join("");
+}
+
+type MathSegment =
+  | { kind: "text"; content: string }
+  | { kind: "math"; content: string; displayMode: boolean };
+
+// Matnni $$...$$ (block) va $...$ (inline) formulalarga, qolganini oddiy
+// matnga ajratadi. MathText (render) va validateLatex (admin panelidagi
+// saqlashdan oldingi tekshiruv) ayni shu bo'lishni ishlatadi — ajratish
+// mantig'i ikki joyda alohida yozilib, bir-biridan chetlashib qolmasin.
+function splitMathSegments(text: string): MathSegment[] {
+  const processed = preprocessText(normalizeLiteralNewlines(stripInvisibleMathOperators(text)));
+  const segments: MathSegment[] = [];
+
+  const blockSplit = processed.split(/\$\$(.+?)\$\$/g);
+  blockSplit.forEach((part, i) => {
+    if (i % 2 === 1) {
+      segments.push({ kind: "math", content: part, displayMode: true });
+      return;
+    }
+
+    const inlineSplit = part.split(/\$(.+?)\$/g);
+    inlineSplit.forEach((seg, j) => {
+      if (j % 2 === 1) {
+        segments.push({ kind: "math", content: seg, displayMode: false });
+      } else if (seg) {
+        segments.push({ kind: "text", content: seg });
+      }
+    });
+  });
+
+  return segments;
+}
+
+// Admin panelida savol/variant matnini saqlashdan oldin LaTeX xatolarini
+// aniqlaydi — bo'sh massiv qaytsa, xato topilmagan. Ikki bosqichda
+// tekshiradi: (1) butun matndagi "{" va "}" sonini solishtirib, tipik
+// "ortiqcha/yetishmayotgan qavs" xatolarini (masalan \sqrt{24}}} kabi) tez
+// ushlaydi; (2) har bir formula segmentini throwOnError:true bilan KaTeX'dan
+// o'tkazib, boshqa sintaksis xatolarini (noma'lum buyruq va h.k.) topadi.
+export function validateLatex(text: string): string[] {
+  if (!text) return [];
+  const errors: string[] = [];
+
+  const openCount = (text.match(/\{/g) ?? []).length;
+  const closeCount = (text.match(/\}/g) ?? []).length;
+  if (openCount !== closeCount) {
+    errors.push(`Qavslar soni mos emas: "{" – ${openCount} ta, "}" – ${closeCount} ta`);
+  }
+
+  for (const seg of splitMathSegments(text)) {
+    if (seg.kind !== "math") continue;
+    try {
+      katex.renderToString(seg.content, { throwOnError: true, displayMode: seg.displayMode });
+    } catch (e) {
+      errors.push(`Formula xatosi ("${seg.content}"): ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  return errors;
 }
 
 // Matnni $...$ (inline) va $$...$$ (block) formulalarga ajratib,
@@ -54,55 +169,31 @@ export function MathText({ text, className }: MathTextProps) {
   const html = useMemo(() => {
     if (!text) return "";
 
-    const processed = preprocessText(normalizeLiteralNewlines(stripInvisibleMathOperators(text)));
-
-    // Avval block formulalarni ($$...$$) ajratamiz
-    const blockSplit = processed.split(/\$\$(.+?)\$\$/g);
-
-    return blockSplit
-      .map((part, i) => {
-        const isBlock = i % 2 === 1;
-
-        if (isBlock) {
-          try {
-            return katex.renderToString(part, {
-              throwOnError: false,
-              displayMode: true,
-            });
-          } catch {
-            return part;
-          }
+    return splitMathSegments(text)
+      .map((seg) => {
+        if (seg.kind === "text") {
+          // HTML teglarni (table, tr, td va h.k.) safe render qilamiz
+          const SAFE = /^<\/?(table|thead|tbody|tr|th|td|br|b|i|strong|em|span|p|ul|ol|li)(\s[^>]*)?>$/i;
+          return seg.content.split(/(<[^>]*>)/g).map((chunk) => {
+            if (/^<[^>]*>$/.test(chunk)) {
+              return SAFE.test(chunk) ? chunk : chunk.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            }
+            return chunk
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/\n/g, "<br/>");
+          }).join("");
         }
 
-        // Inline formulalarni ($...$) shu segment ichida qayta ajratamiz
-        const inlineSplit = part.split(/\$(.+?)\$/g);
-        return inlineSplit
-          .map((seg, j) => {
-            const isInline = j % 2 === 1;
-            if (!isInline) {
-              // HTML teglarni (table, tr, td va h.k.) safe render qilamiz
-              const SAFE = /^<\/?(table|thead|tbody|tr|th|td|br|b|i|strong|em|span|p|ul|ol|li)(\s[^>]*)?>$/i;
-              return seg.split(/(<[^>]*>)/g).map((chunk) => {
-                if (/^<[^>]*>$/.test(chunk)) {
-                  return SAFE.test(chunk) ? chunk : chunk.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                }
-                return chunk
-                  .replace(/&/g, "&amp;")
-                  .replace(/</g, "&lt;")
-                  .replace(/>/g, "&gt;")
-                  .replace(/\n/g, "<br/>");
-              }).join("");
-            }
-            try {
-              return katex.renderToString(seg, {
-                throwOnError: false,
-                displayMode: false,
-              });
-            } catch {
-              return seg;
-            }
-          })
-          .join("");
+        try {
+          return katex.renderToString(seg.content, {
+            throwOnError: false,
+            displayMode: seg.displayMode,
+          });
+        } catch {
+          return seg.content;
+        }
       })
       .join("");
   }, [text]);

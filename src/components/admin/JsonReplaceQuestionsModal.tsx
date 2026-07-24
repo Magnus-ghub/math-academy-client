@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Copy, Check, Loader2, AlertCircle, AlertTriangle, Upload } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { getAiPrompt } from "@/lib/ai-test-prompt";
+import { validateLatex } from "@/components/MathText";
 import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
@@ -57,6 +58,26 @@ export function JsonReplaceQuestionsModal({ testId, testType, currentQuestionCou
         isSat
           ? 'Har bir savol "questionText" va 4 ta "options" (MCQ) yoki bo\'sh "options": [] (SPR) bo\'lishi kerak.'
           : 'Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.'
+      );
+      return;
+    }
+
+    const latexIssues: string[] = [];
+    questions.forEach((q: { questionText?: string; options?: string[] }, qi: number) => {
+      validateLatex(String(q.questionText ?? "")).forEach((err) =>
+        latexIssues.push(`${qi + 1}-savol matni: ${err}`)
+      );
+      (q.options ?? []).forEach((opt: string, oi: number) => {
+        validateLatex(String(opt ?? "")).forEach((err) =>
+          latexIssues.push(`${qi + 1}-savol, ${["A", "B", "C", "D"][oi]} varianti: ${err}`)
+        );
+      });
+    });
+    if (latexIssues.length > 0) {
+      setJsonError(
+        `LaTeX xatolari topildi, avval JSON'ni tuzating:\n${latexIssues.slice(0, 8).join("\n")}${
+          latexIssues.length > 8 ? `\n... yana ${latexIssues.length - 8} ta xato` : ""
+        }`
       );
       return;
     }
@@ -132,7 +153,7 @@ export function JsonReplaceQuestionsModal({ testId, testType, currentQuestionCou
           </div>
 
           {jsonError && (
-            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 whitespace-pre-line">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               {jsonError}
             </div>

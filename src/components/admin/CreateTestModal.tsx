@@ -9,6 +9,8 @@ import { GET_ALL_GROUPS } from "@/lib/graphql/group";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { countWords, limitWords } from "@/lib/utils";
 import { getAiPrompt } from "@/lib/ai-test-prompt";
+import { validateLatex } from "@/components/MathText";
+import { LatexPreview } from "@/components/admin/LatexPreview";
 import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
@@ -130,6 +132,26 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
         isSat
           ? 'Har bir savol "questionText" va 4 ta "options" (MCQ) yoki bo\'sh "options": [] (SPR) bo\'lishi kerak.'
           : 'Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.'
+      );
+      return;
+    }
+
+    const latexIssues: string[] = [];
+    questions.forEach((q: { questionText?: string; options?: string[] }, qi: number) => {
+      validateLatex(String(q.questionText ?? "")).forEach((err) =>
+        latexIssues.push(`${qi + 1}-savol matni: ${err}`)
+      );
+      (q.options ?? []).forEach((opt: string, oi: number) => {
+        validateLatex(String(opt ?? "")).forEach((err) =>
+          latexIssues.push(`${qi + 1}-savol, ${["A", "B", "C", "D"][oi]} varianti: ${err}`)
+        );
+      });
+    });
+    if (latexIssues.length > 0) {
+      setJsonError(
+        `LaTeX xatolari topildi, avval JSON'ni tuzating:\n${latexIssues.slice(0, 8).join("\n")}${
+          latexIssues.length > 8 ? `\n... yana ${latexIssues.length - 8} ta xato` : ""
+        }`
       );
       return;
     }
@@ -485,7 +507,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                   </div>
 
                   {jsonError && (
-                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 whitespace-pre-line">
                       <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                       {jsonError}
                     </div>
@@ -542,24 +564,33 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
                         onChange={(e) => updateQuestion(qIdx, "questionText", e.target.value)}
                       />
 
+                      <LatexPreview text={q.questionText} />
+
                       <div className="space-y-2">
                         {q.options.map((opt, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <button
-                              onClick={() => updateQuestion(qIdx, "correctAnswer", i)}
-                              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
-                                q.correctAnswer === i
-                                  ? "border-primary bg-primary text-white"
-                                  : "border-border hover:border-primary"
-                              }`}
-                            >
-                              {["A", "B", "C", "D"][i]}
-                            </button>
-                            <Input
-                              placeholder={`${["A", "B", "C", "D"][i]} variant`}
-                              value={opt}
-                              onChange={(e) => updateOption(qIdx, i, e.target.value)}
-                            />
+                          <div key={i} className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => updateQuestion(qIdx, "correctAnswer", i)}
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                                  q.correctAnswer === i
+                                    ? "border-primary bg-primary text-white"
+                                    : "border-border hover:border-primary"
+                                }`}
+                              >
+                                {["A", "B", "C", "D"][i]}
+                              </button>
+                              <Input
+                                placeholder={`${["A", "B", "C", "D"][i]} variant`}
+                                value={opt}
+                                onChange={(e) => updateOption(qIdx, i, e.target.value)}
+                              />
+                            </div>
+                            {opt && (
+                              <div className="pl-8">
+                                <LatexPreview text={opt} />
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { toast } from "sonner";
 import { CREATE_TEST, ADD_QUESTION } from "@/lib/graphql/test";
-import { MathText } from "@/components/MathText";
+import { LatexPreview } from "@/components/admin/LatexPreview";
 import { useAuthStore } from "@/lib/store/auth.store";
 
 const API_BASE =
@@ -487,11 +487,7 @@ function QuestionCard({
           onChange={(e) => onUpdate(q.uid, "questionText", e.target.value)}
         />
 
-        {q.questionText && (
-          <div className="px-3 py-2 bg-muted/30 rounded-lg text-sm">
-            <MathText text={q.questionText} />
-          </div>
-        )}
+        <LatexPreview text={q.questionText} />
 
         {/* Image area */}
         <div>
@@ -560,8 +556,8 @@ function QuestionCard({
                 />
               </div>
               {opt && (
-                <div className="pl-9 text-xs text-muted-foreground">
-                  <MathText text={opt} />
+                <div className="pl-9">
+                  <LatexPreview text={opt} />
                 </div>
               )}
             </div>

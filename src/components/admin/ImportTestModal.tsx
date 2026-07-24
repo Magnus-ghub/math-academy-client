@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Copy, Check, Upload, Loader2, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
+import { validateLatex } from "@/components/MathText";
 import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
@@ -117,6 +118,26 @@ export default function ImportTestModal({ onClose, onImported }: Props) {
       return;
     }
 
+    const latexIssues: string[] = [];
+    parsed.questions.forEach((q: { questionText?: string; options?: string[] }, qi: number) => {
+      validateLatex(String(q.questionText ?? "")).forEach((err) =>
+        latexIssues.push(`${qi + 1}-savol matni: ${err}`)
+      );
+      (q.options ?? []).forEach((opt: string, oi: number) => {
+        validateLatex(String(opt ?? "")).forEach((err) =>
+          latexIssues.push(`${qi + 1}-savol, ${["A", "B", "C", "D"][oi]} varianti: ${err}`)
+        );
+      });
+    });
+    if (latexIssues.length > 0) {
+      setError(
+        `LaTeX xatolari topildi, avval JSON'ni tuzating:\n${latexIssues.slice(0, 8).join("\n")}${
+          latexIssues.length > 8 ? `\n... yana ${latexIssues.length - 8} ta xato` : ""
+        }`
+      );
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch(`${API_BASE}/upload/json-test`, {
@@ -222,7 +243,7 @@ export default function ImportTestModal({ onClose, onImported }: Props) {
               </div>
 
               {error && (
-                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 whitespace-pre-line">
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
