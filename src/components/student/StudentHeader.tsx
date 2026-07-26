@@ -82,7 +82,7 @@ export default function StudentHeader() {
                 alt={user.userName ?? "Student"}
                 width={30}
                 height={30}
-                className="rounded-full object-cover shrink-0"
+                className="w-7.5 h-7.5 rounded-full object-cover shrink-0"
               />
             ) : (
               <div className="w-7.5 h-7.5 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs shrink-0">
