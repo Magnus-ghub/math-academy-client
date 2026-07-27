@@ -115,6 +115,12 @@ export const ADMIN_GENERATE_LOGIN_LINK = gql`
   }
 `;
 
+export const ADMIN_GENERATE_REBIND_LINK = gql`
+  mutation AdminGenerateRebindLink($userId: String!) {
+    adminGenerateRebindLink(userId: $userId)
+  }
+`;
+
 export const GOOGLE_LOGIN = gql`
   mutation GoogleLogin(
     $googleId: String!

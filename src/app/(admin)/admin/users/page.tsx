@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Search, Ban, Pencil, ShieldCheck, Link2 } from "lucide-react";
+import { Search, Ban, Pencil, ShieldCheck, Link2, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GET_ALL_USERS, ADMIN_UPDATE_USER } from "@/lib/graphql/user";
-import { ADMIN_GENERATE_LOGIN_LINK } from "@/lib/graphql/auth";
+import { ADMIN_GENERATE_LOGIN_LINK, ADMIN_GENERATE_REBIND_LINK } from "@/lib/graphql/auth";
 import { toast } from "sonner";
 import EditUserModal from "@/components/admin/EditUserModal";
 
@@ -59,6 +59,17 @@ export default function AdminUsersPage() {
         toast.success("Havola nusxalandi — foydalanuvchiga yuboring");
       },
       onError: () => toast.error("Havola yaratishda xatolik"),
+    }
+  );
+
+  const [adminGenerateRebindLink] = useMutation<{ adminGenerateRebindLink: string }>(
+    ADMIN_GENERATE_REBIND_LINK,
+    {
+      onCompleted: (data) => {
+        navigator.clipboard.writeText(data.adminGenerateRebindLink);
+        toast.success("Bog'lash havolasi nusxalandi — foydalanuvchi buni YANGI Telegram akkauntidan ochsin");
+      },
+      onError: (err) => toast.error(err.message || "Havola yaratishda xatolik"),
     }
   );
 
@@ -195,6 +206,13 @@ export default function AdminUsersPage() {
                           <Link2 className="w-3.5 h-3.5 text-purple-600" />
                         </button>
                       )}
+                      <button
+                        onClick={() => adminGenerateRebindLink({ variables: { userId: user.id } })}
+                        className="p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+                        title="Yangi Telegramga bog'lash havolasi (eski Telegram o'chib ketgan bo'lsa)"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 text-orange-600" />
+                      </button>
                       {user.userStatus === "BLOCKED" ? (
                         <button
                           onClick={() => adminUpdateUser({ variables: { userId: user.id, input: { userStatus: "ACTIVE" } } })}
