@@ -71,7 +71,7 @@ export default function AdminSidebar() {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 min-h-screen bg-gray-950 text-white flex-col">
+      <aside className="hidden md:flex w-64 h-full shrink-0 bg-gray-950 text-white flex-col">
         <SidebarContent />
       </aside>
 

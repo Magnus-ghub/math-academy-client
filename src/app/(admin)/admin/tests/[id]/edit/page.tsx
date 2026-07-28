@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen, FileText, Upload, Sparkles } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen, FileText, Upload, Sparkles, Copy, Check, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +18,8 @@ import { useAuthStore } from "@/lib/store/auth.store";
 import { countWords, limitWords } from "@/lib/utils";
 import { JsonReplaceQuestionsModal } from "@/components/admin/JsonReplaceQuestionsModal";
 import { LatexPreview } from "@/components/admin/LatexPreview";
+import { AI_PROMPT_SINGLE_QUESTION } from "@/lib/ai-test-prompt";
+import { validateLatex } from "@/components/MathText";
 import { toast } from "sonner";
 
 const MAX_DESC_WORDS = 40;
@@ -246,6 +248,9 @@ export default function EditTestPage() {
 
   const setQ = (uid: string, field: keyof QuestionRow, value: any) =>
     setQuestions((qs) => qs.map((q) => q.uid === uid ? { ...q, [field]: value, dirty: true } : q));
+
+  const setQBulk = (uid: string, fields: Partial<QuestionRow>) =>
+    setQuestions((qs) => qs.map((q) => q.uid === uid ? { ...q, ...fields, dirty: true } : q));
 
   const setOption = (uid: string, idx: number, value: string) =>
     setQuestions((qs) => qs.map((q) => {
@@ -582,6 +587,7 @@ export default function EditTestPage() {
               q={q}
               index={i}
               onUpdate={setQ}
+              onBulkUpdate={setQBulk}
               onUpdateOption={setOption}
               onRemove={() => removeQuestion(q.uid, q.id)}
               onImagePick={(file) => uploadImage(file, q.uid)}
@@ -612,16 +618,68 @@ export default function EditTestPage() {
   );
 }
 
-function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImagePick, canRemove }: {
+function EditQuestionCard({ q, index, onUpdate, onBulkUpdate, onUpdateOption, onRemove, onImagePick, canRemove }: {
   q: QuestionRow;
   index: number;
   onUpdate: (uid: string, field: keyof QuestionRow, value: string | number | boolean | string[]) => void;
+  onBulkUpdate: (uid: string, fields: Partial<QuestionRow>) => void;
   onUpdateOption: (uid: string, idx: number, value: string) => void;
   onRemove: () => void;
   onImagePick: (file: File) => void;
   canRemove: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [showJson, setShowJson] = useState(false);
+  const [jsonText, setJsonText] = useState("");
+  const [jsonError, setJsonError] = useState("");
+  const [promptCopied, setPromptCopied] = useState(false);
+
+  const copyPrompt = () => {
+    navigator.clipboard.writeText(AI_PROMPT_SINGLE_QUESTION);
+    setPromptCopied(true);
+    setTimeout(() => setPromptCopied(false), 2000);
+  };
+
+  const applyJson = () => {
+    setJsonError("");
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonText.trim());
+    } catch {
+      setJsonError("JSON formati noto'g'ri.");
+      return;
+    }
+
+    if (!parsed.questionText || !Array.isArray(parsed.options) || parsed.options.length !== 4) {
+      setJsonError('"questionText" va 4 ta "options" bo\'lishi kerak.');
+      return;
+    }
+
+    const latexIssues: string[] = [];
+    validateLatex(String(parsed.questionText)).forEach((err) => latexIssues.push(`Savol matni: ${err}`));
+    parsed.options.forEach((opt: string, oi: number) => {
+      validateLatex(String(opt ?? "")).forEach((err) =>
+        latexIssues.push(`${["A", "B", "C", "D"][oi]} varianti: ${err}`)
+      );
+    });
+    if (latexIssues.length > 0) {
+      setJsonError(`LaTeX xatolari topildi:\n${latexIssues.join("\n")}`);
+      return;
+    }
+
+    onBulkUpdate(q.uid, {
+      questionText: parsed.questionText,
+      questionImage: parsed.questionImage || "",
+      options: parsed.options,
+      correctAnswer: Number(parsed.correctAnswer ?? 0),
+      explanation: parsed.explanation || "",
+      youtubeUrl: parsed.youtubeUrl || "",
+      analysis: parsed.analysis || "",
+    });
+    setJsonText("");
+    setShowJson(false);
+    toast.success('Savol JSON orqali to\'ldirildi — "Saqlash"ni bosishni unutmang');
+  };
 
   const handlePaste = (e: React.ClipboardEvent) => {
     const items = Array.from(e.clipboardData?.items ?? []);
@@ -679,12 +737,63 @@ function EditQuestionCard({ q, index, onUpdate, onUpdateOption, onRemove, onImag
           {q.isNew && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Yangi</span>}
           {q.dirty && !q.isNew && <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">O'zgartirildi</span>}
         </div>
-        {canRemove && (
-          <button onClick={onRemove} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
-            <Trash2 className="w-4 h-4 text-red-500" />
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setShowJson((v) => !v)}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+            title="LaTeX yozish qiyin bo'lsa, AI yordamida JSON tayyorlab shu yerga joylashtiring"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            JSON orqali to'ldirish
           </button>
-        )}
+          {canRemove && (
+            <button onClick={onRemove} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors">
+              <Trash2 className="w-4 h-4 text-red-500" />
+            </button>
+          )}
+        </div>
       </div>
+
+      {showJson && (
+        <div className="mb-4 p-4 rounded-xl border border-dashed border-primary/30 bg-primary/5 space-y-3">
+          <div className="relative">
+            <pre className="bg-muted rounded-xl p-3 text-[11px] overflow-x-auto whitespace-pre-wrap font-mono leading-relaxed text-muted-foreground max-h-40">
+              {AI_PROMPT_SINGLE_QUESTION}
+            </pre>
+            <button
+              onClick={copyPrompt}
+              className="absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-border text-xs font-medium hover:bg-muted transition-colors"
+            >
+              {promptCopied
+                ? <><Check className="w-3.5 h-3.5 text-green-600" />Nusxalandi!</>
+                : <><Copy className="w-3.5 h-3.5" />Nusxalash</>}
+            </button>
+          </div>
+
+          <textarea
+            className="w-full border border-border rounded-xl px-3 py-2.5 text-xs font-mono bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+            rows={7}
+            placeholder={'{\n  "questionText": "...",\n  "options": ["A", "B", "C", "D"],\n  "correctAnswer": 0\n}'}
+            value={jsonText}
+            onChange={(e) => { setJsonText(e.target.value); setJsonError(""); }}
+          />
+
+          {jsonError && (
+            <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 whitespace-pre-line">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              {jsonError}
+            </div>
+          )}
+
+          <button
+            onClick={applyJson}
+            disabled={!jsonText.trim()}
+            className="w-full bg-primary text-white py-2 rounded-xl text-sm font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Shu savolga qo'llash
+          </button>
+        </div>
+      )}
 
       <div className="space-y-3">
         <textarea

@@ -461,7 +461,7 @@ function ExamPageContent() {
                 </div>
 
                 {/* Question text */}
-                <div className="text-base font-medium mb-5 leading-relaxed">
+                <div className="text-base font-semibold mb-5 leading-relaxed">
                   <MathText text={q.questionText} />
                 </div>
 
@@ -470,7 +470,7 @@ function ExamPageContent() {
                   <img
                     src={q.questionImage}
                     alt="savol rasmi"
-                    className="mb-5 rounded-xl max-h-64 object-contain border border-border"
+                    className="mb-5 mx-auto block rounded-xl max-h-64 object-contain border border-border"
                   />
                 )}
 
@@ -497,7 +497,7 @@ function ExamPageContent() {
                       >
                         {["A", "B", "C", "D"][oi]}
                       </div>
-                      <span className="text-sm">
+                      <span className="text-sm font-semibold">
                         <MathText text={opt} />
                       </span>
                     </button>

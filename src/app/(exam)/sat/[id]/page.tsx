@@ -743,7 +743,7 @@ function SatExamPageContent() {
 
               {/* Question content */}
               <div className="px-6 py-6">
-                <div className="text-base leading-relaxed text-gray-800 mb-5 font-medium">
+                <div className="text-base leading-relaxed text-gray-800 mb-5 font-semibold">
                   <MathText text={currentQ.questionText} />
                 </div>
 
@@ -751,7 +751,7 @@ function SatExamPageContent() {
                   <img
                     src={currentQ.questionImage}
                     alt="question"
-                    className="mb-6 rounded-xl max-h-72 object-contain border border-gray-200"
+                    className="mb-6 mx-auto block rounded-xl max-h-72 object-contain border border-gray-200"
                   />
                 )}
 
@@ -795,7 +795,7 @@ function SatExamPageContent() {
                           >
                             {OPTION_LETTERS[oi]}
                           </div>
-                          <span className="text-sm text-gray-700 leading-relaxed pt-0.5">
+                          <span className="text-sm font-semibold text-gray-700 leading-relaxed pt-0.5">
                             <MathText text={opt} />
                           </span>
                         </button>

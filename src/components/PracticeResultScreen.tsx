@@ -126,7 +126,7 @@ export function PracticeResultScreen({ questions, answers, duration, onClose }: 
                       <img
                         src={q.questionImage}
                         alt="savol rasmi"
-                        className="mb-3 rounded-xl max-h-56 object-contain border border-border"
+                        className="mb-3 mx-auto block rounded-xl max-h-56 object-contain border border-border"
                       />
                     )}
 

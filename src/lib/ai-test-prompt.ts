@@ -67,3 +67,25 @@ QOIDALAR:
 export function getAiPrompt(testType: string): string {
   return testType === "SAT" ? AI_PROMPT_SAT : AI_PROMPT_GENERAL;
 }
+
+export const AI_PROMPT_SINGLE_QUESTION = `Quyidagi bitta savolni JSON formatiga o'tkazing. Faqat bitta savol obyektini qaytaring (massiv emas, "questions" kaliti ham kerak emas).
+
+FORMAT:
+{
+  "questionText": "Savol matni. Formulalar $LaTeX$ da: $x^2 + 5x = 0$",
+  "questionImage": null,
+  "options": ["A variant", "B variant", "C variant", "D variant"],
+  "correctAnswer": 0,
+  "explanation": "",
+  "analysis": "Bu savolning to'liq tahlili yoki izoh (ixtiyoriy)",
+  "youtubeUrl": ""
+}
+
+QOIDALAR:
+- correctAnswer: 0=A, 1=B, 2=C, 3=D
+- options da 4 ta variant SHART
+- Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
+- Jadvallar: <table><tr><td>...</td></tr></table>
+- analysis: savol bo'yicha AI tahlil matni (ixtiyoriy). Ichidagi formulalarni ham LaTeX bilan yozing
+- youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;

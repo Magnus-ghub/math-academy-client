@@ -182,12 +182,12 @@ export default function TakeTestPage() {
                 </button>
               </div>
 
-              <div className="text-base font-medium mb-6 leading-relaxed">
+              <div className="text-base font-semibold mb-6 leading-relaxed">
                 <MathText text={q.questionText} />
               </div>
 
               {q.questionImage && (
-                <img src={q.questionImage} alt="question" className="mb-4 rounded-lg max-h-64 object-contain" />
+                <img src={q.questionImage} alt="question" className="mb-4 mx-auto block rounded-lg max-h-64 object-contain" />
               )}
 
               <div className="space-y-3">
@@ -208,7 +208,7 @@ export default function TakeTestPage() {
                     }`}>
                       {["A", "B", "C", "D"][optIdx]}
                     </div>
-                    <span className="text-sm"><MathText text={option} /></span>
+                    <span className="text-sm font-semibold"><MathText text={option} /></span>
                   </button>
                 ))}
               </div>

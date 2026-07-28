@@ -141,11 +141,11 @@ export default function AdminTestsPage() {
               </div>
               <div>
                 <h3 className="font-semibold text-sm">Testni o'chirish</h3>
-                <p className="text-xs text-muted-foreground">Bu amalni qaytarib bo'lmaydi</p>
+                <p className="text-xs text-muted-foreground">Test ro'yxatdan yashiriladi, ma'lumotlari saqlanib qoladi</p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-6">
-              <span className="font-medium text-foreground">"{deleteTarget.title}"</span> va uning barcha savollarini o'chirishni tasdiqlaysizmi?
+              <span className="font-medium text-foreground">"{deleteTarget.title}"</span> ro'yxatlardan yashirilsinmi? Talabalarning avval topshirgan natijalari buzilmaydi.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteTarget(null)} disabled={deleting}
