@@ -131,6 +131,7 @@ export default function EditTestPage() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "questions">("questions");
   const [showJsonReplace, setShowJsonReplace] = useState(false);
+  const [showTestAnalysisPreview, setShowTestAnalysisPreview] = useState(false);
 
   const { data: testData, loading: testLoading } = useQuery<TestData, { testId: string }>(GET_TEST, {
     variables: { testId },
@@ -502,10 +503,21 @@ export default function EditTestPage() {
 
           {/* AI Analysis */}
           <div>
-            <label className="text-sm font-medium mb-1.5 block">
-              AI / Matn tahlili{" "}
-              <span className="text-muted-foreground font-normal">(ixtiyoriy — test bo'yicha umumiy tahlil)</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-sm font-medium">
+                AI / Matn tahlili{" "}
+                <span className="text-muted-foreground font-normal">(ixtiyoriy — test bo'yicha umumiy tahlil)</span>
+              </label>
+              {testInfo.testAnalysis.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setShowTestAnalysisPreview((v) => !v)}
+                  className="text-xs font-medium text-primary hover:underline shrink-0"
+                >
+                  {showTestAnalysisPreview ? "Preview'ni yashirish" : "Preview ko'rish"}
+                </button>
+              )}
+            </div>
             <textarea
               className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
               rows={5}
@@ -513,6 +525,11 @@ export default function EditTestPage() {
               value={testInfo.testAnalysis}
               onChange={(e) => setTestInfo({ ...testInfo, testAnalysis: e.target.value })}
             />
+            {showTestAnalysisPreview && (
+              <div className="mt-2">
+                <LatexPreview text={testInfo.testAnalysis} />
+              </div>
+            )}
           </div>
 
           {/* PDF upload */}
@@ -633,6 +650,7 @@ function EditQuestionCard({ q, index, onUpdate, onBulkUpdate, onUpdateOption, on
   const [jsonText, setJsonText] = useState("");
   const [jsonError, setJsonError] = useState("");
   const [promptCopied, setPromptCopied] = useState(false);
+  const [showAnalysisPreview, setShowAnalysisPreview] = useState(false);
 
   const copyPrompt = () => {
     navigator.clipboard.writeText(AI_PROMPT_SINGLE_QUESTION);
@@ -864,7 +882,18 @@ function EditQuestionCard({ q, index, onUpdate, onBulkUpdate, onUpdateOption, on
           onChange={(e) => onUpdate(q.uid, "explanation", e.target.value)} />
 
         <div className="pt-1 border-t border-border/50 space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tahlil (ixtiyoriy)</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tahlil (ixtiyoriy)</p>
+            {q.analysis.trim() && (
+              <button
+                type="button"
+                onClick={() => setShowAnalysisPreview((v) => !v)}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                {showAnalysisPreview ? "Preview'ni yashirish" : "Preview ko'rish"}
+              </button>
+            )}
+          </div>
           <Input
             placeholder="YouTube link (masalan: https://youtu.be/...)"
             value={q.youtubeUrl}
@@ -877,6 +906,7 @@ function EditQuestionCard({ q, index, onUpdate, onBulkUpdate, onUpdateOption, on
             value={q.analysis}
             onChange={(e) => onUpdate(q.uid, "analysis", e.target.value)}
           />
+          {showAnalysisPreview && <LatexPreview text={q.analysis} />}
         </div>
       </div>
     </div>
