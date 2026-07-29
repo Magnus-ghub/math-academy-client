@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle, XCircle, Clock, Info, ShieldOff } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle, XCircle, Clock, Info, ShieldOff, Bot } from "lucide-react";
 import { MathText } from "@/components/MathText";
 import { parseSprAnswer } from "@/lib/utils";
 
@@ -11,12 +12,14 @@ interface Question {
   options?: string[];
   correctAnswer: number;
   explanation?: string;
+  analysis?: string;
 }
 
 interface Props {
   questions: Question[];
   answers: Record<string, number | string | undefined>;
   duration: number;
+  testAnalysis?: string;
   onClose: () => void;
 }
 
@@ -28,7 +31,9 @@ function normalizeSelected(q: Question, raw: number | string | undefined): numbe
   return isSpr ? parseSprAnswer(String(raw)) : (raw as number);
 }
 
-export function PracticeResultScreen({ questions, answers, duration, onClose }: Props) {
+export function PracticeResultScreen({ questions, answers, duration, testAnalysis, onClose }: Props) {
+  const [testAnalysisOpen, setTestAnalysisOpen] = useState(false);
+  const [openAnalysisId, setOpenAnalysisId] = useState<string | null>(null);
   const total = questions.length;
   const correctCount = questions.filter(
     (q) => normalizeSelected(q, answers[q.id]) === q.correctAnswer
@@ -88,6 +93,29 @@ export function PracticeResultScreen({ questions, answers, duration, onClose }: 
             </div>
           </div>
         </div>
+
+        {/* Test-level AI tahlil */}
+        {testAnalysis?.trim() && (
+          <div className="bg-background rounded-2xl border border-border p-5 mb-6">
+            <button
+              onClick={() => setTestAnalysisOpen((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                testAnalysisOpen
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              <Bot className="w-4 h-4" />
+              AI Tahlil
+            </button>
+            {testAnalysisOpen && (
+              <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-base leading-relaxed wrap-break-word overflow-x-auto">
+                <MathText text={testAnalysis} />
+                <p className="mt-3 text-[11px] text-red-500">AI tahlilda xatolik bo'lishi mumkin!</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Answers review */}
         <h2 className="text-lg font-bold mb-4">Javoblar tahlili</h2>
@@ -187,6 +215,28 @@ export function PracticeResultScreen({ questions, answers, duration, onClose }: 
                       <div className="mt-3 pt-3 border-t border-border/50 flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
                         <Info className="w-3.5 h-3.5 shrink-0 mt-0.5 text-primary" />
                         <MathText text={q.explanation} />
+                      </div>
+                    )}
+
+                    {q.analysis?.trim() && (
+                      <div className="mt-3 pt-3 border-t border-border/50">
+                        <button
+                          onClick={() => setOpenAnalysisId((cur) => (cur === q.id ? null : q.id))}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                            openAnalysisId === q.id
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground hover:border-primary/40"
+                          }`}
+                        >
+                          <Bot className="w-3 h-3" />
+                          AI Tahlil
+                        </button>
+                        {openAnalysisId === q.id && (
+                          <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed wrap-break-word overflow-x-auto">
+                            <MathText text={q.analysis} />
+                            <p className="mt-2 text-[10px] text-red-500">AI tahlilda xatolik bo'lishi mumkin!</p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

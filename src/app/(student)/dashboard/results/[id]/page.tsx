@@ -357,7 +357,7 @@ export default function ResultDetailPage() {
           )}
 
           {testAnalysisOpen && test?.testAnalysis && (
-            <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed wrap-break-word overflow-x-auto">
+            <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-base leading-relaxed wrap-break-word overflow-x-auto">
               <MathText text={test.testAnalysis} />
               <p className="mt-3 text-[11px] text-red-500">AI tahlilda xatolik bo'lishi mumkin!</p>
             </div>
@@ -484,7 +484,7 @@ export default function ResultDetailPage() {
                       )}
 
                       {qAnalysisOpen && question?.analysis && (
-                        <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/20 text-xs leading-relaxed wrap-break-word overflow-x-auto">
+                        <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed wrap-break-word overflow-x-auto">
                           <MathText text={question.analysis} />
                           <p className="mt-2 text-[10px] text-red-500">AI tahlilda xatolik bo'lishi mumkin!</p>
                         </div>

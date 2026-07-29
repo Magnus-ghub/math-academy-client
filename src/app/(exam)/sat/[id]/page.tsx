@@ -537,6 +537,7 @@ function SatExamPageContent() {
             questions={allQuestions}
             answers={answers}
             duration={practiceDuration}
+            testAnalysis={test?.testAnalysis}
             onClose={() => router.push("/dashboard/tests")}
           />
         </div>
@@ -628,6 +629,15 @@ function SatExamPageContent() {
       {/* ══ HEADER ══ */}
       <header className="shrink-0 bg-[#1e3a5f] text-white px-4 py-0 h-14 flex items-center">
         <div className="max-w-5xl mx-auto w-full flex items-center gap-4">
+          {isRetake && (
+            <button
+              onClick={() => router.back()}
+              className="shrink-0 p-2 rounded-xl hover:bg-white/10 text-white/70 transition-colors"
+              title="Chiqish — natija saqlanmaydi"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
           {/* Brand */}
           <div className="flex items-center gap-2 shrink-0">
             <span className="font-black text-xl tracking-tight">SAT</span>

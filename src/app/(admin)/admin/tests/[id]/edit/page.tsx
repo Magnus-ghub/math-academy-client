@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen, FileText, Upload, Sparkles, Copy, Check, AlertCircle } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen, FileText, Upload, Sparkles, Copy, Check, AlertCircle, Eye } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import {
@@ -371,6 +371,16 @@ export default function EditTestPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <a
+            href={`${testInfo.testType === "SAT" ? `/sat/${testId}` : `/exam/${testId}`}?retake=1`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors"
+            title="Talaba ko'radigan sahifada ko'ring — hali nashr etilmagan bo'lsa ham faqat siz (admin/o'qituvchi) ko'ra olasiz. Natija saqlanmaydi, istalgan vaqt qayta ko'rishingiz mumkin"
+          >
+            <Eye className="w-4 h-4" />
+            Ko'rish
+          </a>
           <button onClick={handleSave} disabled={saving}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-40">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

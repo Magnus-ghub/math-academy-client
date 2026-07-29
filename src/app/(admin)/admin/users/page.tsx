@@ -28,7 +28,7 @@ const statusColors: Record<string, string> = {
   BLOCKED: "bg-red-100 text-red-600",
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 100;
 
 export default function AdminUsersPage() {
   const [search, setSearch] = useState("");

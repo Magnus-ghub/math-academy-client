@@ -295,6 +295,7 @@ function ExamPageContent() {
           questions={questions}
           answers={answers}
           duration={practiceDuration}
+          testAnalysis={test?.testAnalysis}
           onClose={() => router.push("/dashboard/tests")}
         />
       );
@@ -320,6 +321,15 @@ function ExamPageContent() {
       {/* ── HEADER ── */}
       <header className="shrink-0 bg-background border-b border-border px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-4">
+          {isRetake && (
+            <button
+              onClick={() => router.back()}
+              className="shrink-0 p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
+              title="Chiqish — natija saqlanmaydi"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
           <div className="flex-1 min-w-0">
             <h1 className="font-bold text-sm truncate">{test.testTitle}</h1>
             <div className="flex items-center gap-3 mt-1">
