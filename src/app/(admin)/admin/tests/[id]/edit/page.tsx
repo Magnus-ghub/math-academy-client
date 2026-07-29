@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { ChevronLeft, Plus, Trash2, Image as ImageIcon, X, Loader2, Save, BookOpen, FileText, Upload, Sparkles, Copy, Check, AlertCircle, Eye } from "lucide-react";
 import Link from "next/link";
@@ -122,9 +122,11 @@ function makeRow(q?: any): QuestionRow {
   };
 }
 
-export default function EditTestPage() {
+function EditTestPageContent() {
   const { id: testId } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const highlightQuestionId = searchParams.get("questionId");
   const { accessToken } = useAuthStore();
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
@@ -189,6 +191,14 @@ export default function EditTestPage() {
       setQuestions(questionsData.getQuestions.map(makeRow));
     }
   }, [questionsData]);
+
+  // Report'dan "Ko'rish" havolasi orqali kelinganda (?questionId=...) o'sha
+  // savolga avtomatik scroll qilib, bir muddat ajratib ko'rsatamiz
+  useEffect(() => {
+    if (!highlightQuestionId || questions.length === 0) return;
+    const el = document.getElementById(`question-${highlightQuestionId}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightQuestionId, questions.length]);
 
   const [updateTest] = useMutation(UPDATE_TEST, {
     onError: () => toast.error("Test ma'lumotlari saqlanmadi"),
@@ -613,6 +623,7 @@ export default function EditTestPage() {
               key={q.uid}
               q={q}
               index={i}
+              highlighted={!!q.id && q.id === highlightQuestionId}
               onUpdate={setQ}
               onBulkUpdate={setQBulk}
               onUpdateOption={setOption}
@@ -645,9 +656,20 @@ export default function EditTestPage() {
   );
 }
 
-function EditQuestionCard({ q, index, onUpdate, onBulkUpdate, onUpdateOption, onRemove, onImagePick, canRemove }: {
+export default function EditTestPage() {
+  return (
+    <Suspense fallback={<div className="max-w-3xl mx-auto space-y-3">
+      {[...Array(4)].map((_, i) => <div key={i} className="bg-muted rounded-2xl h-32 animate-pulse" />)}
+    </div>}>
+      <EditTestPageContent />
+    </Suspense>
+  );
+}
+
+function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpdateOption, onRemove, onImagePick, canRemove }: {
   q: QuestionRow;
   index: number;
+  highlighted?: boolean;
   onUpdate: (uid: string, field: keyof QuestionRow, value: string | number | boolean | string[]) => void;
   onBulkUpdate: (uid: string, fields: Partial<QuestionRow>) => void;
   onUpdateOption: (uid: string, idx: number, value: string) => void;
@@ -756,8 +778,13 @@ function EditQuestionCard({ q, index, onUpdate, onBulkUpdate, onUpdateOption, on
 
   return (
     <div
+      id={q.id ? `question-${q.id}` : undefined}
       onPaste={handlePaste}
-      className={`bg-background rounded-2xl border p-5 transition-colors ${q.dirty || q.isNew ? "border-primary/40" : "border-border"}`}
+      className={`bg-background rounded-2xl border p-5 transition-colors ${
+        highlighted
+          ? "border-amber-400 ring-2 ring-amber-300"
+          : q.dirty || q.isNew ? "border-primary/40" : "border-border"
+      }`}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">

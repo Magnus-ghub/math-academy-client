@@ -6,8 +6,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { Bell, Sun, Moon, LogOut, House } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { useQuery } from "@apollo/client/react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { LogoutConfirmModal } from "@/components/LogoutConfirmModal";
+import { GET_UNSEEN_REPORTS_COUNT } from "@/lib/graphql/report";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -24,6 +26,11 @@ export default function StudentHeader() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const { data } = useQuery<{ getUnseenReportsCount: number }>(GET_UNSEEN_REPORTS_COUNT, {
+    pollInterval: 60_000,
+  });
+  const unseenCount = data?.getUnseenReportsCount ?? 0;
 
   const title =
     Object.entries(pageTitles).find(([path]) => pathname === path)?.[1] ??
@@ -64,12 +71,18 @@ export default function StudentHeader() {
           </button>
 
           {/* Notification bell */}
-          <button
+          <Link
+            href="/dashboard/reports"
             className="relative p-2 rounded-xl hover:bg-muted transition-colors"
             title="Bildirishnomalar"
           >
             <Bell className="w-5 h-5 text-muted-foreground" />
-          </button>
+            {unseenCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                {unseenCount > 99 ? "99+" : unseenCount}
+              </span>
+            )}
+          </Link>
 
           {/* Avatar */}
           <Link

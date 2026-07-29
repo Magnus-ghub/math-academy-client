@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery, useMutation, useSubscription } from "@apollo/client/react";
 import { Search, CheckCircle, XCircle, Bell } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ const reasonLabels: Record<string, string> = {
 
 export default function AdminReportsPage() {
   const [search, setSearch] = useState("");
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
 
   const { data, loading, refetch } = useQuery<{ getPendingReports: any[] }>(
     GET_PENDING_REPORTS,
@@ -149,29 +151,47 @@ export default function AdminReportsPage() {
                       "Hal qilindi" bosilsa, talabaning avvalgi urinishi o'chiriladi va u testni darhol qayta topshira oladi.
                     </p>
                   )}
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {report.testTitle && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium">
-                        Test: {report.testTitle}
-                      </span>
-                    )}
-                    {report.questionOrder != null && (
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium">
-                        {report.questionOrder}-savol
-                      </span>
-                    )}
-                  </div>
+                  {report.testId && (
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <Link
+                        href={
+                          report.questionId
+                            ? `/admin/tests/${report.testId}/edit?questionId=${report.questionId}`
+                            : `/admin/tests/${report.testId}/edit`
+                        }
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-medium hover:bg-blue-100 transition-colors"
+                      >
+                        Test: {report.testTitle ?? "Ko'rish"} →
+                      </Link>
+                      {report.questionOrder != null && (
+                        <Link
+                          href={`/admin/tests/${report.testId}/edit?questionId=${report.questionId}`}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-purple-50 text-purple-700 text-xs font-medium hover:bg-purple-100 transition-colors"
+                        >
+                          {report.questionOrder}-savol →
+                        </Link>
+                      )}
+                    </div>
+                  )}
+
+                  <textarea
+                    className="w-full mt-3 border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    rows={2}
+                    placeholder="Talabaga javob (ixtiyoriy) — Telegram orqali yuboriladi..."
+                    value={replyDrafts[report.id] ?? ""}
+                    onChange={(e) => setReplyDrafts((d) => ({ ...d, [report.id]: e.target.value }))}
+                  />
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button
-                    onClick={() => resolveReport({ variables: { reportId: report.id } })}
+                    onClick={() => resolveReport({ variables: { reportId: report.id, adminReply: replyDrafts[report.id] || undefined } })}
                     className="p-2 rounded-xl bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
                     title="Hal qilindi"
                   >
                     <CheckCircle className="w-4 h-4" />
                   </button>
                   <button
-                    onClick={() => rejectReport({ variables: { reportId: report.id } })}
+                    onClick={() => rejectReport({ variables: { reportId: report.id, adminReply: replyDrafts[report.id] || undefined } })}
                     className="p-2 rounded-xl bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                     title="Rad etish"
                   >

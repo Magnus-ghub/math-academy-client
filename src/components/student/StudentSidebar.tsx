@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, BookOpen, Trophy, BarChart3, Users, User,
+  LayoutDashboard, BookOpen, Trophy, BarChart3, Users, User, Flag,
   ChevronRight, Menu, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,7 @@ const menuItems = [
   { href: "/dashboard/results", icon: BarChart3, label: "Natijalarim" },
   { href: "/dashboard/leaderboard", icon: Trophy, label: "Reyting" },
   { href: "/dashboard/groups", icon: Users, label: "Guruhlarim" },
+  { href: "/dashboard/reports", icon: Flag, label: "E'tirozlarim" },
   { href: "/dashboard/profile", icon: User, label: "Profil" },
 ];
 

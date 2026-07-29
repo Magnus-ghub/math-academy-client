@@ -11,6 +11,7 @@ export const GET_PENDING_REPORTS = gql`
       userId
       questionId
       testId
+      adminReply
       testTitle
       questionOrder
       createdAt
@@ -18,20 +19,52 @@ export const GET_PENDING_REPORTS = gql`
   }
 `;
 
+export const GET_MY_REPORTS = gql`
+  query GetMyReports {
+    getMyReports {
+      id
+      reportType
+      reportStatus
+      reportReason
+      reportText
+      questionId
+      testId
+      adminReply
+      testTitle
+      questionOrder
+      createdAt
+    }
+  }
+`;
+
+export const GET_UNSEEN_REPORTS_COUNT = gql`
+  query GetUnseenReportsCount {
+    getUnseenReportsCount
+  }
+`;
+
+export const MARK_REPORTS_SEEN = gql`
+  mutation MarkReportsSeen {
+    markReportsSeen
+  }
+`;
+
 export const RESOLVE_REPORT = gql`
-  mutation ResolveReport($reportId: String!) {
-    resolveReport(reportId: $reportId) {
+  mutation ResolveReport($reportId: String!, $adminReply: String) {
+    resolveReport(reportId: $reportId, adminReply: $adminReply) {
       id
       reportStatus
+      adminReply
     }
   }
 `;
 
 export const REJECT_REPORT = gql`
-  mutation RejectReport($reportId: String!) {
-    rejectReport(reportId: $reportId) {
+  mutation RejectReport($reportId: String!, $adminReply: String) {
+    rejectReport(reportId: $reportId, adminReply: $adminReply) {
       id
       reportStatus
+      adminReply
     }
   }
 `;
