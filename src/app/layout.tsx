@@ -9,7 +9,7 @@ import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const siteUrl = "https://saidxonov.academy";
+const siteUrl = "https://saidxonovacademy.uz";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
