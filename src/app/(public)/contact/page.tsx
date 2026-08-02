@@ -4,7 +4,7 @@ const otherContacts = [
   {
     icon: Mail,
     label: "Email",
-    value: "info@saidxonovacademy.uz",
+    value: "info@saidxonov.academy",
     href: "#",
     color: "bg-accent/10 text-accent",
   },
