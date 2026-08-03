@@ -126,9 +126,12 @@ export default function AdminReportsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs font-bold">
-                      R
+                    <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-xs font-bold shrink-0">
+                      {(report.userName?.[0] ?? "?").toUpperCase()}
                     </div>
+                    <span className="text-sm font-medium">
+                      {[report.userName, report.userLastName].filter(Boolean).join(" ") || "Noma'lum talaba"}
+                    </span>
                     <span className="text-xs text-muted-foreground ml-auto">
                       {new Date(report.createdAt).toLocaleDateString("uz-UZ")}
                     </span>

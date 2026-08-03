@@ -125,7 +125,9 @@ export default function AdminTestResultsPage() {
                         {statusLabels[r.resultStatus] ?? r.resultStatus}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium">{Number(r.score).toFixed(1)}%</td>
+                    <td className="px-4 py-3 text-sm font-medium">
+                      {r.satScore != null ? `${r.satScore} / 800` : `${Number(r.score).toFixed(1)}%`}
+                    </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {r.correctAnswers}/{r.totalQuestions}
                     </td>

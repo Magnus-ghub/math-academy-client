@@ -65,6 +65,9 @@ export default function AdminRecoveryPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                      {(r.fullName?.[0] ?? "?").toUpperCase()}
+                    </div>
                     <span className="font-semibold text-sm">{r.fullName}</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[r.status]}`}>
                       {statusLabels[r.status]}

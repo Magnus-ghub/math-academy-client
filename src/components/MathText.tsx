@@ -153,6 +153,19 @@ export function validateLatex(text: string): string[] {
 
   for (const seg of splitMathSegments(text)) {
     if (seg.kind !== "math") continue;
+
+    // Haqiqiy LaTeX formulada kamdan-kam holda 6 tadan ortiq bo'shliq bilan
+    // ajralgan "so'z" bo'ladi — agar bo'lsa, ehtimol matndagi "$" belgilar
+    // (masalan "$164" kabi pul miqdori) noto'g'ri joyda, va oddiy jumla
+    // formula deb noto'g'ri o'qilgan (bo'shliqsiz, bir chiziqda chiqib ketadi).
+    const wordCount = seg.content.trim().split(/\s+/).filter(Boolean).length;
+    if (wordCount > 6) {
+      errors.push(
+        `Formula matnga o'xshaydi, ehtimol "$" belgi noto'g'ri joyga qo'yilgan: "${seg.content.slice(0, 60)}${seg.content.length > 60 ? "..." : ""}"`,
+      );
+      continue;
+    }
+
     try {
       katex.renderToString(seg.content, { throwOnError: true, displayMode: seg.displayMode });
     } catch (e) {

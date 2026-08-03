@@ -75,7 +75,9 @@ export default function ResultsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {results.map((result: any) => (
+          {results.map((result: any) => {
+            const isSat = result.testType === "SAT";
+            return (
             <Link key={result.id} href={`/dashboard/results/${result.id}`}>
               <div className="bg-background border border-border rounded-2xl p-5 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer flex flex-col gap-3 h-full">
 
@@ -114,13 +116,13 @@ export default function ResultsPage() {
                           className={scoreColor(result.score)}
                         />
                       </svg>
-                      <span className={`absolute inset-0 flex items-center justify-center text-xs font-bold ${scoreColor(result.score)}`}>
-                        {Math.round(result.score)}%
+                      <span className={`absolute inset-0 flex items-center justify-center font-bold ${scoreColor(result.score)} ${isSat ? "text-[10px]" : "text-xs"}`}>
+                        {isSat ? (result.satScore ?? "-") : `${Math.round(result.score)}%`}
                       </span>
                     </div>
                     <div>
                       <p className={`text-sm font-bold ${scoreColor(result.score)}`}>
-                        {scoreLabel(result.score)}
+                        {isSat ? `${result.satScore ?? "-"} / 800` : scoreLabel(result.score)}
                       </p>
                       <p className="text-xs text-muted-foreground">{result.correctAnswers}/{result.totalQuestions} to'g'ri</p>
                     </div>
@@ -152,7 +154,8 @@ export default function ResultsPage() {
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

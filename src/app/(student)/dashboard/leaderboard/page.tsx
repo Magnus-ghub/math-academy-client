@@ -164,7 +164,7 @@ function TestLeaderboardList({ testId }: { testId: string }) {
             entry.score >= 80 ? "text-green-600" :
             entry.score >= 60 ? "text-accent" : "text-red-500"
           }`}>
-            {Math.round(entry.score)}%
+            {entry.satScore != null ? `${entry.satScore} / 800` : `${Math.round(entry.score)}%`}
           </div>
         </div>
       ))}

@@ -5,6 +5,7 @@ export const SUBMIT_TEST = gql`
     submitTest(input: $input) {
       id
       score
+      satScore
       correctAnswers
       totalQuestions
       duration
@@ -40,6 +41,7 @@ export const GET_MY_RESULTS = gql`
       testTitle
       testType
       score
+      satScore
       correctAnswers
       totalQuestions
       duration
@@ -57,6 +59,7 @@ export const GET_RESULT = gql`
       testTitle
       testType
       score
+      satScore
       correctAnswers
       totalQuestions
       duration
@@ -81,6 +84,7 @@ export const GET_LEADERBOARD = gql`
       userName
       userImage
       score
+      satScore
       correctAnswers
       totalQuestions
       duration
@@ -115,6 +119,7 @@ export const GET_ALL_RESULTS_FOR_TEST = gql`
       totalQuestions
       correctAnswers
       score
+      satScore
       duration
       finishedAt
       createdAt

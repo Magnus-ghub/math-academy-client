@@ -167,4 +167,11 @@
   .math-text .katex-display {
     @apply overflow-x-auto overflow-y-hidden max-w-full;
   }
+
+  /* Inline ($...$) formulalar ham xuddi shunday — masalan matndagi "$" belgilar
+     noto'g'ri joylashib, katta bo'lak matn formula sifatida o'qilib qolsa (bo'shliqsiz,
+     bir chiziqda), konteyner chegarasidan chiqib ketish o'rniga gorizontal scroll beradi */
+  .math-text {
+    @apply overflow-x-auto max-w-full;
+  }
 }

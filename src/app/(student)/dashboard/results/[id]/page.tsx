@@ -185,6 +185,7 @@ export default function ResultDetailPage() {
 
   const result = resultData?.getResult;
   const isAttestatsiya = result?.testType === "ATTESTATSIYA";
+  const isSat = result?.testType === "SAT";
 
   const { data: questionsData, loading: questionsLoading } = useQuery<{ getQuestions: any[] }>(GET_QUESTIONS, {
     variables: { testId: result?.testId },
@@ -244,7 +245,7 @@ export default function ResultDetailPage() {
               {new Date(result.createdAt).toLocaleDateString("uz-UZ")}
             </p>
             <h1 className="text-xl font-bold">
-              {isAttestatsiya ? "Attestatsiya natijasi" : "Test natijasi"}
+              {isAttestatsiya ? "Attestatsiya natijasi" : isSat ? "SAT Math natijasi" : "Test natijasi"}
             </h1>
           </div>
 
@@ -252,6 +253,11 @@ export default function ResultDetailPage() {
             <div className={`px-4 py-3 rounded-2xl text-center ${scoreBg}`}>
               <p className={`text-2xl font-black ${scoreColor}`}>{attestPoints}</p>
               <p className={`text-xs font-medium ${scoreColor}`}>ball / 100</p>
+            </div>
+          ) : isSat ? (
+            <div className={`px-4 py-3 rounded-2xl text-center ${scoreBg}`}>
+              <p className={`text-2xl font-black ${scoreColor}`}>{result.satScore ?? "-"}</p>
+              <p className={`text-xs font-medium ${scoreColor}`}>ball / 800</p>
             </div>
           ) : (
             <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center ${scoreBg}`}>
@@ -403,7 +409,7 @@ export default function ResultDetailPage() {
                           Etiroz
                         </button>
                       </div>
-                      <p className="text-sm font-medium mb-3 leading-relaxed">
+                      <p className="text-sm font-medium mb-3 leading-relaxed wrap-break-word overflow-x-auto">
                         {i + 1}. {question
                           ? <MathText text={question.questionText} />
                           : questionsLoading
@@ -417,7 +423,7 @@ export default function ResultDetailPage() {
                           className="mb-3 mx-auto block rounded-xl max-h-56 object-contain border border-border"
                         />
                       )}
-                      {question?.options && (
+                      {question && (question.options && question.options.length > 0 ? (
                         <div className="space-y-2">
                           {question.options.map((opt: string, j: number) => {
                             const isSelected = j === answer.selectedAnswer;
@@ -425,7 +431,7 @@ export default function ResultDetailPage() {
                             return (
                               <div
                                 key={j}
-                                className={`flex items-center gap-2 p-2.5 rounded-xl text-sm ${
+                                className={`flex items-center gap-2 p-2.5 rounded-xl text-sm wrap-break-word overflow-x-auto ${
                                   isSelected && answer.isCorrect
                                     ? "bg-green-50 text-green-700 font-medium"
                                     : isSelected && !answer.isCorrect
@@ -451,7 +457,24 @@ export default function ResultDetailPage() {
                             );
                           })}
                         </div>
-                      )}
+                      ) : (
+                        // SPR (raqam kiritish) savol turi — variantlar yo'q, javoblar
+                        // backendda x100 qilib butun songa kodlangan (masalan 3.5 -> 350)
+                        <div className="space-y-1.5 text-sm">
+                          <p>
+                            <span className="text-muted-foreground">Sizning javobingiz: </span>
+                            <span className={`font-semibold ${answer.isCorrect ? "text-green-700" : "text-red-600"}`}>
+                              {answer.selectedAnswer === -1 ? "Javob belgilanmagan" : answer.selectedAnswer / 100}
+                            </span>
+                          </p>
+                          {!answer.isCorrect && (
+                            <p>
+                              <span className="text-muted-foreground">To'g'ri javob: </span>
+                              <span className="font-semibold text-green-700">{question.correctAnswer / 100}</span>
+                            </p>
+                          )}
+                        </div>
+                      ))}
 
                       {/* Per-question analysis buttons */}
                       {(question?.analysis || question?.youtubeUrl) && (

@@ -9,6 +9,8 @@ export const GET_PENDING_REPORTS = gql`
       reportReason
       reportText
       userId
+      userName
+      userLastName
       questionId
       testId
       adminReply

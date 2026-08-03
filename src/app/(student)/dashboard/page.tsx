@@ -101,7 +101,7 @@ export default function DashboardPage() {
                     result.score >= 80 ? "text-green-600" :
                     result.score >= 60 ? "text-accent" : "text-red-500"
                   }`}>
-                    {Math.round(result.score)}%
+                    {result.satScore != null ? `${result.satScore} / 800` : `${Math.round(result.score)}%`}
                   </div>
                 </div>
               </div>
