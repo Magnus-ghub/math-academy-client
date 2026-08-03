@@ -9,6 +9,7 @@ import { GET_ALL_GROUPS } from "@/lib/graphql/group";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { countWords, limitWords } from "@/lib/utils";
 import { getAiPrompt } from "@/lib/ai-test-prompt";
+import { isValidQuestionShape } from "@/lib/question-json-validation";
 import { validateLatex } from "@/components/MathText";
 import { LatexPreview } from "@/components/admin/LatexPreview";
 import { toast } from "sonner";
@@ -120,18 +121,10 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
       setJsonError('"questions" massivi topilmadi yoki bo\'sh.');
       return;
     }
-    const isSat = form.testType === "SAT";
-    const invalid = questions.find(
-      (q: any) =>
-        !q.questionText ||
-        !Array.isArray(q.options) ||
-        (isSat ? (q.options.length !== 0 && q.options.length !== 4) : q.options.length !== 4)
-    );
+    const invalid = questions.find((q: any) => !isValidQuestionShape(q, form.testType));
     if (invalid) {
       setJsonError(
-        isSat
-          ? 'Har bir savol "questionText" va 4 ta "options" (MCQ) yoki bo\'sh "options": [] (SPR) bo\'lishi kerak.'
-          : 'Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.'
+        'Har bir savol "questionText" va 4 ta "options" (yoki SAT/Milliy Sertifikat uchun SPR/MATCHING/TWO_PART shakli) bo\'lishi kerak.'
       );
       return;
     }
@@ -143,7 +136,7 @@ export default function CreateTestModal({ onClose, onSuccess }: Props) {
       );
       (q.options ?? []).forEach((opt: string, oi: number) => {
         validateLatex(String(opt ?? "")).forEach((err) =>
-          latexIssues.push(`${qi + 1}-savol, ${["A", "B", "C", "D"][oi]} varianti: ${err}`)
+          latexIssues.push(`${qi + 1}-savol, ${String.fromCharCode(65 + oi)} varianti: ${err}`)
         );
       });
     });

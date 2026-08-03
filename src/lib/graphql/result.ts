@@ -6,6 +6,8 @@ export const SUBMIT_TEST = gql`
       id
       score
       satScore
+      rawPoints
+      totalPoints
       correctAnswers
       totalQuestions
       duration
@@ -13,7 +15,9 @@ export const SUBMIT_TEST = gql`
       answers {
         questionId
         selectedAnswer
+        selectedAnswerB
         isCorrect
+        isCorrectB
         timeSpent
       }
       createdAt
@@ -42,6 +46,8 @@ export const GET_MY_RESULTS = gql`
       testType
       score
       satScore
+      rawPoints
+      totalPoints
       correctAnswers
       totalQuestions
       duration
@@ -60,6 +66,8 @@ export const GET_RESULT = gql`
       testType
       score
       satScore
+      rawPoints
+      totalPoints
       correctAnswers
       totalQuestions
       duration
@@ -67,7 +75,9 @@ export const GET_RESULT = gql`
       answers {
         questionId
         selectedAnswer
+        selectedAnswerB
         isCorrect
+        isCorrectB
         timeSpent
       }
       finishedAt
@@ -120,9 +130,25 @@ export const GET_ALL_RESULTS_FOR_TEST = gql`
       correctAnswers
       score
       satScore
+      rawPoints
+      totalPoints
       duration
       finishedAt
       createdAt
+    }
+  }
+`;
+
+export const GET_MILLIY_SERTIFIKAT_SCORE = gql`
+  query GetMilliySertifikatScore($resultId: String!) {
+    getMilliySertifikatScore(resultId: $resultId) {
+      ready
+      respondentCount
+      threshold
+      finalScore
+      grade
+      rawPoints
+      totalPoints
     }
   }
 `;

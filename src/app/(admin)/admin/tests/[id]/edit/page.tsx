@@ -29,10 +29,13 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "ht
 interface QuestionRow {
   uid: string;
   id?: string;
+  questionType?: string;
+  section?: string;
   questionText: string;
   questionImage: string;
   options: string[];
   correctAnswer: number;
+  correctAnswerB?: number | null;
   explanation: string;
   youtubeUrl: string;
   analysis: string;
@@ -57,16 +60,20 @@ interface TestData {
     testPdfUrl?: string;
     testYoutubeUrl?: string;
     testAnalysis?: string;
+    closesAt?: string;
   };
 }
 
 interface QuestionsData {
   getQuestions?: Array<{
     id: string;
+    questionType?: string;
+    section?: string;
     questionText?: string;
     questionImage?: string;
     options?: string[];
     correctAnswer?: number;
+    correctAnswerB?: number | null;
     explanation?: string;
   }>;
 }
@@ -109,10 +116,13 @@ function makeRow(q?: any): QuestionRow {
   return {
     uid: q?.id ?? `new-${Date.now()}-${Math.random()}`,
     id: q?.id,
+    questionType: q?.questionType,
+    section: q?.section,
     questionText: q?.questionText ?? "",
     questionImage: q?.questionImage ?? "",
     options: q?.options ?? ["", "", "", ""],
     correctAnswer: q?.correctAnswer ?? 0,
+    correctAnswerB: q?.correctAnswerB,
     explanation: q?.explanation ?? "",
     youtubeUrl: q?.youtubeUrl ?? "",
     analysis: q?.analysis ?? "",
@@ -162,6 +172,7 @@ function EditTestPageContent() {
     testPdfUrl: "",
     testYoutubeUrl: "",
     testAnalysis: "",
+    closesAt: "",
   });
   const [pdfUploading, setPdfUploading] = useState(false);
   const pdfRef = useRef<HTMLInputElement>(null);
@@ -182,6 +193,7 @@ function EditTestPageContent() {
         testPdfUrl: test.testPdfUrl ?? "",
         testYoutubeUrl: test.testYoutubeUrl ?? "",
         testAnalysis: test.testAnalysis ?? "",
+        closesAt: test.closesAt ? new Date(test.closesAt).toISOString().slice(0, 16) : "",
       });
     }
   }, [test]);
@@ -301,6 +313,7 @@ function EditTestPageContent() {
             testPdfUrl: testInfo.testPdfUrl || undefined,
             testYoutubeUrl: testInfo.testYoutubeUrl || undefined,
             testAnalysis: testInfo.testAnalysis || undefined,
+            closesAt: testInfo.closesAt ? new Date(testInfo.closesAt).toISOString() : null,
           },
         },
       });
@@ -475,6 +488,31 @@ function EditTestPageContent() {
               <Input type="number" min={5} max={180} value={testInfo.duration}
                 onChange={(e) => setTestInfo({ ...testInfo, duration: Number(e.target.value) })} />
             </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Yopilish sanasi (ixtiyoriy)</label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="datetime-local"
+                value={testInfo.closesAt}
+                onChange={(e) => setTestInfo({ ...testInfo, closesAt: e.target.value })}
+                className="flex-1"
+              />
+              {testInfo.closesAt && (
+                <button
+                  type="button"
+                  onClick={() => setTestInfo({ ...testInfo, closesAt: "" })}
+                  className="px-3 py-2 rounded-lg border border-border text-xs font-medium text-muted-foreground hover:bg-muted transition-colors shrink-0"
+                >
+                  Doimiy ochiq qilish
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Belgilansa, shu sanadan keyin test avtomatik yopiladi (arxivlanadi) va yangi urinish qabul qilinmaydi.
+              Bo'sh qoldirilsa, test doimiy ochiq qoladi.
+            </p>
           </div>
 
           {testInfo.testAccess === "PREMIUM" && (
@@ -850,6 +888,58 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
         </div>
       )}
 
+      {q.questionType && q.questionType !== "SINGLE" ? (
+        <div className="space-y-3">
+          <div className="p-2.5 rounded-lg border border-dashed border-amber-300 bg-amber-50 text-xs text-amber-800">
+            Bu savol turi ({q.questionType}) hozircha faqat JSON orqali tahrirlanadi — quyida faqat
+            ko'rish uchun ko'rsatilmoqda, qo'lda o'zgartirib bo'lmaydi.
+          </div>
+
+          <div className="p-3 rounded-lg border border-border bg-muted/30 text-sm">
+            <LatexPreview text={q.questionText} />
+          </div>
+
+          {q.questionImage && (
+            <img src={q.questionImage} alt="savol rasmi" className="max-h-48 rounded-lg border border-border object-contain" />
+          )}
+
+          {q.questionType === "MATCHING" ? (
+            <div className="space-y-1.5">
+              {q.section && <p className="text-xs text-muted-foreground">Guruh (section): {q.section}</p>}
+              {q.options.map((opt, i) => (
+                <div
+                  key={i}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${
+                    q.correctAnswer === i ? "border-green-400 bg-green-50" : "border-border"
+                  }`}
+                >
+                  <span
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${
+                      q.correctAnswer === i ? "border-green-500 bg-green-500 text-white" : "border-border"
+                    }`}
+                  >
+                    {String.fromCharCode(65 + i)}
+                  </span>
+                  <LatexPreview text={opt} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="p-2.5 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">a) to'g'ri javob</p>
+                <p className="font-semibold">{q.correctAnswer / 100}</p>
+              </div>
+              <div className="p-2.5 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">b) to'g'ri javob</p>
+                <p className="font-semibold">{q.correctAnswerB != null ? q.correctAnswerB / 100 : "-"}</p>
+              </div>
+            </div>
+          )}
+
+          {q.explanation && <p className="text-xs text-muted-foreground">Izoh: {q.explanation}</p>}
+        </div>
+      ) : (
       <div className="space-y-3">
         <textarea
           className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
@@ -946,6 +1036,7 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
           {showAnalysisPreview && <LatexPreview text={q.analysis} />}
         </div>
       </div>
+      )}
     </div>
   );
 }

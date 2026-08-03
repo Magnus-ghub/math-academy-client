@@ -69,6 +69,7 @@ export const GET_TEST = gql`
       testPdfUrl
       testYoutubeUrl
       testAnalysis
+      closesAt
     }
   }
 `;
@@ -78,10 +79,12 @@ export const GET_QUESTIONS = gql`
     getQuestions(testId: $testId) {
       id
       testId
+      questionType
       questionText
       questionImage
       options
       correctAnswer
+      correctAnswerB
       explanation
       youtubeUrl
       analysis
@@ -92,8 +95,8 @@ export const GET_QUESTIONS = gql`
 `;
 
 export const GET_ALL_TESTS = gql`
-  query GetAllTests {
-    getAllTests {
+  query GetAllTests($includeArchived: Boolean) {
+    getAllTests(includeArchived: $includeArchived) {
       id
       testTitle
       testType
@@ -104,6 +107,7 @@ export const GET_ALL_TESTS = gql`
       duration
       totalAttempts
       testPdfUrl
+      closesAt
       createdAt
     }
   }
@@ -117,6 +121,7 @@ export const CREATE_TEST = gql`
       testType
       testAccess
       testStatus
+      closesAt
     }
   }
 `;
@@ -127,6 +132,7 @@ export const UPDATE_TEST = gql`
       id
       testTitle
       testStatus
+      closesAt
     }
   }
 `;

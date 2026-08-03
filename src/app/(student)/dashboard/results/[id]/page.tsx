@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { CheckCircle, XCircle, Clock, ChevronLeft, TriangleAlert, Award, Bot, X } from "lucide-react";
+import { useQuery, useLazyQuery } from "@apollo/client/react";
+import { CheckCircle, XCircle, Clock, ChevronLeft, TriangleAlert, Award, Bot, X, Info } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { GET_RESULT } from "@/lib/graphql/result";
+import { GET_RESULT, GET_MILLIY_SERTIFIKAT_SCORE } from "@/lib/graphql/result";
 import { GET_QUESTIONS, GET_TEST } from "@/lib/graphql/test";
 import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
@@ -170,6 +170,52 @@ function AttestatsiyaGrid({ questions, answers }: { questions: any[]; answers: a
   );
 }
 
+// ─── Milliy Sertifikat — Rasch balli (talab bo'yicha, keshlanmaydi) ───────────
+function MilliySertifikatScoreBlock({ resultId }: { resultId: string }) {
+  const [fetchScore, { data, loading, called }] = useLazyQuery<
+    { getMilliySertifikatScore: any },
+    { resultId: string }
+  >(GET_MILLIY_SERTIFIKAT_SCORE, { fetchPolicy: "network-only" });
+  const scoreResult = data?.getMilliySertifikatScore;
+
+  return (
+    <div className="bg-background rounded-2xl border border-border p-5 mb-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm font-bold">Rasch balli (rasmiy)</p>
+        <button
+          onClick={() => fetchScore({ variables: { resultId } })}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-primary text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+        >
+          {loading ? "Yuklanmoqda..." : "Haqiqiy natijani ko'rish"}
+        </button>
+      </div>
+
+      {called && !loading && scoreResult && (
+        scoreResult.ready ? (
+          <div className="flex items-center gap-3 mt-4">
+            <div className="px-4 py-3 rounded-2xl text-center bg-primary/10 shrink-0">
+              <p className="text-2xl font-black text-primary">{scoreResult.finalScore.toFixed(1)}</p>
+              <p className="text-xs font-medium text-primary">ball</p>
+            </div>
+            <div>
+              <p className="text-sm font-bold">{scoreResult.grade ?? "Sertifikat berilmadi"}</p>
+              <p className="text-xs text-muted-foreground">
+                {scoreResult.respondentCount} ta talaba natijasi asosida hisoblangan
+              </p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-amber-600 mt-3">
+            Hali yetarli ma'lumot yo'q — hozircha {scoreResult.respondentCount}/{scoreResult.threshold} talaba
+            topshirgan. Kamida {scoreResult.threshold} talaba topshirgach haqiqiy ball hisoblanadi.
+          </p>
+        )
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function ResultDetailPage() {
   const { id } = useParams();
@@ -186,6 +232,7 @@ export default function ResultDetailPage() {
   const result = resultData?.getResult;
   const isAttestatsiya = result?.testType === "ATTESTATSIYA";
   const isSat = result?.testType === "SAT";
+  const isMilliySertifikat = result?.testType === "MILLIY_SERTIFIKAT";
 
   const { data: questionsData, loading: questionsLoading } = useQuery<{ getQuestions: any[] }>(GET_QUESTIONS, {
     variables: { testId: result?.testId },
@@ -245,7 +292,13 @@ export default function ResultDetailPage() {
               {new Date(result.createdAt).toLocaleDateString("uz-UZ")}
             </p>
             <h1 className="text-xl font-bold">
-              {isAttestatsiya ? "Attestatsiya natijasi" : isSat ? "SAT Math natijasi" : "Test natijasi"}
+              {isAttestatsiya
+                ? "Attestatsiya natijasi"
+                : isSat
+                ? "SAT Math natijasi"
+                : isMilliySertifikat
+                ? "Milliy Sertifikat natijasi"
+                : "Test natijasi"}
             </h1>
           </div>
 
@@ -258,6 +311,11 @@ export default function ResultDetailPage() {
             <div className={`px-4 py-3 rounded-2xl text-center ${scoreBg}`}>
               <p className={`text-2xl font-black ${scoreColor}`}>{result.satScore ?? "-"}</p>
               <p className={`text-xs font-medium ${scoreColor}`}>ball / 800</p>
+            </div>
+          ) : isMilliySertifikat ? (
+            <div className={`px-4 py-3 rounded-2xl text-center ${scoreBg}`}>
+              <p className={`text-2xl font-black ${scoreColor}`}>{result.rawPoints ?? "-"}</p>
+              <p className={`text-xs font-medium ${scoreColor}`}>ball / {result.totalPoints ?? "-"}</p>
             </div>
           ) : (
             <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center ${scoreBg}`}>
@@ -376,6 +434,9 @@ export default function ResultDetailPage() {
         <AttestatsiyaGrid questions={questions} answers={result.answers} />
       )}
 
+      {/* Milliy Sertifikat — Rasch balli (talab bo'yicha) */}
+      {isMilliySertifikat && <MilliySertifikatScoreBlock resultId={result.id} />}
+
       {/* Answers review */}
       {result.answers && result.answers.length > 0 && (
         <>
@@ -384,19 +445,23 @@ export default function ResultDetailPage() {
             {result.answers.map((answer: any, i: number) => {
               const question = questions.find((q: any) => q.id === answer.questionId);
               const qAnalysisOpen = openQuestionAnalysis === answer.questionId;
+              const isTwoPart = question?.questionType === "TWO_PART";
+              const isPartial = isTwoPart && answer.isCorrect !== answer.isCorrectB;
               return (
                 <div
                   key={answer.questionId}
                   className={`bg-background rounded-2xl border-2 p-5 ${
-                    answer.isCorrect ? "border-green-200" : "border-red-200"
+                    answer.isCorrect ? "border-green-200" : isPartial ? "border-amber-200" : "border-red-200"
                   }`}
                 >
                   <div className="flex items-start gap-3">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                      answer.isCorrect ? "bg-green-100" : "bg-red-100"
+                      answer.isCorrect ? "bg-green-100" : isPartial ? "bg-amber-100" : "bg-red-100"
                     }`}>
                       {answer.isCorrect
                         ? <CheckCircle className="w-4 h-4 text-green-600" />
+                        : isPartial
+                        ? <Info className="w-4 h-4 text-amber-600" />
                         : <XCircle className="w-4 h-4 text-red-500" />}
                     </div>
                     <div className="flex-1">
@@ -423,7 +488,44 @@ export default function ResultDetailPage() {
                           className="mb-3 mx-auto block rounded-xl max-h-56 object-contain border border-border"
                         />
                       )}
-                      {question && (question.options && question.options.length > 0 ? (
+                      {question && (isTwoPart ? (
+                        // TWO_PART (Milliy Sertifikat) — ikkita mustaqil javob (a, b),
+                        // har biri alohida baholanadi, javoblar x100 kodlangan.
+                        <div className="space-y-3 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">a)</p>
+                            <p>
+                              <span className="text-muted-foreground">Sizning javobingiz: </span>
+                              <span className={`font-semibold ${answer.isCorrect ? "text-green-700" : "text-red-600"}`}>
+                                {answer.selectedAnswer === -1 ? "Javob belgilanmagan" : answer.selectedAnswer / 100}
+                              </span>
+                            </p>
+                            {!answer.isCorrect && (
+                              <p>
+                                <span className="text-muted-foreground">To'g'ri javob: </span>
+                                <span className="font-semibold text-green-700">{question.correctAnswer / 100}</span>
+                              </p>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-1">b)</p>
+                            <p>
+                              <span className="text-muted-foreground">Sizning javobingiz: </span>
+                              <span className={`font-semibold ${answer.isCorrectB ? "text-green-700" : "text-red-600"}`}>
+                                {answer.selectedAnswerB == null || answer.selectedAnswerB === -1
+                                  ? "Javob belgilanmagan"
+                                  : answer.selectedAnswerB / 100}
+                              </span>
+                            </p>
+                            {!answer.isCorrectB && question.correctAnswerB != null && (
+                              <p>
+                                <span className="text-muted-foreground">To'g'ri javob: </span>
+                                <span className="font-semibold text-green-700">{question.correctAnswerB / 100}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ) : question.options && question.options.length > 0 ? (
                         <div className="space-y-2">
                           {question.options.map((opt: string, j: number) => {
                             const isSelected = j === answer.selectedAnswer;
@@ -450,7 +552,7 @@ export default function ResultDetailPage() {
                                     ? "border-green-500 bg-green-500 text-white"
                                     : "border-border"
                                 }`}>
-                                  {["A", "B", "C", "D"][j]}
+                                  {String.fromCharCode(65 + j)}
                                 </span>
                                 <MathText text={opt} />
                               </div>

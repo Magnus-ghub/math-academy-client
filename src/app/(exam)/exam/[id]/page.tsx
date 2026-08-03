@@ -23,8 +23,34 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
 import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
 import { MathText } from "@/components/MathText";
+import { SprInput } from "@/components/SprInput";
+import { parseSprAnswer } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
+
+// Bir nechta MATCHING savol (bir xil "section") bitta umumiy javob bankini
+// ko'rsatib, bitta navigatsiya qadamiga birlashtiriladi — SINGLE/TWO_PART
+// savollar esa xuddi avvalgidek, bittadan qadam.
+type Step =
+  | { kind: "single"; question: any }
+  | { kind: "matching"; questions: any[] };
+
+function buildSteps(questions: any[]): Step[] {
+  const steps: Step[] = [];
+  for (const q of questions) {
+    const last = steps[steps.length - 1];
+    if (q.questionType === "MATCHING" && q.section) {
+      if (last && last.kind === "matching" && last.questions[0].section === q.section) {
+        last.questions.push(q);
+        continue;
+      }
+      steps.push({ kind: "matching", questions: [q] });
+    } else {
+      steps.push({ kind: "single", question: q });
+    }
+  }
+  return steps;
+}
 
 function ExamPageContent() {
   const { id } = useParams<{ id: string }>();
@@ -33,7 +59,8 @@ function ExamPageContent() {
   const isRetake = searchParams.get("retake") === "1";
   const { isAuthenticated } = useAuthStore();
 
-  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [answers, setAnswers] = useState<Record<string, number | string>>({});
+  const [answersB, setAnswersB] = useState<Record<string, string>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
@@ -88,13 +115,41 @@ function ExamPageContent() {
   const test = testData?.getTest;
   const questions = questionsData?.getQuestions || [];
   const totalQuestions = questions.length;
-  const answeredCount = Object.keys(answers).length;
   const isWarning = timeLeft < 300 && timeLeft > 0;
   const isAttestatsiya = test?.testType === "ATTESTATSIYA";
 
-  const q = questions[currentIndex];
+  // TWO_PART savolda javob "a" qismi answers'da, "b" qismi answersB'da —
+  // ikkalasidan kamida bittasi to'ldirilsa, savol "javoblangan" hisoblanadi.
+  const isAnswered = (question: any): boolean => {
+    if (question.questionType === "TWO_PART") {
+      const a = answers[question.id];
+      const b = answersB[question.id];
+      return (a !== undefined && a !== "") || (b !== undefined && b !== "");
+    }
+    return answers[question.id] !== undefined;
+  };
+  const answeredCount = questions.filter(isAnswered).length;
+  const stepAnswered = (s: Step): boolean =>
+    s.kind === "matching"
+      ? s.questions.every((mq) => answers[mq.id] !== undefined)
+      : isAnswered(s.question);
+  const stepFlagged = (s: Step): boolean =>
+    s.kind === "matching" ? s.questions.some((mq) => flagged.has(mq.id)) : flagged.has(s.question.id);
+  // MATCHING guruhi bir nechta savolni bitta qadamga birlashtirgani uchun,
+  // umumiy 45 ta savoldan "43 ta" bo'lib qolmasligi uchun har doim haqiqiy
+  // savol raqami (yoki guruh uchun oralig'i, masalan "33-35") ko'rsatiladi —
+  // qadam pozitsiyasi (i+1) emas.
+  const stepLabel = (s: Step): string =>
+    s.kind === "matching"
+      ? `${s.questions[0].orderIndex}-${s.questions[s.questions.length - 1].orderIndex}`
+      : String(s.question.orderIndex ?? "");
+
+  const steps = buildSteps(questions);
+  const totalSteps = steps.length;
+  const step = steps[currentIndex];
+  const q = step?.kind === "single" ? step.question : undefined;
   const isFirst = currentIndex === 0;
-  const isLast = currentIndex === totalQuestions - 1;
+  const isLast = currentIndex === totalSteps - 1;
 
   // Attestatsiya: orderIndex bo'yicha 3 ta bo'lim (doim bir xil)
   const ATTEST_SECTIONS = [
@@ -155,13 +210,13 @@ function ExamPageContent() {
       if (e.key === "ArrowLeft") {
         setCurrentIndex((i) => Math.max(0, i - 1));
       } else if (e.key === "ArrowRight" && !isLast) {
-        setCurrentIndex((i) => Math.min(totalQuestions - 1, i + 1));
+        setCurrentIndex((i) => Math.min(totalSteps - 1, i + 1));
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showConfirm, showGrid, showCalc, reportTarget, isLast, totalQuestions]);
+  }, [showConfirm, showGrid, showCalc, reportTarget, isLast, totalSteps]);
 
   useEffect(() => {
     if (test?.duration && timeLeft === 0) {
@@ -208,11 +263,20 @@ function ExamPageContent() {
       variables: {
         input: {
           testId: id,
-          answers: questions.map((q: any) => ({
-            questionId: q.id,
-            selectedAnswer: answers[q.id] ?? -1,
-            timeSpent: 0,
-          })),
+          answers: questions.map((q: any) =>
+            q.questionType === "TWO_PART"
+              ? {
+                  questionId: q.id,
+                  selectedAnswer: parseSprAnswer(String(answers[q.id] ?? "")),
+                  selectedAnswerB: parseSprAnswer(String(answersB[q.id] ?? "")),
+                  timeSpent: 0,
+                }
+              : {
+                  questionId: q.id,
+                  selectedAnswer: answers[q.id] ?? -1,
+                  timeSpent: 0,
+                },
+          ),
           duration,
         },
       },
@@ -294,6 +358,7 @@ function ExamPageContent() {
         <PracticeResultScreen
           questions={questions}
           answers={answers}
+          answersB={answersB}
           duration={practiceDuration}
           testAnalysis={test?.testAnalysis}
           onClose={() => router.push("/dashboard/tests")}
@@ -403,12 +468,12 @@ function ExamPageContent() {
       <div className="flex flex-1 overflow-hidden max-w-5xl mx-auto w-full">
         {/* ── LEFT: Single question ── */}
         <main className="flex-1 overflow-y-auto px-4 py-6 flex flex-col">
-          {q && (
+          {step && (
             <div className="flex-1">
               {/* Question card */}
               <div
                 className={`relative overflow-hidden bg-background rounded-2xl border transition-colors ${
-                  answers[q.id] !== undefined
+                  step.kind === "single" && isAnswered(step.question)
                     ? "border-primary/30"
                     : "border-border"
                 }`}
@@ -431,45 +496,111 @@ function ExamPageContent() {
                 <div className="relative p-5">
                 {/* Question header */}
                 <div className="flex items-center justify-between mb-4">
-                  <span
-                    className={`text-sm font-bold px-3 py-1 rounded-full ${
-                      answers[q.id] !== undefined
-                        ? "bg-primary/10 text-primary"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {currentIndex + 1} / {totalQuestions}
+                  <span className="text-sm font-bold px-3 py-1 rounded-full bg-primary/10 text-primary">
+                    {stepLabel(step)} / {totalQuestions}
                   </span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() =>
-                        setReportTarget({
-                          questionId: q.id,
-                          number: currentIndex + 1,
-                        })
-                      }
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300 transition-all duration-200"
-                      title="E'tiroz bildirish"
-                    >
-                      <span className="text-[13px] font-medium leading-none">
-                        E'tiroz
-                      </span>
-                      <TriangleAlert className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => toggleFlag(q.id)}
-                      className={`p-1.5 rounded-lg transition-colors ${
-                        flagged.has(q.id)
-                          ? "bg-amber-100 text-amber-600"
-                          : "hover:bg-muted text-muted-foreground"
-                      }`}
-                      title="Belgilash"
-                    >
-                      <Flag className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                  {step.kind === "single" && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() =>
+                          setReportTarget({
+                            questionId: step.question.id,
+                            number: currentIndex + 1,
+                          })
+                        }
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 hover:border-red-300 transition-all duration-200"
+                        title="E'tiroz bildirish"
+                      >
+                        <span className="text-[13px] font-medium leading-none">
+                          E'tiroz
+                        </span>
+                        <TriangleAlert className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => toggleFlag(step.question.id)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                          flagged.has(step.question.id)
+                            ? "bg-amber-100 text-amber-600"
+                            : "hover:bg-muted text-muted-foreground"
+                        }`}
+                        title="Belgilash"
+                      >
+                        <Flag className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
+                {step.kind === "matching" ? (
+                  <>
+                    {/* Moslashtirish qismi — umumiy javob banki bitta marta ko'rsatiladi,
+                        har bir savol o'z dropdown'idan mustaqil tanlaydi (variantlar
+                        takrorlanishi mumkin). */}
+                    <div className="space-y-2.5 mb-5">
+                      {step.questions[0].options.map((opt: string, oi: number) => (
+                        <div
+                          key={oi}
+                          className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border"
+                        >
+                          <div className="w-7 h-7 rounded-full border-2 border-muted-foreground/40 flex items-center justify-center text-xs font-bold shrink-0">
+                            {String.fromCharCode(65 + oi)}
+                          </div>
+                          <span className="text-sm font-semibold">
+                            <MathText text={opt} />
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-4">
+                      {step.questions.map((mq: any, mi: number) => (
+                        <div key={mq.id} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-sm font-semibold">
+                              {mq.orderIndex}. <MathText text={mq.questionText} />
+                            </p>
+                            <div className="shrink-0 ml-2 flex items-center gap-1">
+                              <button
+                                onClick={() => setReportTarget({ questionId: mq.id, number: mq.orderIndex })}
+                                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                title="E'tiroz bildirish"
+                              >
+                                <TriangleAlert className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => toggleFlag(mq.id)}
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                  flagged.has(mq.id)
+                                    ? "bg-amber-100 text-amber-600"
+                                    : "hover:bg-muted text-muted-foreground"
+                                }`}
+                                title="Belgilash"
+                              >
+                                <Flag className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                          <select
+                            value={answers[mq.id] ?? ""}
+                            onChange={(e) =>
+                              setAnswers((prev) => ({ ...prev, [mq.id]: Number(e.target.value) }))
+                            }
+                            className="w-full px-4 py-3 rounded-xl border-2 border-border text-sm font-semibold bg-background focus:border-primary focus:outline-none"
+                          >
+                            <option value="" disabled>
+                              Javobni tanlang...
+                            </option>
+                            {step.questions[0].options.map((_: string, oi: number) => (
+                              <option key={oi} value={oi}>
+                                {String.fromCharCode(65 + oi)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
                 {/* Question text */}
                 <div className="text-base font-semibold mb-5 leading-relaxed">
                   <MathText text={q.questionText} />
@@ -484,35 +615,55 @@ function ExamPageContent() {
                   />
                 )}
 
-                {/* Options */}
-                <div className="space-y-2.5">
-                  {q.options.map((opt: string, oi: number) => (
-                    <button
-                      key={oi}
-                      onClick={() =>
-                        setAnswers((prev) => ({ ...prev, [q.id]: oi }))
-                      }
-                      className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all ${
-                        answers[q.id] === oi
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/40 hover:bg-muted/30"
-                      }`}
-                    >
-                      <div
-                        className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                {q.questionType === "TWO_PART" ? (
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-sm font-bold text-muted-foreground mb-1">a)</p>
+                      <SprInput
+                        value={String(answers[q.id] ?? "")}
+                        onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+                      />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-muted-foreground mb-1">b)</p>
+                      <SprInput
+                        value={answersB[q.id] ?? ""}
+                        onChange={(v) => setAnswersB((prev) => ({ ...prev, [q.id]: v }))}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {q.options.map((opt: string, oi: number) => (
+                      <button
+                        key={oi}
+                        onClick={() =>
+                          setAnswers((prev) => ({ ...prev, [q.id]: oi }))
+                        }
+                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all ${
                           answers[q.id] === oi
-                            ? "border-primary bg-primary text-white"
-                            : "border-muted-foreground/40"
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/40 hover:bg-muted/30"
                         }`}
                       >
-                        {["A", "B", "C", "D"][oi]}
-                      </div>
-                      <span className="text-sm font-semibold">
-                        <MathText text={opt} />
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                        <div
+                          className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                            answers[q.id] === oi
+                              ? "border-primary bg-primary text-white"
+                              : "border-muted-foreground/40"
+                          }`}
+                        >
+                          {String.fromCharCode(65 + oi)}
+                        </div>
+                        <span className="text-sm font-semibold">
+                          <MathText text={opt} />
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                  </>
+                )}
                 </div>
               </div>
 
@@ -563,7 +714,7 @@ function ExamPageContent() {
                   <button
                     onClick={() =>
                       setCurrentIndex((i) =>
-                        Math.min(totalQuestions - 1, i + 1),
+                        Math.min(totalSteps - 1, i + 1),
                       )
                     }
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -625,21 +776,23 @@ function ExamPageContent() {
               })
             ) : (
               <div className="grid grid-cols-5 gap-1.5">
-                {questions.map((sq: any, i: number) => (
+                {steps.map((st, i) => (
                   <button
-                    key={sq.id}
+                    key={st.kind === "matching" ? st.questions[0].id : st.question.id}
                     onClick={() => setCurrentIndex(i)}
-                    className={`aspect-square rounded-lg text-xs font-bold transition-all hover:scale-105 ring-offset-1 ${
+                    className={`aspect-square rounded-lg font-bold transition-all hover:scale-105 ring-offset-1 ${
+                      st.kind === "matching" ? "text-[10px]" : "text-xs"
+                    } ${
                       i === currentIndex ? "ring-2 ring-primary scale-105" : ""
                     } ${
-                      flagged.has(sq.id)
+                      stepFlagged(st)
                         ? "bg-amber-100 text-amber-700"
-                        : answers[sq.id] !== undefined
+                        : stepAnswered(st)
                           ? "bg-primary text-white"
                           : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
-                    {i + 1}
+                    {stepLabel(st)}
                   </button>
                 ))}
               </div>
@@ -761,26 +914,28 @@ function ExamPageContent() {
                 })
               ) : (
                 <div className="grid grid-cols-7 gap-1.5">
-                  {questions.map((sq: any, i: number) => (
+                  {steps.map((st, i) => (
                     <button
-                      key={sq.id}
+                      key={st.kind === "matching" ? st.questions[0].id : st.question.id}
                       onClick={() => {
                         setCurrentIndex(i);
                         setShowGrid(false);
                       }}
-                      className={`aspect-square rounded-lg text-xs font-bold transition-all ring-offset-1 ${
+                      className={`aspect-square rounded-lg font-bold transition-all ring-offset-1 ${
+                        st.kind === "matching" ? "text-[10px]" : "text-xs"
+                      } ${
                         i === currentIndex
                           ? "ring-2 ring-primary scale-105"
                           : ""
                       } ${
-                        flagged.has(sq.id)
+                        stepFlagged(st)
                           ? "bg-amber-100 text-amber-700"
-                          : answers[sq.id] !== undefined
+                          : stepAnswered(st)
                             ? "bg-primary text-white"
                             : "bg-muted text-muted-foreground"
                       }`}
                     >
-                      {i + 1}
+                      {stepLabel(st)}
                     </button>
                   ))}
                 </div>

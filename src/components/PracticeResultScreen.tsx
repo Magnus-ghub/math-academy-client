@@ -9,8 +9,10 @@ interface Question {
   id: string;
   questionText: string;
   questionImage?: string;
+  questionType?: string;
   options?: string[];
   correctAnswer: number;
+  correctAnswerB?: number | null;
   explanation?: string;
   analysis?: string;
 }
@@ -18,12 +20,11 @@ interface Question {
 interface Props {
   questions: Question[];
   answers: Record<string, number | string | undefined>;
+  answersB?: Record<string, string | undefined>;
   duration: number;
   testAnalysis?: string;
   onClose: () => void;
 }
-
-const OPTION_LETTERS = ["A", "B", "C", "D"];
 
 function normalizeSelected(q: Question, raw: number | string | undefined): number | undefined {
   const isSpr = !q.options || q.options.length === 0;
@@ -31,14 +32,41 @@ function normalizeSelected(q: Question, raw: number | string | undefined): numbe
   return isSpr ? parseSprAnswer(String(raw)) : (raw as number);
 }
 
-export function PracticeResultScreen({ questions, answers, duration, testAnalysis, onClose }: Props) {
+function normalizeB(raw: number | string | undefined): number | undefined {
+  if (raw === undefined || raw === "") return undefined;
+  return typeof raw === "number" ? raw : parseSprAnswer(String(raw));
+}
+
+function questionPoints(q: Question): number {
+  return q.questionType === "TWO_PART" ? 2 : 1;
+}
+
+function earnedPoints(
+  q: Question,
+  answers: Record<string, number | string | undefined>,
+  answersB: Record<string, string | undefined>,
+): number {
+  if (q.questionType === "TWO_PART") {
+    const a = normalizeSelected(q, answers[q.id]);
+    const b = normalizeB(answersB[q.id]);
+    let pts = 0;
+    if (a !== undefined && a === q.correctAnswer) pts++;
+    if (b !== undefined && q.correctAnswerB != null && b === q.correctAnswerB) pts++;
+    return pts;
+  }
+  return normalizeSelected(q, answers[q.id]) === q.correctAnswer ? 1 : 0;
+}
+
+export function PracticeResultScreen({ questions, answers, answersB = {}, duration, testAnalysis, onClose }: Props) {
   const [testAnalysisOpen, setTestAnalysisOpen] = useState(false);
   const [openAnalysisId, setOpenAnalysisId] = useState<string | null>(null);
   const total = questions.length;
   const correctCount = questions.filter(
-    (q) => normalizeSelected(q, answers[q.id]) === q.correctAnswer
+    (q) => earnedPoints(q, answers, answersB) === questionPoints(q)
   ).length;
-  const score = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+  const totalPoints = questions.reduce((s, q) => s + questionPoints(q), 0);
+  const gotPoints = questions.reduce((s, q) => s + earnedPoints(q, answers, answersB), 0);
+  const score = totalPoints > 0 ? Math.round((gotPoints / totalPoints) * 100) : 0;
 
   const scoreColor = score >= 80 ? "text-green-600" : score >= 60 ? "text-amber-500" : "text-red-500";
   const scoreBg = score >= 80 ? "bg-green-100" : score >= 60 ? "bg-amber-50" : "bg-red-100";
@@ -121,26 +149,38 @@ export function PracticeResultScreen({ questions, answers, duration, testAnalysi
         <h2 className="text-lg font-bold mb-4">Javoblar tahlili</h2>
         <div className="space-y-3 mb-6">
           {questions.map((q, i) => {
-            const isSpr = !q.options || q.options.length === 0;
+            const isTwoPart = q.questionType === "TWO_PART";
+            const isSpr = !isTwoPart && (!q.options || q.options.length === 0);
             const raw = answers[q.id];
             const selected = normalizeSelected(q, raw);
-            const isCorrect = selected !== undefined && selected === q.correctAnswer;
+            const rawB = answersB[q.id];
+            const selectedB = normalizeB(rawB);
+            const isCorrectA = isTwoPart
+              ? selected !== undefined && selected === q.correctAnswer
+              : selected !== undefined && selected === q.correctAnswer;
+            const isCorrectB = isTwoPart
+              ? selectedB !== undefined && q.correctAnswerB != null && selectedB === q.correctAnswerB
+              : undefined;
+            const isCorrect = isTwoPart ? isCorrectA && !!isCorrectB : isCorrectA;
+            const isPartial = isTwoPart && isCorrectA !== isCorrectB;
 
             return (
               <div
                 key={q.id}
                 className={`bg-background rounded-2xl border-2 p-5 ${
-                  isCorrect ? "border-green-200" : "border-red-200"
+                  isCorrect ? "border-green-200" : isPartial ? "border-amber-200" : "border-red-200"
                 }`}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                      isCorrect ? "bg-green-100" : "bg-red-100"
+                      isCorrect ? "bg-green-100" : isPartial ? "bg-amber-100" : "bg-red-100"
                     }`}
                   >
                     {isCorrect ? (
                       <CheckCircle className="w-4 h-4 text-green-600" />
+                    ) : isPartial ? (
+                      <Info className="w-4 h-4 text-amber-600" />
                     ) : (
                       <XCircle className="w-4 h-4 text-red-500" />
                     )}
@@ -158,7 +198,40 @@ export function PracticeResultScreen({ questions, answers, duration, testAnalysi
                       />
                     )}
 
-                    {isSpr ? (
+                    {isTwoPart ? (
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">a)</p>
+                          <p>
+                            <span className="text-muted-foreground">Sizning javobingiz: </span>
+                            <span className={`font-semibold ${isCorrectA ? "text-green-700" : "text-red-600"}`}>
+                              {raw === undefined || raw === "" ? "Javob belgilanmagan" : String(raw)}
+                            </span>
+                          </p>
+                          {!isCorrectA && (
+                            <p>
+                              <span className="text-muted-foreground">To'g'ri javob: </span>
+                              <span className="font-semibold text-green-700">{q.correctAnswer / 100}</span>
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">b)</p>
+                          <p>
+                            <span className="text-muted-foreground">Sizning javobingiz: </span>
+                            <span className={`font-semibold ${isCorrectB ? "text-green-700" : "text-red-600"}`}>
+                              {rawB === undefined || rawB === "" ? "Javob belgilanmagan" : String(rawB)}
+                            </span>
+                          </p>
+                          {!isCorrectB && q.correctAnswerB != null && (
+                            <p>
+                              <span className="text-muted-foreground">To'g'ri javob: </span>
+                              <span className="font-semibold text-green-700">{q.correctAnswerB / 100}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : isSpr ? (
                       <div className="space-y-1.5 text-sm">
                         <p>
                           <span className="text-muted-foreground">Sizning javobingiz: </span>
@@ -202,7 +275,7 @@ export function PracticeResultScreen({ questions, answers, duration, testAnalysi
                                         : "border-border"
                                 }`}
                               >
-                                {OPTION_LETTERS[j]}
+                                {String.fromCharCode(65 + j)}
                               </span>
                               <MathText text={opt} />
                             </div>

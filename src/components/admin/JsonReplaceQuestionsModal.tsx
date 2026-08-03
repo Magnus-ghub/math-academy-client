@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Copy, Check, Loader2, AlertCircle, AlertTriangle, Upload } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { getAiPrompt } from "@/lib/ai-test-prompt";
+import { isValidQuestionShape } from "@/lib/question-json-validation";
 import { validateLatex } from "@/components/MathText";
 import { toast } from "sonner";
 
@@ -46,18 +47,10 @@ export function JsonReplaceQuestionsModal({ testId, testType, currentQuestionCou
       setJsonError('"questions" massivi topilmadi yoki bo\'sh.');
       return;
     }
-    const isSat = testType === "SAT";
-    const invalid = questions.find(
-      (q: any) =>
-        !q.questionText ||
-        !Array.isArray(q.options) ||
-        (isSat ? (q.options.length !== 0 && q.options.length !== 4) : q.options.length !== 4)
-    );
+    const invalid = questions.find((q: any) => !isValidQuestionShape(q, testType));
     if (invalid) {
       setJsonError(
-        isSat
-          ? 'Har bir savol "questionText" va 4 ta "options" (MCQ) yoki bo\'sh "options": [] (SPR) bo\'lishi kerak.'
-          : 'Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.'
+        'Har bir savol "questionText" va 4 ta "options" (yoki SAT/Milliy Sertifikat uchun SPR/MATCHING/TWO_PART shakli) bo\'lishi kerak.'
       );
       return;
     }
@@ -69,7 +62,7 @@ export function JsonReplaceQuestionsModal({ testId, testType, currentQuestionCou
       );
       (q.options ?? []).forEach((opt: string, oi: number) => {
         validateLatex(String(opt ?? "")).forEach((err) =>
-          latexIssues.push(`${qi + 1}-savol, ${["A", "B", "C", "D"][oi]} varianti: ${err}`)
+          latexIssues.push(`${qi + 1}-savol, ${String.fromCharCode(65 + oi)} varianti: ${err}`)
         );
       });
     });

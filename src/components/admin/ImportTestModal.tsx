@@ -5,6 +5,7 @@ import { X, Copy, Check, Upload, Loader2, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { useRouter } from "next/navigation";
 import { validateLatex } from "@/components/MathText";
+import { isValidQuestionShape } from "@/lib/question-json-validation";
 import { toast } from "sonner";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
@@ -102,18 +103,10 @@ export default function ImportTestModal({ onClose, onImported }: Props) {
       return;
     }
 
-    const isSat = parsed.testType === "SAT";
-    const invalid = parsed.questions.find(
-      (q: any) =>
-        !q.questionText ||
-        !Array.isArray(q.options) ||
-        (isSat ? (q.options.length !== 0 && q.options.length !== 4) : q.options.length !== 4)
-    );
+    const invalid = parsed.questions.find((q: any) => !isValidQuestionShape(q, parsed.testType));
     if (invalid) {
       setError(
-        isSat
-          ? 'Har bir savol "questionText" va 4 ta "options" (MCQ) yoki bo\'sh "options": [] (SPR) bo\'lishi kerak.'
-          : 'Har bir savol "questionText" va 4 ta "options" bo\'lishi kerak.'
+        'Har bir savol "questionText" va 4 ta "options" (yoki SAT/Milliy Sertifikat uchun SPR/MATCHING/TWO_PART shakli) bo\'lishi kerak.'
       );
       return;
     }
@@ -125,7 +118,7 @@ export default function ImportTestModal({ onClose, onImported }: Props) {
       );
       (q.options ?? []).forEach((opt: string, oi: number) => {
         validateLatex(String(opt ?? "")).forEach((err) =>
-          latexIssues.push(`${qi + 1}-savol, ${["A", "B", "C", "D"][oi]} varianti: ${err}`)
+          latexIssues.push(`${qi + 1}-savol, ${String.fromCharCode(65 + oi)} varianti: ${err}`)
         );
       });
     });

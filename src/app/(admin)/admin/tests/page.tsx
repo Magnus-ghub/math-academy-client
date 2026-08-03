@@ -60,8 +60,11 @@ export default function AdminTestsPage() {
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
-  const { data, loading, refetch } = useQuery<{ getAllTests: any[] }>(GET_ALL_TESTS);
+  const { data, loading, refetch } = useQuery<{ getAllTests: any[] }>(GET_ALL_TESTS, {
+    variables: { includeArchived: showArchived },
+  });
   const tests = data?.getAllTests || [];
 
   const [updateTest] = useMutation(UPDATE_TEST, {
@@ -188,6 +191,14 @@ export default function AdminTestsPage() {
             </button>
           ))}
         </div>
+        <button
+          onClick={() => { setShowArchived((v) => !v); setPage(1); }}
+          className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${
+            showArchived ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground hover:bg-muted/80"
+          }`}
+        >
+          {showArchived ? "Arxivlanganlar ko'rsatilmoqda" : "Arxivlanganlarni ko'rsatish"}
+        </button>
       </div>
 
       {/* DTM sub-filter */}
