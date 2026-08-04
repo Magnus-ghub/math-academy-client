@@ -130,8 +130,6 @@ export const GET_ALL_RESULTS_FOR_TEST = gql`
       correctAnswers
       score
       satScore
-      rawPoints
-      totalPoints
       duration
       finishedAt
       createdAt
