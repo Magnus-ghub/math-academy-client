@@ -83,6 +83,7 @@ export const GET_QUESTIONS = gql`
       questionText
       questionImage
       options
+      optionImages
       correctAnswer
       correctAnswerB
       explanation
@@ -144,6 +145,7 @@ export const ADD_QUESTION = gql`
       questionText
       questionImage
       options
+      optionImages
       correctAnswer
       orderIndex
     }
@@ -157,6 +159,7 @@ export const UPDATE_QUESTION = gql`
       questionText
       questionImage
       options
+      optionImages
       correctAnswer
       orderIndex
     }

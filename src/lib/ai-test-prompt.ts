@@ -19,6 +19,7 @@ QOIDALAR:
 - correctAnswer: 0=A, 1=B, 2=C, 3=D
 - options da 4 ta variant SHART
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - Jadvallar: <table><tr><td>...</td></tr></table>
 - analysis: savol bo'yicha AI tahlil matni (ixtiyoriy, bo'sh qoldirsa ham bo'ladi). Ichidagi formulalarni ham $x^2$, $$\\frac{a}{b}$$ kabi LaTeX bilan yozing — oddiy matn emas
@@ -60,6 +61,7 @@ QOIDALAR:
     kasr      3/4   → correctAnswer: 75
 - SAT da har 22 savoldan taxminan 5-6 tasi SPR bo'ladi
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - analysis: savol bo'yicha AI tahlil matni (ixtiyoriy). Ichidagi formulalarni ham $x^2$, $$\\frac{a}{b}$$ kabi LaTeX bilan yozing — oddiy matn emas
 - youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;
@@ -113,6 +115,7 @@ UMUMIY QOIDALAR:
 - MATCHING: correctAnswer — oddiy indeks (×100 QILINMAYDI), options 4 tadan ko'p bo'lishi mumkin
 - TWO_PART: options: [] (bo'sh massiv), correctAnswer va correctAnswerB — ikkalasi ham ×100 kodlangan
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - TWO_PART savolning "a)" va "b)" qismlarini questionText ichida "\\n" bilan ajratib yozing`;
 
@@ -139,6 +142,7 @@ QOIDALAR:
 - correctAnswer: 0=A, 1=B, 2=C, 3=D
 - options da 4 ta variant SHART
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - Jadvallar: <table><tr><td>...</td></tr></table>
 - analysis: savol bo'yicha AI tahlil matni (ixtiyoriy). Ichidagi formulalarni ham LaTeX bilan yozing

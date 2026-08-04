@@ -704,24 +704,33 @@ function SatExamPageContent() {
                         <button
                           key={oi}
                           onClick={() => setAnswers((prev) => ({ ...prev, [currentQ.id]: oi }))}
-                          className={`w-full flex items-start gap-3.5 px-4 py-3.5 rounded-xl border-2 text-left transition-all group ${
+                          className={`w-full flex flex-col gap-2.5 px-4 py-3.5 rounded-xl border-2 text-left transition-all group ${
                             isSelected
                               ? "border-[#1e3a5f] bg-[#1e3a5f]/5"
                               : "border-gray-200 hover:border-[#1e3a5f]/40 hover:bg-gray-50"
                           }`}
                         >
-                          <div
-                            className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 transition-colors ${
-                              isSelected
-                                ? "border-[#1e3a5f] bg-[#1e3a5f] text-white"
-                                : "border-gray-300 text-gray-500 group-hover:border-[#1e3a5f]/60"
-                            }`}
-                          >
-                            {OPTION_LETTERS[oi]}
+                          {currentQ.optionImages?.[oi] && (
+                            <img
+                              src={currentQ.optionImages[oi]}
+                              alt=""
+                              className="max-h-32 object-contain rounded-lg border border-gray-200"
+                            />
+                          )}
+                          <div className="flex items-start gap-3.5">
+                            <div
+                              className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 transition-colors ${
+                                isSelected
+                                  ? "border-[#1e3a5f] bg-[#1e3a5f] text-white"
+                                  : "border-gray-300 text-gray-500 group-hover:border-[#1e3a5f]/60"
+                              }`}
+                            >
+                              {OPTION_LETTERS[oi]}
+                            </div>
+                            <span className="text-sm font-semibold text-gray-700 leading-relaxed pt-0.5">
+                              <MathText text={opt} />
+                            </span>
                           </div>
-                          <span className="text-sm font-semibold text-gray-700 leading-relaxed pt-0.5">
-                            <MathText text={opt} />
-                          </span>
                         </button>
                       );
                     })}

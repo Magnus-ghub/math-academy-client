@@ -3,12 +3,13 @@
 import { useState, useRef } from "react";
 import { useMutation } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ChevronLeft, Loader2, ImageIcon, X } from "lucide-react";
+import { Plus, Trash2, ChevronLeft, Loader2, ImageIcon, X, Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { toast } from "sonner";
 import { CREATE_TEST, ADD_QUESTION } from "@/lib/graphql/test";
 import { LatexPreview } from "@/components/admin/LatexPreview";
+import { ImportHistoricalResultsModal } from "@/components/admin/ImportHistoricalResultsModal";
 import { useAuthStore } from "@/lib/store/auth.store";
 
 const API_BASE =
@@ -31,6 +32,8 @@ interface QuestionDraft {
   questionText: string;
   questionImage: string;
   options: string[];
+  optionImages: string[];
+  optionUploading: boolean[];
   correctAnswer: number;
   explanation: string;
   uploading: boolean;
@@ -42,6 +45,8 @@ function newQuestion(index: number): QuestionDraft {
     questionText: "",
     questionImage: "",
     options: ["", "", "", ""],
+    optionImages: ["", "", "", ""],
+    optionUploading: [false, false, false, false],
     correctAnswer: 0,
     explanation: "",
     uploading: false,
@@ -54,6 +59,7 @@ export default function CreateTestPage() {
   const [step, setStep] = useState<"info" | "questions">("info");
   const [createdTestId, setCreatedTestId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showImportResults, setShowImportResults] = useState(false);
 
   const [testInfo, setTestInfo] = useState({
     testTitle: "",
@@ -147,6 +153,48 @@ export default function CreateTestPage() {
     }
   };
 
+  const uploadOptionImage = async (file: File, uid: string, index: number) => {
+    setQuestions((qs) =>
+      qs.map((q) =>
+        q.uid === uid
+          ? { ...q, optionUploading: q.optionUploading.map((u, i) => (i === index ? true : u)) }
+          : q,
+      ),
+    );
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(`${API_BASE}/upload/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setQuestions((qs) =>
+          qs.map((q) =>
+            q.uid === uid
+              ? {
+                  ...q,
+                  optionImages: q.optionImages.map((img, i) => (i === index ? data.url : img)),
+                  optionUploading: q.optionUploading.map((u, i) => (i === index ? false : u)),
+                }
+              : q,
+          ),
+        );
+      }
+    } catch {
+      toast.error("Rasm yuklanmadi");
+      setQuestions((qs) =>
+        qs.map((q) =>
+          q.uid === uid
+            ? { ...q, optionUploading: q.optionUploading.map((u, i) => (i === index ? false : u)) }
+            : q,
+        ),
+      );
+    }
+  };
+
   const handleSave = async (publish: boolean) => {
     if (!createdTestId) return;
     const invalid = questions.some(
@@ -168,6 +216,7 @@ export default function CreateTestPage() {
               questionText: q.questionText,
               questionImage: q.questionImage || undefined,
               options: q.options,
+              optionImages: q.optionImages,
               correctAnswer: q.correctAnswer,
               explanation: q.explanation || undefined,
               orderIndex: i + 1,
@@ -194,6 +243,16 @@ export default function CreateTestPage() {
         const options = [...q.options];
         options[idx] = value;
         return { ...q, options };
+      }),
+    );
+
+  const updateOptionImage = (uid: string, idx: number, value: string) =>
+    setQuestions((qs) =>
+      qs.map((q) => {
+        if (q.uid !== uid) return q;
+        const optionImages = [...q.optionImages];
+        optionImages[idx] = value;
+        return { ...q, optionImages };
       }),
     );
 
@@ -388,6 +447,24 @@ export default function CreateTestPage() {
         </div>
       ) : (
         <div className="space-y-4">
+          {testInfo.testType === "MILLIY_SERTIFIKAT" && createdTestId && (
+            <div className="p-4 bg-muted/40 rounded-xl">
+              <p className="text-sm font-medium mb-1">Rasch kogortasi</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Eski Excel-metodologiyadan xom ballarni import qilib, bu testning Rasch
+                kogortasini boyiting — yangi talabalar tezroq haqiqiy T-ball oladi.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowImportResults(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                Eski natijalarni import qilish
+              </button>
+            </div>
+          )}
+
           {questions.map((q, qIndex) => (
             <QuestionCard
               key={q.uid}
@@ -399,6 +476,8 @@ export default function CreateTestPage() {
                 setQuestions((qs) => qs.filter((x) => x.uid !== q.uid))
               }
               onImagePick={(file) => uploadImage(file, q.uid)}
+              onOptionImagePick={(file, idx) => uploadOptionImage(file, q.uid, idx)}
+              onOptionImageRemove={(idx) => updateOptionImage(q.uid, idx, "")}
               canRemove={questions.length > 1}
             />
           ))}
@@ -439,6 +518,15 @@ export default function CreateTestPage() {
           </div>
         </div>
       )}
+
+      {showImportResults && createdTestId && (
+        <ImportHistoricalResultsModal
+          testId={createdTestId}
+          currentQuestionCount={questions.length}
+          onClose={() => setShowImportResults(false)}
+          onSuccess={() => {}}
+        />
+      )}
     </div>
   );
 }
@@ -450,6 +538,8 @@ function QuestionCard({
   onUpdateOption,
   onRemove,
   onImagePick,
+  onOptionImagePick,
+  onOptionImageRemove,
   canRemove,
 }: {
   q: QuestionDraft;
@@ -458,9 +548,12 @@ function QuestionCard({
   onUpdateOption: (uid: string, idx: number, value: string) => void;
   onRemove: () => void;
   onImagePick: (file: File) => void;
+  onOptionImagePick: (file: File, idx: number) => void;
+  onOptionImageRemove: (idx: number) => void;
   canRemove: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const optionFileRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   return (
     <div className="bg-background rounded-2xl border border-border p-5">
@@ -538,6 +631,47 @@ function QuestionCard({
         <div className="space-y-2">
           {q.options.map((opt, i) => (
             <div key={i} className="space-y-1">
+              <div className="pl-9">
+                {q.optionImages[i] ? (
+                  <div className="relative inline-block mb-1">
+                    <img
+                      src={q.optionImages[i]}
+                      alt={`${["A", "B", "C", "D"][i]} variant rasmi`}
+                      className="max-h-20 rounded-lg border border-border object-contain"
+                    />
+                    <button
+                      onClick={() => onOptionImageRemove(i)}
+                      className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => optionFileRefs.current[i]?.click()}
+                    disabled={q.optionUploading[i]}
+                    className="flex items-center gap-1.5 px-2 py-1 mb-1 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                  >
+                    {q.optionUploading[i] ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <ImageIcon className="w-3 h-3" />
+                    )}
+                    {q.optionUploading[i] ? "Yuklanmoqda..." : "Rasm qo'shish"}
+                  </button>
+                )}
+                <input
+                  ref={(el) => { optionFileRefs.current[i] = el; }}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) onOptionImagePick(f, i);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onUpdate(q.uid, "correctAnswer", i)}
@@ -553,6 +687,18 @@ function QuestionCard({
                   placeholder={`${["A", "B", "C", "D"][i]} variant`}
                   value={opt}
                   onChange={(e) => onUpdateOption(q.uid, i, e.target.value)}
+                  onPaste={(e) => {
+                    const items = Array.from(e.clipboardData?.items ?? []);
+                    const imageItem = items.find((item) => item.type.startsWith("image/"));
+                    const fileFromList = Array.from(e.clipboardData?.files ?? []).find((f) =>
+                      f.type.startsWith("image/"),
+                    );
+                    const file = imageItem?.getAsFile() ?? fileFromList;
+                    if (file) {
+                      e.preventDefault();
+                      onOptionImagePick(file, i);
+                    }
+                  }}
                 />
               </div>
               {opt && (

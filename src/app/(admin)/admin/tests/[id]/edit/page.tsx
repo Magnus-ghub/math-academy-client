@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from "@/lib/store/auth.store";
 import { countWords, limitWords } from "@/lib/utils";
 import { JsonReplaceQuestionsModal } from "@/components/admin/JsonReplaceQuestionsModal";
+import { ImportHistoricalResultsModal } from "@/components/admin/ImportHistoricalResultsModal";
 import { LatexPreview } from "@/components/admin/LatexPreview";
 import { AI_PROMPT_SINGLE_QUESTION } from "@/lib/ai-test-prompt";
 import { validateLatex } from "@/components/MathText";
@@ -34,6 +35,8 @@ interface QuestionRow {
   questionText: string;
   questionImage: string;
   options: string[];
+  optionImages: string[];
+  optionUploading: boolean[];
   correctAnswer: number;
   correctAnswerB?: number | null;
   explanation: string;
@@ -72,6 +75,7 @@ interface QuestionsData {
     questionText?: string;
     questionImage?: string;
     options?: string[];
+    optionImages?: string[];
     correctAnswer?: number;
     correctAnswerB?: number | null;
     explanation?: string;
@@ -121,6 +125,8 @@ function makeRow(q?: any): QuestionRow {
     questionText: q?.questionText ?? "",
     questionImage: q?.questionImage ?? "",
     options: q?.options ?? ["", "", "", ""],
+    optionImages: q?.optionImages ?? ["", "", "", ""],
+    optionUploading: [false, false, false, false],
     correctAnswer: q?.correctAnswer ?? 0,
     correctAnswerB: q?.correctAnswerB,
     explanation: q?.explanation ?? "",
@@ -143,6 +149,7 @@ function EditTestPageContent() {
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "questions">("questions");
   const [showJsonReplace, setShowJsonReplace] = useState(false);
+  const [showImportResults, setShowImportResults] = useState(false);
   const [showTestAnalysisPreview, setShowTestAnalysisPreview] = useState(false);
 
   const { data: testData, loading: testLoading } = useQuery<TestData, { testId: string }>(GET_TEST, {
@@ -283,6 +290,42 @@ function EditTestPageContent() {
       return { ...q, options, dirty: true };
     }));
 
+  const setOptionImage = (uid: string, idx: number, value: string) =>
+    setQuestions((qs) => qs.map((q) => {
+      if (q.uid !== uid) return q;
+      const optionImages = [...q.optionImages];
+      optionImages[idx] = value;
+      return { ...q, optionImages, dirty: true };
+    }));
+
+  const setOptionUploading = (uid: string, idx: number, value: boolean) =>
+    setQuestions((qs) => qs.map((q) => {
+      if (q.uid !== uid) return q;
+      const optionUploading = [...q.optionUploading];
+      optionUploading[idx] = value;
+      return { ...q, optionUploading };
+    }));
+
+  const uploadOptionImage = async (file: File, uid: string, idx: number) => {
+    setOptionUploading(uid, idx, true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch(`${API_BASE}/upload/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.url) setOptionImage(uid, idx, data.url);
+      else toast.error("Rasm yuklanmadi");
+    } catch {
+      toast.error("Rasm yuklanmadi");
+    } finally {
+      setOptionUploading(uid, idx, false);
+    }
+  };
+
   const removeQuestion = (uid: string, dbId?: string) => {
     setQuestions((qs) => qs.filter((q) => q.uid !== uid));
     if (dbId) setDeletedIds((ids) => [...ids, dbId]);
@@ -333,6 +376,7 @@ function EditTestPageContent() {
           questionText: q.questionText,
           questionImage: q.questionImage || undefined,
           options: q.options,
+          optionImages: q.optionImages,
           correctAnswer: q.correctAnswer,
           explanation: q.explanation || undefined,
           youtubeUrl: q.youtubeUrl || undefined,
@@ -470,6 +514,24 @@ function EditTestPageContent() {
                 <option value="ASOSIY">Asosiy blok</option>
                 <option value="FULL">Full DTM</option>
               </select>
+            </div>
+          )}
+
+          {testInfo.testType === "MILLIY_SERTIFIKAT" && testId && (
+            <div className="p-4 bg-muted/40 rounded-xl">
+              <p className="text-sm font-medium mb-1">Rasch kogortasi</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                Eski Excel-metodologiyadan xom ballarni import qilib, bu testning Rasch
+                kogortasini boyiting — yangi talabalar tezroq haqiqiy T-ball oladi.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowImportResults(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                Eski natijalarni import qilish
+              </button>
             </div>
           )}
 
@@ -667,6 +729,8 @@ function EditTestPageContent() {
               onUpdateOption={setOption}
               onRemove={() => removeQuestion(q.uid, q.id)}
               onImagePick={(file) => uploadImage(file, q.uid)}
+              onOptionImagePick={(file, idx) => uploadOptionImage(file, q.uid, idx)}
+              onOptionImageRemove={(idx) => setOptionImage(q.uid, idx, "")}
               canRemove={questions.length > 1}
             />
           ))}
@@ -690,6 +754,15 @@ function EditTestPageContent() {
           onSuccess={() => refetchQuestions()}
         />
       )}
+
+      {showImportResults && testId && (
+        <ImportHistoricalResultsModal
+          testId={testId}
+          currentQuestionCount={questions.length}
+          onClose={() => setShowImportResults(false)}
+          onSuccess={() => {}}
+        />
+      )}
     </div>
   );
 }
@@ -704,7 +777,7 @@ export default function EditTestPage() {
   );
 }
 
-function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpdateOption, onRemove, onImagePick, canRemove }: {
+function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpdateOption, onRemove, onImagePick, onOptionImagePick, onOptionImageRemove, canRemove }: {
   q: QuestionRow;
   index: number;
   highlighted?: boolean;
@@ -713,9 +786,12 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
   onUpdateOption: (uid: string, idx: number, value: string) => void;
   onRemove: () => void;
   onImagePick: (file: File) => void;
+  onOptionImagePick: (file: File, idx: number) => void;
+  onOptionImageRemove: (idx: number) => void;
   canRemove: boolean;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const optionFileRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [showJson, setShowJson] = useState(false);
   const [jsonText, setJsonText] = useState("");
   const [jsonError, setJsonError] = useState("");
@@ -769,34 +845,32 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
     toast.success('Savol JSON orqali to\'ldirildi — "Saqlash"ni bosishni unutmang');
   };
 
-  const handlePaste = (e: React.ClipboardEvent) => {
+  // Umumiy — savol yoki variant, qaysi biriga joylashtirilsa shu joyga
+  // (onFile) boradi. Skrinshot/Paint "image/*" item sifatida, ba'zi
+  // brauzerlarda "files" ro'yxatida, MS Word esa odatda HTML fragmentidagi
+  // <img src="data:..."> orqali keladi (mahalliy "file://" yo'lni brauzer
+  // xavfsizlik sababli o'qiy olmaydi, shuning uchun faqat base64 holatini
+  // tiklaymiz, aks holda foydalanuvchiga sababini tushuntiramiz).
+  const extractPastedImage = (e: React.ClipboardEvent, onFile: (file: File) => void) => {
     const items = Array.from(e.clipboardData?.items ?? []);
 
-    // Oddiy holat: skrinshot, brauzer yoki Paint'dan nusxalangan rasm
-    // to'g'ridan-to'g'ri "image/*" clipboard item sifatida keladi.
     const imageItem = items.find((item) => item.type.startsWith("image/"));
     if (imageItem) {
       e.preventDefault();
       const file = imageItem.getAsFile();
-      if (file) onImagePick(file);
+      if (file) onFile(file);
       return;
     }
 
-    // Ba'zi brauzerlarda rasm faqat `files` ro'yxatida keladi (items emas)
     const fileFromList = Array.from(e.clipboardData?.files ?? []).find((f) =>
       f.type.startsWith("image/")
     );
     if (fileFromList) {
       e.preventDefault();
-      onImagePick(fileFromList);
+      onFile(fileFromList);
       return;
     }
 
-    // MS Word rasmni odatda "image/*" sifatida emas, balki HTML fragmentida
-    // <img> tegi orqali (ba'zan base64, ko'pincha esa faqat mahalliy
-    // "file://" yo'l) taqdim qiladi. Brauzer xavfsizlik sababli "file://"
-    // manzilidan o'qiy olmaydi, shuning uchun faqat base64 holatini tiklab
-    // olamiz, aks holda foydalanuvchiga sababini tushuntiramiz.
     const htmlItem = items.find((item) => item.type === "text/html");
     if (htmlItem) {
       e.preventDefault();
@@ -804,7 +878,7 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
         const match = html.match(/<img[^>]+src=["'](data:image\/[^"']+)["']/i);
         const file = match ? dataUrlToFile(match[1]) : null;
         if (file) {
-          onImagePick(file);
+          onFile(file);
         } else {
           toast.error(
             "Word'dan nusxalangan rasmni to'g'ridan-to'g'ri joylashtirib bo'lmadi. Avval rasmni kompyuteringizga saqlang va \"Fayl tanlash\" orqali yuklang."
@@ -813,6 +887,8 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
       });
     }
   };
+
+  const handlePaste = (e: React.ClipboardEvent) => extractPastedImage(e, onImagePick);
 
   return (
     <div
@@ -984,6 +1060,47 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
         <div className="space-y-2">
           {q.options.map((opt, i) => (
             <div key={i} className="space-y-1">
+              <div className="pl-9">
+                {q.optionImages[i] ? (
+                  <div className="relative inline-block mb-1">
+                    <img
+                      src={q.optionImages[i]}
+                      alt={`${["A", "B", "C", "D"][i]} variant rasmi`}
+                      className="max-h-20 rounded-lg border border-border object-contain"
+                    />
+                    <button
+                      onClick={() => onOptionImageRemove(i)}
+                      className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => optionFileRefs.current[i]?.click()}
+                    disabled={q.optionUploading[i]}
+                    className="flex items-center gap-1.5 px-2 py-1 mb-1 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                  >
+                    {q.optionUploading[i] ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <ImageIcon className="w-3 h-3" />
+                    )}
+                    {q.optionUploading[i] ? "Yuklanmoqda..." : "Rasm qo'shish"}
+                  </button>
+                )}
+                <input
+                  ref={(el) => { optionFileRefs.current[i] = el; }}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) onOptionImagePick(f, i);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onUpdate(q.uid, "correctAnswer", i)}
@@ -994,7 +1111,11 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
                   {["A", "B", "C", "D"][i]}
                 </button>
                 <Input placeholder={`${["A", "B", "C", "D"][i]} variant`} value={opt}
-                  onChange={(e) => onUpdateOption(q.uid, i, e.target.value)} />
+                  onChange={(e) => onUpdateOption(q.uid, i, e.target.value)}
+                  onPaste={(e) => {
+                    e.stopPropagation();
+                    extractPastedImage(e, (file) => onOptionImagePick(file, i));
+                  }} />
               </div>
               {opt && (
                 <div className="pl-9">

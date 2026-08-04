@@ -137,6 +137,26 @@ export const GET_ALL_RESULTS_FOR_TEST = gql`
   }
 `;
 
+export const GET_IMPORTED_RESULTS_COUNT = gql`
+  query GetImportedResultsCount($testId: String!) {
+    getImportedResultsCount(testId: $testId)
+  }
+`;
+
+export const IMPORT_HISTORICAL_RESULTS = gql`
+  mutation ImportHistoricalResults($input: ImportHistoricalResultsInput!) {
+    importHistoricalResults(input: $input) {
+      importedCount
+    }
+  }
+`;
+
+export const CLEAR_IMPORTED_RESULTS = gql`
+  mutation ClearImportedResults($testId: String!) {
+    clearImportedResults(testId: $testId)
+  }
+`;
+
 export const GET_MILLIY_SERTIFIKAT_SCORE = gql`
   query GetMilliySertifikatScore($resultId: String!) {
     getMilliySertifikatScore(resultId: $resultId) {

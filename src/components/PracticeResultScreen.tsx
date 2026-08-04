@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { CheckCircle, XCircle, Clock, Info, ShieldOff, Bot } from "lucide-react";
 import { MathText } from "@/components/MathText";
 import { parseSprAnswer } from "@/lib/utils";
@@ -167,11 +168,26 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
             return (
               <div
                 key={q.id}
-                className={`bg-background rounded-2xl border-2 p-5 ${
+                className={`relative overflow-hidden bg-background rounded-2xl border-2 ${
                   isCorrect ? "border-green-200" : isPartial ? "border-amber-200" : "border-red-200"
                 }`}
               >
-                <div className="flex items-start gap-3">
+                {/* Orqa fondagi logo — katta, juda hira */}
+                <Image
+                  src="/logo.jpg"
+                  alt=""
+                  fill
+                  aria-hidden
+                  className="object-contain opacity-[0.09] pointer-events-none select-none"
+                />
+                <span
+                  aria-hidden
+                  className="absolute inset-x-0 bottom-4 text-center text-lg font-bold tracking-wide text-primary/15 pointer-events-none select-none"
+                >
+                  SAIDXONOV ACADEMY
+                </span>
+
+                <div className="relative flex items-start gap-3 p-5">
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
                       isCorrect ? "bg-green-100" : isPartial ? "bg-amber-100" : "bg-red-100"

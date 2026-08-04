@@ -3,30 +3,42 @@
 import { MathText } from "@/components/MathText";
 
 /* ── SPR Input — real SAT Digital style ──────────────────────────────── */
-export function SprInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+// maxLength — SAT'da rasmiy SPR formati qisqa (6 belgi), lekin Milliy
+// Sertifikat qog'ozda yozma tarzda o'tkaziladi — talabalar uzunroq
+// (ko'p xonali son/kasr) javob yozishi mumkin, shuning uchun bu testlar
+// uchun kengroq maydon kerak (exam/[id]/page.tsx orqali uzatiladi).
+export function SprInput({
+  value,
+  onChange,
+  maxLength = 6,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  maxLength?: number;
+}) {
   const ALLOWED = /^-?[\d./]*$/;
-  const MAX_LEN = 6;
+  const boxWidth = 130 + Math.max(0, maxLength - 6) * 16;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
-    if (v.length <= MAX_LEN && ALLOWED.test(v)) onChange(v);
+    if (v.length <= maxLength && ALLOWED.test(v)) onChange(v);
   };
 
   return (
     <div className="mt-6">
       {/* Input box — SAT style */}
       <div className="flex flex-col items-start gap-4">
-        <div className="relative" style={{ width: 130 }}>
+        <div className="relative" style={{ width: boxWidth }}>
           <input
             type="text"
             inputMode="decimal"
             autoComplete="off"
             spellCheck={false}
-            maxLength={MAX_LEN}
+            maxLength={maxLength}
             value={value}
             onChange={handleChange}
             style={{
-              width: 130,
+              width: boxWidth,
               height: 52,
               fontFamily: "monospace",
               fontSize: 22,

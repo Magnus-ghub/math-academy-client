@@ -622,6 +622,7 @@ function ExamPageContent() {
                       <SprInput
                         value={String(answers[q.id] ?? "")}
                         onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+                        maxLength={12}
                       />
                     </div>
                     <div>
@@ -629,6 +630,7 @@ function ExamPageContent() {
                       <SprInput
                         value={answersB[q.id] ?? ""}
                         onChange={(v) => setAnswersB((prev) => ({ ...prev, [q.id]: v }))}
+                        maxLength={12}
                       />
                     </div>
                   </div>
@@ -640,24 +642,33 @@ function ExamPageContent() {
                         onClick={() =>
                           setAnswers((prev) => ({ ...prev, [q.id]: oi }))
                         }
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 text-left transition-all ${
+                        className={`w-full flex flex-col gap-2 px-4 py-3.5 rounded-xl border-2 text-left transition-all ${
                           answers[q.id] === oi
                             ? "border-primary bg-primary/5"
                             : "border-border hover:border-primary/40 hover:bg-muted/30"
                         }`}
                       >
-                        <div
-                          className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
-                            answers[q.id] === oi
-                              ? "border-primary bg-primary text-white"
-                              : "border-muted-foreground/40"
-                          }`}
-                        >
-                          {String.fromCharCode(65 + oi)}
+                        {q.optionImages?.[oi] && (
+                          <img
+                            src={q.optionImages[oi]}
+                            alt=""
+                            className="max-h-32 object-contain rounded-lg border border-border"
+                          />
+                        )}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-7 h-7 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors ${
+                              answers[q.id] === oi
+                                ? "border-primary bg-primary text-white"
+                                : "border-muted-foreground/40"
+                            }`}
+                          >
+                            {String.fromCharCode(65 + oi)}
+                          </div>
+                          <span className="text-sm font-semibold">
+                            <MathText text={opt} />
+                          </span>
                         </div>
-                        <span className="text-sm font-semibold">
-                          <MathText text={opt} />
-                        </span>
                       </button>
                     ))}
                   </div>
