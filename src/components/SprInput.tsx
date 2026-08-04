@@ -1,23 +1,74 @@
 "use client";
 
+import { forwardRef, useImperativeHandle, useRef } from "react";
 import { MathText } from "@/components/MathText";
+
+export interface SprInputHandle {
+  insertAtCursor: (text: string) => void;
+  backspaceAtCursor: () => void;
+  moveCursor: (dir: -1 | 1) => void;
+}
 
 /* ── SPR Input — real SAT Digital style ──────────────────────────────── */
 // maxLength — SAT'da rasmiy SPR formati qisqa (6 belgi), lekin Milliy
 // Sertifikat qog'ozda yozma tarzda o'tkaziladi — talabalar uzunroq
 // (ko'p xonali son/kasr) javob yozishi mumkin, shuning uchun bu testlar
 // uchun kengroq maydon kerak (exam/[id]/page.tsx orqali uzatiladi).
-export function SprInput({
-  value,
-  onChange,
-  maxLength = 6,
-}: {
+//
+// useVirtualKeyboard yoqilganda input readOnly bo'ladi va insert/backspace/
+// moveCursor metodlari ref orqali tashqariga chiqariladi — bitta savolda
+// (masalan TWO_PART, ikkita input a/b) bir vaqtda ikkita klaviatura
+// chiqmasligi uchun klaviaturaning o'zi bu komponent ICHIDA emas, chaqiruvchi
+// tomonda (bitta umumiy nusxada, qaysi input faol bo'lsa o'shanga) render
+// qilinadi.
+export const SprInput = forwardRef<SprInputHandle, {
   value: string;
   onChange: (v: string) => void;
   maxLength?: number;
-}) {
+  onFocus?: () => void;
+  useVirtualKeyboard?: boolean;
+}>(function SprInput({ value, onChange, maxLength = 6, onFocus, useVirtualKeyboard = false }, ref) {
   const ALLOWED = /^-?[\d./]*$/;
   const boxWidth = 130 + Math.max(0, maxLength - 6) * 16;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const cursorRef = useRef({ start: value.length, end: value.length });
+
+  const trackCursor = () => {
+    const el = inputRef.current;
+    if (el) cursorRef.current = { start: el.selectionStart ?? value.length, end: el.selectionEnd ?? value.length };
+  };
+
+  const placeCursor = (pos: number) => {
+    requestAnimationFrame(() => {
+      inputRef.current?.setSelectionRange(pos, pos);
+      inputRef.current?.focus();
+    });
+    cursorRef.current = { start: pos, end: pos };
+  };
+
+  useImperativeHandle(ref, () => ({
+    insertAtCursor: (text: string) => {
+      const { start, end } = cursorRef.current;
+      const next = value.slice(0, start) + text + value.slice(end);
+      if (next.length > maxLength) return;
+      onChange(next);
+      placeCursor(start + text.length);
+    },
+    backspaceAtCursor: () => {
+      const { start, end } = cursorRef.current;
+      if (start !== end) {
+        onChange(value.slice(0, start) + value.slice(end));
+        placeCursor(start);
+      } else if (start > 0) {
+        onChange(value.slice(0, start - 1) + value.slice(end));
+        placeCursor(start - 1);
+      }
+    },
+    moveCursor: (dir: -1 | 1) => {
+      const { start } = cursorRef.current;
+      placeCursor(Math.max(0, Math.min(value.length, start + dir)));
+    },
+  }));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
@@ -30,13 +81,17 @@ export function SprInput({
       <div className="flex flex-col items-start gap-4">
         <div className="relative" style={{ width: boxWidth }}>
           <input
+            ref={inputRef}
             type="text"
-            inputMode="decimal"
+            inputMode={useVirtualKeyboard ? "none" : "decimal"}
+            readOnly={useVirtualKeyboard}
             autoComplete="off"
             spellCheck={false}
             maxLength={maxLength}
             value={value}
             onChange={handleChange}
+            onClick={trackCursor}
+            onKeyUp={trackCursor}
             style={{
               width: boxWidth,
               height: 52,
@@ -50,8 +105,20 @@ export function SprInput({
               letterSpacing: "0.1em",
               color: "#111827",
               display: "block",
+              cursor: useVirtualKeyboard ? "default" : "text",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#1e3a5f")}
+            onFocus={(e) => {
+              e.target.style.borderColor = "#1e3a5f";
+              onFocus?.();
+              // Ekran klaviaturasi mobilda pastki yarmini yopib qo'yadi —
+              // fokuslangan maydon shundan yuqorida ko'rinib tursin.
+              if (useVirtualKeyboard) {
+                const target = e.target;
+                requestAnimationFrame(() => {
+                  target.scrollIntoView({ behavior: "smooth", block: "center" });
+                });
+              }
+            }}
             onBlur={(e) => (e.target.style.borderColor = "#6b7280")}
           />
           {/* bottom underline like real SAT */}
@@ -70,7 +137,7 @@ export function SprInput({
         {/* Clear */}
         {value.trim() !== "" && (
           <button
-            onClick={() => onChange("")}
+            onClick={() => { onChange(""); placeCursor(0); }}
             className="text-xs text-gray-400 hover:text-red-500 transition-colors underline underline-offset-2"
           >
             Clear
@@ -99,4 +166,4 @@ export function SprInput({
       </p>
     </div>
   );
-}
+});

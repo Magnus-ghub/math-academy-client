@@ -25,6 +25,10 @@ import { toast } from "sonner";
 
 const MAX_DESC_WORDS = 40;
 
+// Haqiqiy SAT imtihonidagi bilan bir xil — har bir modulda 22 tadan savol
+// (sat/[id]/page.tsx dagi MODULE_QUESTIONS bilan mos bo'lishi shart).
+const SAT_MODULE_QUESTIONS = 22;
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL?.replace("/graphql", "") ?? "http://localhost:4000";
 
 interface QuestionRow {
@@ -719,20 +723,31 @@ function EditTestPageContent() {
           </div>
 
           {questions.map((q, i) => (
-            <EditQuestionCard
-              key={q.uid}
-              q={q}
-              index={i}
-              highlighted={!!q.id && q.id === highlightQuestionId}
-              onUpdate={setQ}
-              onBulkUpdate={setQBulk}
-              onUpdateOption={setOption}
-              onRemove={() => removeQuestion(q.uid, q.id)}
-              onImagePick={(file) => uploadImage(file, q.uid)}
-              onOptionImagePick={(file, idx) => uploadOptionImage(file, q.uid, idx)}
-              onOptionImageRemove={(idx) => setOptionImage(q.uid, idx, "")}
-              canRemove={questions.length > 1}
-            />
+            <div key={q.uid}>
+              {testInfo.testType === "SAT" && i === 0 && (
+                <SatModuleDivider module={1} from={1} to={SAT_MODULE_QUESTIONS} />
+              )}
+              {testInfo.testType === "SAT" && i === SAT_MODULE_QUESTIONS && (
+                <SatModuleDivider module={2} from={1} to={SAT_MODULE_QUESTIONS} />
+              )}
+              <EditQuestionCard
+                q={q}
+                index={
+                  testInfo.testType === "SAT" && i >= SAT_MODULE_QUESTIONS
+                    ? i - SAT_MODULE_QUESTIONS
+                    : i
+                }
+                highlighted={!!q.id && q.id === highlightQuestionId}
+                onUpdate={setQ}
+                onBulkUpdate={setQBulk}
+                onUpdateOption={setOption}
+                onRemove={() => removeQuestion(q.uid, q.id)}
+                onImagePick={(file) => uploadImage(file, q.uid)}
+                onOptionImagePick={(file, idx) => uploadOptionImage(file, q.uid, idx)}
+                onOptionImageRemove={(idx) => setOptionImage(q.uid, idx, "")}
+                canRemove={questions.length > 1}
+              />
+            </div>
           ))}
 
           <button
@@ -774,6 +789,18 @@ export default function EditTestPage() {
     </div>}>
       <EditTestPageContent />
     </Suspense>
+  );
+}
+
+function SatModuleDivider({ module, from, to }: { module: number; from: number; to: number }) {
+  return (
+    <div className={`flex items-center gap-3 ${module === 1 ? "mb-4" : "mt-2 mb-4"}`}>
+      <span className="text-xs font-bold uppercase tracking-wide text-primary bg-primary/10 px-3 py-1 rounded-full shrink-0">
+        Modul {module}
+      </span>
+      <span className="text-xs text-muted-foreground shrink-0">{from}-{to} savollar</span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
   );
 }
 

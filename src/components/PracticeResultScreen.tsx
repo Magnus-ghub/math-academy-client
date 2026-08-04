@@ -24,7 +24,21 @@ interface Props {
   answersB?: Record<string, string | undefined>;
   duration: number;
   testAnalysis?: string;
+  isSat?: boolean;
   onClose: () => void;
+}
+
+// SAT'da har modulda 22 tadan savol, raqamlash 1dan qayta boshlanadi.
+function SatModuleDivider({ module }: { module: number }) {
+  return (
+    <div className={`flex items-center gap-3 ${module === 1 ? "mb-3" : "mt-1 mb-3"}`}>
+      <span className="text-xs font-bold uppercase tracking-wide text-primary bg-primary/10 px-3 py-1 rounded-full shrink-0">
+        Modul {module}
+      </span>
+      <span className="text-xs text-muted-foreground shrink-0">1-22 savollar</span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
+  );
 }
 
 function normalizeSelected(q: Question, raw: number | string | undefined): number | undefined {
@@ -58,7 +72,7 @@ function earnedPoints(
   return normalizeSelected(q, answers[q.id]) === q.correctAnswer ? 1 : 0;
 }
 
-export function PracticeResultScreen({ questions, answers, answersB = {}, duration, testAnalysis, onClose }: Props) {
+export function PracticeResultScreen({ questions, answers, answersB = {}, duration, testAnalysis, isSat = false, onClose }: Props) {
   const [testAnalysisOpen, setTestAnalysisOpen] = useState(false);
   const [openAnalysisId, setOpenAnalysisId] = useState<string | null>(null);
   const total = questions.length;
@@ -164,10 +178,13 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
               : undefined;
             const isCorrect = isTwoPart ? isCorrectA && !!isCorrectB : isCorrectA;
             const isPartial = isTwoPart && isCorrectA !== isCorrectB;
+            const displayNumber = isSat && i >= 22 ? i - 22 + 1 : i + 1;
 
             return (
+              <div key={q.id}>
+              {isSat && i === 0 && <SatModuleDivider module={1} />}
+              {isSat && i === 22 && <SatModuleDivider module={2} />}
               <div
-                key={q.id}
                 className={`relative overflow-hidden bg-background rounded-2xl border-2 ${
                   isCorrect ? "border-green-200" : isPartial ? "border-amber-200" : "border-red-200"
                 }`}
@@ -203,7 +220,7 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium mb-3 leading-relaxed">
-                      {i + 1}. <MathText text={q.questionText} />
+                      {displayNumber}. <MathText text={q.questionText} />
                     </p>
 
                     {q.questionImage && (
@@ -330,6 +347,7 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
                     )}
                   </div>
                 </div>
+              </div>
               </div>
             );
           })}

@@ -21,7 +21,7 @@ QOIDALAR:
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
-- Jadvallar: <table><tr><td>...</td></tr></table>
+- Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — MUHIM: agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa (masalan x/y qiymatlar jadvali), o'sha variant matnini ham vergul bilan ajratilgan ro'yxat emas, aynan shu qator-qator formatda yozing: "x | y\\n-5 | 6\\n-6 | 9\\n-8 | -4"
 - analysis: savol bo'yicha AI tahlil matni (ixtiyoriy, bo'sh qoldirsa ham bo'ladi). Ichidagi formulalarni ham $x^2$, $$\\frac{a}{b}$$ kabi LaTeX bilan yozing — oddiy matn emas
 - youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;
 
@@ -62,6 +62,7 @@ QOIDALAR:
 - SAT da har 22 savoldan taxminan 5-6 tasi SPR bo'ladi
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
+- Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — MUHIM: agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa (masalan x/y qiymatlar jadvali), o'sha variant matnini ham vergul bilan ajratilgan ro'yxat emas, aynan shu qator-qator formatda yozing: "x | y\\n-5 | 6\\n-6 | 9\\n-8 | -4"
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - analysis: savol bo'yicha AI tahlil matni (ixtiyoriy). Ichidagi formulalarni ham $x^2$, $$\\frac{a}{b}$$ kabi LaTeX bilan yozing — oddiy matn emas
 - youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;
@@ -116,6 +117,7 @@ UMUMIY QOIDALAR:
 - TWO_PART: options: [] (bo'sh massiv), correctAnswer va correctAnswerB — ikkalasi ham ×100 kodlangan
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
+- Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa, o'sha variant matnini ham shu qator-qator formatda yozing
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - TWO_PART savolning "a)" va "b)" qismlarini questionText ichida "\\n" bilan ajratib yozing`;
 
@@ -144,6 +146,6 @@ QOIDALAR:
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
-- Jadvallar: <table><tr><td>...</td></tr></table>
+- Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — MUHIM: agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa (masalan x/y qiymatlar jadvali), o'sha variant matnini ham vergul bilan ajratilgan ro'yxat emas, aynan shu qator-qator formatda yozing: "x | y\\n-5 | 6\\n-6 | 9\\n-8 | -4"
 - analysis: savol bo'yicha AI tahlil matni (ixtiyoriy). Ichidagi formulalarni ham LaTeX bilan yozing
 - youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;

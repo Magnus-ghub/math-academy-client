@@ -187,7 +187,7 @@ function SatExamPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isRetake = searchParams.get("retake") === "1";
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, hasHydrated } = useAuthStore();
   const [startTime] = useState(Date.now());
   const [practiceDuration, setPracticeDuration] = useState(0);
 
@@ -198,6 +198,11 @@ function SatExamPageContent() {
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(MODULE_TIME);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Vaqt tugab avtomatik yuborilganda ishlatiladigan doSubmit'ga har renderda
+  // eng so'nggi javoblarni ko'rsatib turadi — aks holda setInterval ichidagi
+  // chaqiruv modul boshlangan paytdagi (deyarli bo'sh) javoblarni "eslab
+  // qolib", talaba keyinchalik bergan javoblarini e'tiborsiz qoldirib yuboradi.
+  const doSubmitRef = useRef<() => void>(() => {});
 
   // UI overlays
   const [showCalc, setShowCalc] = useState(false);
@@ -212,6 +217,7 @@ function SatExamPageContent() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);    // confirm final submit
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [showRetakeRequest, setShowRetakeRequest] = useState(false);
 
   const { data: attemptData, loading: attemptLoading } = useQuery<{ checkMyAttempt: any }>(
@@ -240,6 +246,7 @@ function SatExamPageContent() {
     },
     onError: () => {
       setIsSubmitting(false);
+      setSubmitError(true);
       toast.error("Submission failed. Please try again.");
     },
   });
@@ -268,8 +275,13 @@ function SatExamPageContent() {
   const unansweredInModule = MODULE_QUESTIONS - answeredInModule;
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated]);
+    // hasHydrated bo'lguncha kutamiz — aks holda yangi tabda (masalan admin
+    // "Ko'rish" preview'ni target="_blank" bilan ochganda) localStorage'dan
+    // auth holati hali tiklanmagan bo'ladi, isAuthenticated bir lahza
+    // noto'g'ri "false" ko'rinadi va foydalanuvchi soxta ravishda /login'ga
+    // (undan esa proxy.ts orqali /admin'ga) uloqtirib yuboriladi.
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated]);
 
   // Timer — resets when module changes
   useEffect(() => {
@@ -284,7 +296,7 @@ function SatExamPageContent() {
         if (t <= 1) {
           clearInterval(timerRef.current!);
           if (module === 1) handleEndModule1(true);
-          else doSubmit();
+          else doSubmitRef.current();
           return 0;
         }
         return t - 1;
@@ -350,8 +362,9 @@ function SatExamPageContent() {
   };
 
   const doSubmit = () => {
-    if (isSubmitting || isFinished) return;
+    if (isSubmitting || (isFinished && !submitError)) return;
     setIsFinished(true);
+    setSubmitError(false);
     clearInterval(timerRef.current!);
     const duration = Math.floor((Date.now() - startTime) / 1000 / 60);
 
@@ -381,6 +394,7 @@ function SatExamPageContent() {
       },
     });
   };
+  doSubmitRef.current = doSubmit;
 
   // ── LOADING ──
   if (testLoading || questionsLoading || attemptLoading) {
@@ -452,6 +466,7 @@ function SatExamPageContent() {
             answers={answers}
             duration={practiceDuration}
             testAnalysis={test?.testAnalysis}
+            isSat
             onClose={() => router.push("/dashboard/tests")}
           />
         </div>
@@ -464,13 +479,24 @@ function SatExamPageContent() {
         </div>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[#1e3a5f]">Test Submitted!</h1>
-          <p className="text-gray-500 mt-1 text-sm">Calculating your score...</p>
+          <p className="text-gray-500 mt-1 text-sm">
+            {submitError ? "Submission failed." : "Calculating your score..."}
+          </p>
         </div>
         <div className="flex gap-6 text-sm text-gray-600">
           <span>Module 1: <strong>{answeredInM1}/22</strong> answered</span>
           <span>Module 2: <strong>{answeredInM2}/22</strong> answered</span>
         </div>
-        <p className="text-sm text-gray-400 animate-pulse">Redirecting to results...</p>
+        {submitError ? (
+          <button
+            onClick={doSubmit}
+            className="px-5 py-2.5 rounded-xl bg-[#1e3a5f] text-white text-sm font-medium hover:bg-[#162d4a] transition-colors"
+          >
+            Try again
+          </button>
+        ) : (
+          <p className="text-sm text-gray-400 animate-pulse">Redirecting to results...</p>
+        )}
       </div>
     );
   }

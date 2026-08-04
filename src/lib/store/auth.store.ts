@@ -30,6 +30,14 @@ interface AuthState {
   groups: UserGroup[];
   accessToken: string | null;
   isAuthenticated: boolean;
+  // localStorage'dan qayta tiklash (rehydration) asinxron — yangi tab/sahifa
+  // yuklanganida bir lahza "isAuthenticated: false" bo'lib turadi, garchi
+  // foydalanuvchi haqiqatda tizimga kirgan bo'lsa ham. Shu paytda
+  // "!isAuthenticated" tekshiruviga asoslanib /login'ga yo'naltirish
+  // (masalan imtihon sahifalarida) noto'g'ri, soxta chiqishga olib keladi —
+  // shuning uchun komponentlar bu flag `true` bo'lishini kutishi kerak.
+  hasHydrated: boolean;
+  setHasHydrated: (v: boolean) => void;
   setAuth: (user: User, accessToken: string, groups?: UserGroup[]) => void;
   logout: () => void;
   updateUser: (user: Partial<User>) => void;
@@ -42,6 +50,8 @@ export const useAuthStore = create<AuthState>()(
       groups: [],
       accessToken: null,
       isAuthenticated: false,
+      hasHydrated: false,
+      setHasHydrated: (v) => set({ hasHydrated: v }),
 
       setAuth: (user, accessToken, groups = []) => {
         if (typeof document !== "undefined") {
@@ -68,6 +78,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );

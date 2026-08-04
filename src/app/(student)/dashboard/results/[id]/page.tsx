@@ -182,6 +182,19 @@ function AttestatsiyaGrid({ questions, answers }: { questions: any[]; answers: a
   );
 }
 
+// ─── SAT modul ajratgichi — har modulda 22 tadan savol, raqamlash 1dan qayta boshlanadi ───
+function SatModuleDivider({ module }: { module: number }) {
+  return (
+    <div className={`flex items-center gap-3 ${module === 1 ? "mb-3" : "mt-1 mb-3"}`}>
+      <span className="text-xs font-bold uppercase tracking-wide text-primary bg-primary/10 px-3 py-1 rounded-full shrink-0">
+        Modul {module}
+      </span>
+      <span className="text-xs text-muted-foreground shrink-0">1-22 savollar</span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
+  );
+}
+
 // ─── Milliy Sertifikat — Rasch balli (talab bo'yicha, keshlanmaydi) ───────────
 function MilliySertifikatScoreBlock({ resultId }: { resultId: string }) {
   const [fetchScore, { data, loading, called }] = useLazyQuery<
@@ -465,9 +478,12 @@ export default function ResultDetailPage() {
               const qAnalysisOpen = openQuestionAnalysis === answer.questionId;
               const isTwoPart = question?.questionType === "TWO_PART";
               const isPartial = isTwoPart && answer.isCorrect !== answer.isCorrectB;
+              const displayNumber = isSat && i >= 22 ? i - 22 + 1 : i + 1;
               return (
+                <div key={answer.questionId}>
+                {isSat && i === 0 && <SatModuleDivider module={1} />}
+                {isSat && i === 22 && <SatModuleDivider module={2} />}
                 <div
-                  key={answer.questionId}
                   className={`relative overflow-hidden bg-background rounded-2xl border-2 ${
                     answer.isCorrect ? "border-green-200" : isPartial ? "border-amber-200" : "border-red-200"
                   }`}
@@ -500,7 +516,7 @@ export default function ResultDetailPage() {
                     <div className="flex-1">
                       <div className="flex items-center justify-end mb-1">
                         <button
-                          onClick={() => setReportTarget({ questionId: answer.questionId, number: i + 1 })}
+                          onClick={() => setReportTarget({ questionId: answer.questionId, number: displayNumber })}
                           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
                         >
                           <TriangleAlert className="w-3 h-3" />
@@ -508,7 +524,7 @@ export default function ResultDetailPage() {
                         </button>
                       </div>
                       <p className="text-sm font-medium mb-3 leading-relaxed wrap-break-word overflow-x-auto">
-                        {i + 1}. {question
+                        {displayNumber}. {question
                           ? <MathText text={question.questionText} />
                           : questionsLoading
                             ? "Savol yuklanmoqda..."
@@ -649,6 +665,7 @@ export default function ResultDetailPage() {
                       )}
                     </div>
                   </div>
+                </div>
                 </div>
               );
             })}

@@ -23,7 +23,8 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
 import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
 import { MathText } from "@/components/MathText";
-import { SprInput } from "@/components/SprInput";
+import { SprInput, SprInputHandle } from "@/components/SprInput";
+import { AnswerKeyboard } from "@/components/AnswerKeyboard";
 import { parseSprAnswer } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
@@ -57,16 +58,23 @@ function ExamPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isRetake = searchParams.get("retake") === "1";
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, hasHydrated } = useAuthStore();
 
   const [answers, setAnswers] = useState<Record<string, number | string>>({});
   const [answersB, setAnswersB] = useState<Record<string, string>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [timeLeft, setTimeLeft] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [startTime] = useState(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
+  // TWO_PART (Milliy Sertifikat) savolida ikkita input (a/b) bor — bitta
+  // umumiy AnswerKeyboard shulardan qaysi biri faol bo'lsa o'shanga yoziladi,
+  // shunda ikkalasi uchun alohida-alohida ikkita klaviatura chiqmaydi.
+  const [activeSprPart, setActiveSprPart] = useState<"a" | "b" | null>(null);
+  const sprRefA = useRef<SprInputHandle>(null);
+  const sprRefB = useRef<SprInputHandle>(null);
   const [showGrid, setShowGrid] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
@@ -78,6 +86,12 @@ function ExamPageContent() {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const examActiveRef = useRef(false);
+  // Vaqt tugab avtomatik yuborilganda ishlatiladigan doSubmit'ga har renderda
+  // eng so'nggi javoblarni (answers/answersB/questions) ko'rsatib turadi —
+  // aks holda setInterval ichidagi chaqiruv taймер birinchi ishga tushgan
+  // paytdagi (deyarli bo'sh) javoblarni "eslab qolib", talaba keyinchalik
+  // bergan javoblarini e'tiborsiz qoldirib yuboradi.
+  const doSubmitRef = useRef<() => void>(() => {});
 
   const { data: attemptData, loading: attemptLoading } = useQuery<{ checkMyAttempt: any }>(
     CHECK_MY_ATTEMPT,
@@ -109,7 +123,10 @@ function ExamPageContent() {
     onCompleted: (data: any) => {
       router.push(`/dashboard/results/${data.submitTest.id}`);
     },
-    onError: () => toast.error("Yuborishda xatolik, qayta urinib ko'ring"),
+    onError: () => {
+      toast.error("Yuborishda xatolik, qayta urinib ko'ring");
+      setSubmitError(true);
+    },
   });
 
   const test = testData?.getTest;
@@ -117,6 +134,7 @@ function ExamPageContent() {
   const totalQuestions = questions.length;
   const isWarning = timeLeft < 300 && timeLeft > 0;
   const isAttestatsiya = test?.testType === "ATTESTATSIYA";
+  const isMilliySertifikat = test?.testType === "MILLIY_SERTIFIKAT";
 
   // TWO_PART savolda javob "a" qismi answers'da, "b" qismi answersB'da —
   // ikkalasidan kamida bittasi to'ldirilsa, savol "javoblangan" hisoblanadi.
@@ -162,8 +180,13 @@ function ExamPageContent() {
   );
 
   useEffect(() => {
-    if (!isAuthenticated) router.push("/login");
-  }, [isAuthenticated]);
+    // hasHydrated bo'lguncha kutamiz — aks holda yangi tabda (masalan admin
+    // "Ko'rish" preview'ni target="_blank" bilan ochganda) localStorage'dan
+    // auth holati hali tiklanmagan bo'ladi, isAuthenticated bir lahza
+    // noto'g'ri "false" ko'rinadi va foydalanuvchi soxta ravishda /login'ga
+    // (undan esa proxy.ts orqali /admin'ga) uloqtirib yuboriladi.
+    if (hasHydrated && !isAuthenticated) router.push("/login");
+  }, [hasHydrated, isAuthenticated]);
 
   // ref ni har render'dan keyin yangilab turadi
   useEffect(() => {
@@ -224,13 +247,18 @@ function ExamPageContent() {
     }
   }, [test]);
 
+  // Boshqa savolga o'tganda klaviatura oldingi savolda ochiq qolib ketmasin.
+  useEffect(() => {
+    setActiveSprPart(null);
+  }, [currentIndex]);
+
   useEffect(() => {
     if (isFinished || timeLeft <= 0) return;
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
           clearInterval(timerRef.current!);
-          doSubmit();
+          doSubmitRef.current();
           return 0;
         }
         return t - 1;
@@ -248,8 +276,9 @@ function ExamPageContent() {
   };
 
   const doSubmit = () => {
-    if (isFinished) return;
+    if (isFinished && !submitError) return;
     setIsFinished(true);
+    setSubmitError(false);
     clearInterval(timerRef.current!);
     const duration = Math.floor((Date.now() - startTime) / 1000 / 60);
 
@@ -282,6 +311,7 @@ function ExamPageContent() {
       },
     });
   };
+  doSubmitRef.current = doSubmit;
 
   const toggleFlag = (qId: string) => {
     setFlagged((prev) => {
@@ -374,9 +404,21 @@ function ExamPageContent() {
         <p className="text-muted-foreground">
           {answeredCount} / {totalQuestions} savol javoblandi
         </p>
-        <p className="text-sm text-muted-foreground animate-pulse">
-          Natija hisoblanmoqda...
-        </p>
+        {submitError ? (
+          <>
+            <p className="text-sm text-red-500">Natijani yuborishda xatolik yuz berdi.</p>
+            <button
+              onClick={doSubmit}
+              className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              Qayta urinish
+            </button>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Natija hisoblanmoqda...
+          </p>
+        )}
       </div>
     );
   }
@@ -426,8 +468,8 @@ function ExamPageContent() {
             </p>
           </div>
 
-          {/* Calculator (Attestatsiya only) */}
-          {isAttestatsiya && (
+          {/* Calculator (Attestatsiya va Milliy Sertifikat) */}
+          {(isAttestatsiya || isMilliySertifikat) && (
             <button
               onClick={() => setShowCalc((v) => !v)}
               className={`shrink-0 p-2 rounded-xl transition-colors ${
@@ -467,7 +509,7 @@ function ExamPageContent() {
       {/* ── BODY ── */}
       <div className="flex flex-1 overflow-hidden max-w-5xl mx-auto w-full">
         {/* ── LEFT: Single question ── */}
-        <main className="flex-1 overflow-y-auto px-4 py-6 flex flex-col">
+        <main className={`flex-1 overflow-y-auto px-4 py-6 flex flex-col ${activeSprPart ? "pb-[380px] md:pb-6" : ""}`}>
           {step && (
             <div className="flex-1">
               {/* Question card */}
@@ -620,19 +662,34 @@ function ExamPageContent() {
                     <div>
                       <p className="text-sm font-bold text-muted-foreground mb-1">a)</p>
                       <SprInput
+                        ref={sprRefA}
                         value={String(answers[q.id] ?? "")}
                         onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
                         maxLength={12}
+                        useVirtualKeyboard={isMilliySertifikat}
+                        onFocus={() => setActiveSprPart("a")}
                       />
                     </div>
                     <div>
                       <p className="text-sm font-bold text-muted-foreground mb-1">b)</p>
                       <SprInput
+                        ref={sprRefB}
                         value={answersB[q.id] ?? ""}
                         onChange={(v) => setAnswersB((prev) => ({ ...prev, [q.id]: v }))}
                         maxLength={12}
+                        useVirtualKeyboard={isMilliySertifikat}
+                        onFocus={() => setActiveSprPart("b")}
                       />
                     </div>
+                    {isMilliySertifikat && activeSprPart && (
+                      <AnswerKeyboard
+                        onInsert={(t) => (activeSprPart === "a" ? sprRefA : sprRefB).current?.insertAtCursor(t)}
+                        onBackspace={() => (activeSprPart === "a" ? sprRefA : sprRefB).current?.backspaceAtCursor()}
+                        onMoveCursor={(d) => (activeSprPart === "a" ? sprRefA : sprRefB).current?.moveCursor(d)}
+                        onClose={() => setActiveSprPart(null)}
+                        onDone={() => setActiveSprPart(null)}
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-2.5">
@@ -973,7 +1030,7 @@ function ExamPageContent() {
       )}
 
       {/* ── CALCULATOR ── */}
-      {showCalc && isAttestatsiya && (
+      {showCalc && (isAttestatsiya || isMilliySertifikat) && (
         <FloatingCalculator onClose={() => setShowCalc(false)} />
       )}
 
