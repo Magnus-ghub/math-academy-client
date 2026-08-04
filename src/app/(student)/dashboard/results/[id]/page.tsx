@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useQuery, useLazyQuery } from "@apollo/client/react";
 import { CheckCircle, XCircle, Clock, ChevronLeft, TriangleAlert, Award, Bot, X, Info } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { GET_RESULT, GET_MILLIY_SERTIFIKAT_SCORE } from "@/lib/graphql/result";
@@ -110,12 +111,15 @@ interface Toifa {
   ustama?: string;
 }
 
-function getAttestatsiyaToifa(points: number): Toifa | null {
-  if (points >= 86) return { label: "Oliy toifa", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-300", ustama: "+ 70% ustama" };
-  if (points >= 80) return { label: "Oliy toifa", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-300" };
-  if (points >= 70) return { label: "Birinchi toifa", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-300" };
-  if (points >= 60) return { label: "Ikkinchi toifa", color: "text-cyan-700", bg: "bg-cyan-50", border: "border-cyan-300" };
-  if (points >= 56) return { label: "Mutaxassis", color: "text-green-700", bg: "bg-green-50", border: "border-green-300" };
+// Chegaralar to'g'ri javoblar foizi (0-100) bo'yicha — savollar soni 50 dan
+// farq qilsa ham (kam yoki ko'p) to'g'ri ishlashi uchun. Backend'dagi
+// getAttestationCategory bilan bir xil bo'lishi kerak.
+function getAttestatsiyaToifa(percentage: number): Toifa | null {
+  if (percentage >= 86) return { label: "Oliy toifa", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-300", ustama: "+ 70% ustama" };
+  if (percentage >= 80) return { label: "Oliy toifa", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-300" };
+  if (percentage >= 70) return { label: "Birinchi toifa", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-300" };
+  if (percentage >= 60) return { label: "Ikkinchi toifa", color: "text-cyan-700", bg: "bg-cyan-50", border: "border-cyan-300" };
+  if (percentage >= 56) return { label: "Mutaxassis", color: "text-green-700", bg: "bg-green-50", border: "border-green-300" };
   return null;
 }
 
@@ -128,28 +132,36 @@ const ATTEST_SECTIONS = [
 
 function AttestatsiyaGrid({ questions, answers }: { questions: any[]; answers: any[] }) {
   const answerMap = new Map<string, boolean>(answers.map((a: any) => [a.questionId, a.isCorrect]));
-  const byOrder = new Map<number, any>(questions.map((q: any) => [q.orderIndex, q]));
+  const sorted = [...questions].sort((a, b) => a.orderIndex - b.orderIndex);
+
+  // Standart 50 savollik tuzilma (35+5+10) uchun mavzu bo'yicha bo'linadi.
+  // Boshqa sonli testlarda mavzu chegaralari mos kelmasligi mumkin, shuning
+  // uchun barcha savollar bitta ro'yxatda ko'rsatiladi.
+  const sections =
+    questions.length === 50
+      ? ATTEST_SECTIONS.map((sec) => ({
+          name: sec.name,
+          questions: sorted.filter((q) => q.orderIndex >= sec.from && q.orderIndex <= sec.to),
+        }))
+      : [{ name: "Barcha savollar", questions: sorted }];
 
   return (
     <div className="bg-background rounded-2xl border border-border p-5 mb-6 space-y-6">
-      {ATTEST_SECTIONS.map((sec) => {
-        const range = Array.from({ length: sec.to - sec.from + 1 }, (_, i) => sec.from + i);
-        const sectionQs = range.map((idx) => byOrder.get(idx)).filter(Boolean);
-        const correct = sectionQs.filter((q) => answerMap.get(q.id) === true).length;
+      {sections.map((sec) => {
+        const correct = sec.questions.filter((q) => answerMap.get(q.id) === true).length;
 
         return (
           <div key={sec.name}>
             <div className="flex flex-col items-center mb-3">
               <p className="text-sm font-bold">{sec.name}</p>
-              <p className="text-xs text-muted-foreground">{correct}/{sectionQs.length} to'g'ri</p>
+              <p className="text-xs text-muted-foreground">{correct}/{sec.questions.length} to'g'ri</p>
             </div>
             <div className="grid grid-cols-8 gap-2">
-              {range.map((orderIdx) => {
-                const q = byOrder.get(orderIdx);
-                const isCorrect = q ? answerMap.get(q.id) : undefined;
+              {sec.questions.map((q) => {
+                const isCorrect = answerMap.get(q.id);
                 return (
                   <div
-                    key={orderIdx}
+                    key={q.id}
                     className={`aspect-square rounded-2xl flex items-center justify-center text-sm font-bold shadow-sm ${
                       isCorrect === true
                         ? "bg-green-100 text-green-700"
@@ -158,7 +170,7 @@ function AttestatsiyaGrid({ questions, answers }: { questions: any[]; answers: a
                         : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {orderIdx}
+                    {q.orderIndex}
                   </div>
                 );
               })}
@@ -199,16 +211,17 @@ function MilliySertifikatScoreBlock({ resultId }: { resultId: string }) {
               <p className="text-xs font-medium text-primary">ball</p>
             </div>
             <div>
-              <p className="text-sm font-bold">{scoreResult.grade ?? "Sertifikat berilmadi"}</p>
+              <p className="text-sm font-bold">{scoreResult.grade ?? "Sertifikat talabini bajarmadingiz."}</p>
               <p className="text-xs text-muted-foreground">
-                {scoreResult.respondentCount} ta talaba natijasi asosida hisoblangan
+                {scoreResult.respondentCount != null
+                  ? `${scoreResult.respondentCount} ta talaba natijasi asosida hisoblangan`
+                  : "Boshqa talabalar natijasi asosida hisoblangan"}
               </p>
             </div>
           </div>
         ) : (
           <p className="text-sm text-amber-600 mt-3">
-            Hali yetarli ma'lumot yo'q — hozircha {scoreResult.respondentCount}/{scoreResult.threshold} talaba
-            topshirgan. Kamida {scoreResult.threshold} talaba topshirgach haqiqiy ball hisoblanadi.
+            Hali yetarli ma'lumot yo'q — haqiqiy ball hisoblanishi uchun ko'proq talaba shu testni topshirishi kerak.
           </p>
         )
       )}
@@ -265,7 +278,10 @@ export default function ResultDetailPage() {
   }
 
   const attestPoints = isAttestatsiya ? result.correctAnswers * 2 : null;
-  const toifa = isAttestatsiya && attestPoints !== null ? getAttestatsiyaToifa(attestPoints) : null;
+  const attestMaxPoints = isAttestatsiya ? result.totalQuestions * 2 : null;
+  const attestPercentage =
+    isAttestatsiya && result.totalQuestions > 0 ? (result.correctAnswers / result.totalQuestions) * 100 : null;
+  const toifa = attestPercentage !== null ? getAttestatsiyaToifa(attestPercentage) : null;
 
   const scoreColor = result.score >= 80 ? "text-green-600" : result.score >= 60 ? "text-amber-500" : "text-red-500";
   const scoreBg   = result.score >= 80 ? "bg-green-100"  : result.score >= 60 ? "bg-amber-50"   : "bg-red-100";
@@ -305,7 +321,7 @@ export default function ResultDetailPage() {
           {isAttestatsiya ? (
             <div className={`px-4 py-3 rounded-2xl text-center ${scoreBg}`}>
               <p className={`text-2xl font-black ${scoreColor}`}>{attestPoints}</p>
-              <p className={`text-xs font-medium ${scoreColor}`}>ball / 100</p>
+              <p className={`text-xs font-medium ${scoreColor}`}>ball / {attestMaxPoints}</p>
             </div>
           ) : isSat ? (
             <div className={`px-4 py-3 rounded-2xl text-center ${scoreBg}`}>
@@ -339,21 +355,23 @@ export default function ResultDetailPage() {
                     {toifa.label} {toifa.ustama && <span className="text-xs font-medium">{toifa.ustama}</span>}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {attestPoints! >= 86
-                      ? "86 ball va undan yuqori"
-                      : attestPoints! >= 80
-                      ? "80–84 ball"
-                      : attestPoints! >= 71
-                      ? "70–78 ball"
-                      : attestPoints! >= 61
-                      ? "60–68 ball"
-                      : "56–58 ball"}
+                    {attestPercentage! >= 86
+                      ? "86% va undan yuqori"
+                      : attestPercentage! >= 80
+                      ? "80–85%"
+                      : attestPercentage! >= 70
+                      ? "70–79%"
+                      : attestPercentage! >= 60
+                      ? "60–69%"
+                      : "56–59%"}
                   </p>
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-bold text-muted-foreground">Toifaga kiritilmadi</p>
-                  <p className="text-xs text-muted-foreground">Minimal ball: 56 (28 ta to'g'ri)</p>
+                  <p className="text-sm font-bold text-muted-foreground">Siz toifa imtihonidan o'ta olmadingiz</p>
+                  <p className="text-xs text-muted-foreground">
+                    Minimal: 56% ({Math.ceil(0.56 * result.totalQuestions)} ta to'g'ri, {result.totalQuestions} tadan)
+                  </p>
                 </>
               )}
             </div>
@@ -450,11 +468,26 @@ export default function ResultDetailPage() {
               return (
                 <div
                   key={answer.questionId}
-                  className={`bg-background rounded-2xl border-2 p-5 ${
+                  className={`relative overflow-hidden bg-background rounded-2xl border-2 ${
                     answer.isCorrect ? "border-green-200" : isPartial ? "border-amber-200" : "border-red-200"
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  {/* Orqa fondagi logo — katta, juda hira */}
+                  <Image
+                    src="/logo.jpg"
+                    alt=""
+                    fill
+                    aria-hidden
+                    className="object-contain opacity-[0.09] pointer-events-none select-none"
+                  />
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-4 text-center text-lg font-bold tracking-wide text-primary/15 pointer-events-none select-none"
+                  >
+                    SAIDXONOV ACADEMY
+                  </span>
+
+                  <div className="relative flex items-start gap-3 p-5">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
                       answer.isCorrect ? "bg-green-100" : isPartial ? "bg-amber-100" : "bg-red-100"
                     }`}>
