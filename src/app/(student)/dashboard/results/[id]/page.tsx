@@ -12,6 +12,9 @@ import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { MathText } from "@/components/MathText";
 import { ReviewPrompt } from "@/components/ReviewPrompt";
+import { getAttestatsiyaToifa } from "@/lib/attestatsiya";
+import { getMilliySertifikatEstimatedGrade } from "@/lib/milliySertifikat";
+import { splitTwoPartText } from "@/lib/utils";
 
 // ─── YouTube helpers ──────────────────────────────────────────────────────────
 
@@ -100,27 +103,6 @@ function YoutubeModal({ url, onClose }: { url: string; onClose: () => void }) {
       </div>
     </div>
   );
-}
-
-// ─── Attestatsiya toifa tizimi ────────────────────────────────────────────────
-interface Toifa {
-  label: string;
-  color: string;
-  bg: string;
-  border: string;
-  ustama?: string;
-}
-
-// Chegaralar to'g'ri javoblar foizi (0-100) bo'yicha — savollar soni 50 dan
-// farq qilsa ham (kam yoki ko'p) to'g'ri ishlashi uchun. Backend'dagi
-// getAttestationCategory bilan bir xil bo'lishi kerak.
-function getAttestatsiyaToifa(percentage: number): Toifa | null {
-  if (percentage >= 86) return { label: "Oliy toifa", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-300", ustama: "+ 70% ustama" };
-  if (percentage >= 80) return { label: "Oliy toifa", color: "text-purple-700", bg: "bg-purple-50", border: "border-purple-300" };
-  if (percentage >= 70) return { label: "Birinchi toifa", color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-300" };
-  if (percentage >= 60) return { label: "Ikkinchi toifa", color: "text-cyan-700", bg: "bg-cyan-50", border: "border-cyan-300" };
-  if (percentage >= 56) return { label: "Mutaxassis", color: "text-green-700", bg: "bg-green-50", border: "border-green-300" };
-  return null;
 }
 
 // ─── Attestatsiya grid view ───────────────────────────────────────────────────
@@ -224,7 +206,9 @@ function MilliySertifikatScoreBlock({ resultId }: { resultId: string }) {
               <p className="text-xs font-medium text-primary">ball</p>
             </div>
             <div>
-              <p className="text-sm font-bold">{scoreResult.grade ?? "Sertifikat talabini bajarmadingiz."}</p>
+              <p className="text-sm font-bold">
+                {scoreResult.grade ? `${scoreResult.grade} daraja` : "Sertifikat talabini bajarmadingiz."}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {scoreResult.respondentCount != null
                   ? `${scoreResult.respondentCount} ta talaba natijasi asosida hisoblangan`
@@ -290,11 +274,38 @@ export default function ResultDetailPage() {
     );
   }
 
+  // MATCHING guruhidagi savollar bitta umumiy rasm va umumiy shart (groupPrompt)ga
+  // ega bo'lishi mumkin, lekin admin ularni guruhning istalgan savoliga biriktirgan
+  // bo'lishi mumkin — shu sabab har bir "section" uchun topilgan birinchisi butun
+  // guruhga qo'llaniladi.
+  const matchingSectionImages = new Map<string, string>();
+  const matchingSectionPrompts = new Map<string, string>();
+  for (const q of questions) {
+    if (q.questionType === "MATCHING" && q.section) {
+      if (q.questionImage && !matchingSectionImages.has(q.section)) {
+        matchingSectionImages.set(q.section, q.questionImage);
+      }
+      if (q.groupPrompt && !matchingSectionPrompts.has(q.section)) {
+        matchingSectionPrompts.set(q.section, q.groupPrompt);
+      }
+    }
+  }
+
   const attestPoints = isAttestatsiya ? result.correctAnswers * 2 : null;
   const attestMaxPoints = isAttestatsiya ? result.totalQuestions * 2 : null;
   const attestPercentage =
     isAttestatsiya && result.totalQuestions > 0 ? (result.correctAnswers / result.totalQuestions) * 100 : null;
   const toifa = attestPercentage !== null ? getAttestatsiyaToifa(attestPercentage) : null;
+
+  // Rasmiy Milliy Sertifikat bahosi (A+/A/B+/...) Rasch-uslubida kogortaga
+  // nisbatan hisoblanadi (pastdagi MilliySertifikatScoreBlock, talab bo'yicha) —
+  // bu yerda esa xom ball foizi asosida TAXMINIY daraja ko'rsatiladi, shuning
+  // uchun aniq "taxminiy" deb belgilanadi.
+  const milliyPercentage =
+    isMilliySertifikat && result.rawPoints != null && result.totalPoints
+      ? (result.rawPoints / result.totalPoints) * 100
+      : null;
+  const milliyGrade = milliyPercentage !== null ? getMilliySertifikatEstimatedGrade(milliyPercentage) : null;
 
   const scoreColor = result.score >= 80 ? "text-green-600" : result.score >= 60 ? "text-amber-500" : "text-red-500";
   const scoreBg   = result.score >= 80 ? "bg-green-100"  : result.score >= 60 ? "bg-amber-50"   : "bg-red-100";
@@ -391,6 +402,22 @@ export default function ResultDetailPage() {
           </div>
         )}
 
+        {isMilliySertifikat && (
+          <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border mb-4 ${
+            milliyGrade ? `${milliyGrade.bg} ${milliyGrade.border}` : "bg-muted border-border"
+          }`}>
+            <Award className={`w-5 h-5 shrink-0 ${milliyGrade ? milliyGrade.color : "text-muted-foreground"}`} />
+            <div>
+              <p className={`text-sm font-bold ${milliyGrade ? milliyGrade.color : "text-muted-foreground"}`}>
+                {milliyGrade ? `${milliyGrade.label} daraja (taxminiy)` : "Sertifikat talabini bajarmadingiz. (taxminiy)"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Xom ball foiziga asoslangan taxminiy daraja — rasmiy baho pastdagi Rasch balli bo'limida
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="h-2 bg-muted rounded-full overflow-hidden mb-4">
           <div className={`h-full rounded-full transition-all ${scoreBar}`} style={{ width: `${result.score}%` }} />
         </div>
@@ -477,6 +504,11 @@ export default function ResultDetailPage() {
               const question = questions.find((q: any) => q.id === answer.questionId);
               const qAnalysisOpen = openQuestionAnalysis === answer.questionId;
               const isTwoPart = question?.questionType === "TWO_PART";
+              const isMatching = question?.questionType === "MATCHING";
+              // TWO_PART'da "a)"/"b)" shartlari umumiy shartdan ajratilib, har biri
+              // o'z javobi ustida ko'rsatiladi. Ajratib bo'lmasa (eski format),
+              // twoPart.partA/partB bo'sh qoladi — bare "a)"/"b)" belgiga qaytiladi.
+              const twoPart = isTwoPart && question ? splitTwoPartText(question.questionText) : null;
               const isPartial = isTwoPart && answer.isCorrect !== answer.isCorrectB;
               const displayNumber = isSat && i >= 22 ? i - 22 + 1 : i + 1;
               return (
@@ -523,26 +555,37 @@ export default function ResultDetailPage() {
                           Etiroz
                         </button>
                       </div>
+                      {isMatching && question?.section && matchingSectionPrompts.has(question.section) && (
+                        <p className="text-sm font-semibold mb-2 leading-relaxed wrap-break-word overflow-x-auto">
+                          <MathText text={matchingSectionPrompts.get(question.section)!} />
+                        </p>
+                      )}
                       <p className="text-sm font-medium mb-3 leading-relaxed wrap-break-word overflow-x-auto">
                         {displayNumber}. {question
-                          ? <MathText text={question.questionText} />
+                          ? <MathText text={twoPart ? twoPart.stem : question.questionText} />
                           : questionsLoading
                             ? "Savol yuklanmoqda..."
                             : <span className="text-muted-foreground italic">Bu savol testdan olib tashlangan yoki o'zgartirilgan</span>}
                       </p>
-                      {question?.questionImage && (
-                        <img
-                          src={question.questionImage}
-                          alt="savol rasmi"
-                          className="mb-3 mx-auto block rounded-xl max-h-56 object-contain border border-border"
-                        />
-                      )}
+                      {(() => {
+                        const img = question?.questionImage
+                          || (isMatching && question?.section ? matchingSectionImages.get(question.section) : undefined);
+                        return img ? (
+                          <img
+                            src={img}
+                            alt="savol rasmi"
+                            className="mb-3 mx-auto block rounded-xl max-h-56 object-contain border border-border"
+                          />
+                        ) : null;
+                      })()}
                       {question && (isTwoPart ? (
                         // TWO_PART (Milliy Sertifikat) — ikkita mustaqil javob (a, b),
                         // har biri alohida baholanadi, javoblar x100 kodlangan.
                         <div className="space-y-3 text-sm">
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">a)</p>
+                            <p className="text-sm font-semibold mb-1.5 leading-relaxed">
+                              {twoPart?.partA ? <MathText text={twoPart.partA} /> : "a)"}
+                            </p>
                             <p>
                               <span className="text-muted-foreground">Sizning javobingiz: </span>
                               <span className={`font-semibold ${answer.isCorrect ? "text-green-700" : "text-red-600"}`}>
@@ -557,7 +600,9 @@ export default function ResultDetailPage() {
                             )}
                           </div>
                           <div>
-                            <p className="text-xs text-muted-foreground mb-1">b)</p>
+                            <p className="text-sm font-semibold mb-1.5 leading-relaxed">
+                              {twoPart?.partB ? <MathText text={twoPart.partB} /> : "b)"}
+                            </p>
                             <p>
                               <span className="text-muted-foreground">Sizning javobingiz: </span>
                               <span className={`font-semibold ${answer.isCorrectB ? "text-green-700" : "text-red-600"}`}>

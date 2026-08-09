@@ -15,6 +15,7 @@ export enum TestStatus {
   DRAFT = "DRAFT",
   PUBLISHED = "PUBLISHED",
   ARCHIVED = "ARCHIVED",
+  DELETED = "DELETED",
 }
 
 export enum TestBlock {

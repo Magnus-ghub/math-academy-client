@@ -20,6 +20,7 @@ QOIDALAR:
 - options da 4 ta variant SHART
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
+- Takrorlanuvchi raqamlar/naqsh (masalan "2222...2, 50 ta raqam"): \\underbrace{...}_{\\text{...}} bilan yozing, MASALAN: $\\underbrace{2222\\ldots2}_{50\\ \\text{ta raqam}}$ — natijada raqamlar ostida figurali qavs va izoh chiqadi. MUHIM: bu \\underbrace{}_{}  (pastki belgili) shakl, \\frac{}{} kabi ikkita ketma-ket qavs EMAS, shuning uchun avtomatik $ bilan o'ralmaydi — butun ifodani (pastki izohi bilan birga) qo'lda $ ... $ ichiga oling
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — MUHIM: agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa (masalan x/y qiymatlar jadvali), o'sha variant matnini ham vergul bilan ajratilgan ro'yxat emas, aynan shu qator-qator formatda yozing: "x | y\\n-5 | 6\\n-6 | 9\\n-8 | -4"
 - analysis: savol bo'yicha AI tahlil matni (ixtiyoriy, bo'sh qoldirsa ham bo'ladi). Ichidagi formulalarni ham $x^2$, $$\\frac{a}{b}$$ kabi LaTeX bilan yozing — oddiy matn emas
@@ -80,22 +81,28 @@ Test 45 ta ko'rinadigan savoldan iborat (questions massivida ham 45 ta element b
   "explanation": ""
 }
 
-2) MATCHING (moslashtirish) — bir nechta ketma-ket savol UMUMIY javob bankidan (masalan A-F, 6 ta) tanlaydi (odatda 33-35 savollar):
+2) MATCHING (moslashtirish) — bir nechta ketma-ket savol UMUMIY javob bankidan (masalan A-F, 6 ta) tanlaydi (odatda 33-35 savollar). Bu savollar odatda bitta UMUMIY SHART (masalan piramida/shar haqida chizma va matn) ostida keladi — bu shart alohida savol emas, "groupPrompt" maydonida beriladi, "questionText" esa har bir savolning O'ZIGA XOS QISQA topshirig'i (raqamsiz, umumiy shartsiz):
 {
   "questionType": "MATCHING",
   "section": "match-1",
-  "questionText": "33. Sharning radiusini toping.",
+  "groupPrompt": "SABCD to'rtburchakli muntazam piramidaning yon yoqlari asos tekisligi bilan 30° burchak tashkil qiladi. Bu piramidaga yarim shar ichki shunday chizilganki, uning tekis yoqi piramidaning asosida yotadi, shar sirti esa piramidaning yon yoqlariga urinadi. Piramidaning asosinning tomonidan shar diametrining ayirmasi 1 ga teng. Masalalarni yechishda π ≈ 3 deb oling.",
+  "questionText": "Sharning radiusini toping.",
+  "questionImage": null,
   "options": ["√2/2", "√3/2", "√3/4", "4√3/9", "1/2", "2/3"],
   "correctAnswer": 2
 },
 {
   "questionType": "MATCHING",
   "section": "match-1",
-  "questionText": "34. Piramida yon yog'iga urilgan nuqtasidan asosigacha eng qisqa masofani toping.",
+  "groupPrompt": "SABCD to'rtburchakli muntazam piramidaning yon yoqlari asos tekisligi bilan 30° burchak tashkil qiladi. Bu piramidaga yarim shar ichki shunday chizilganki, uning tekis yoqi piramidaning asosida yotadi, shar sirti esa piramidaning yon yoqlariga urinadi. Piramidaning asosinning tomonidan shar diametrining ayirmasi 1 ga teng. Masalalarni yechishda π ≈ 3 deb oling.",
+  "questionText": "Sharning piramida yon yoqiga urilgan nuqtasidan piramidaning asosigacha bo'lgan eng qisqa masofani toping.",
+  "questionImage": null,
   "options": ["√2/2", "√3/2", "√3/4", "4√3/9", "1/2", "2/3"],
   "correctAnswer": 4
 }
-MUHIM: bir guruhdagi barcha MATCHING savollar bir xil "section" qiymatiga va bir xil "options" bankiga ega bo'lishi SHART (ketma-ket joylashtiring). correctAnswer — bu shu bankdagi variant indeksi (0,1,2...), oddiy indeks, ×100 qilinmaydi.
+MUHIM: bir guruhdagi barcha MATCHING savollar bir xil "section" qiymatiga, bir xil "options" bankiga VA bir xil "groupPrompt" matniga ega bo'lishi SHART (ketma-ket joylashtiring). correctAnswer — bu shu bankdagi variant indeksi (0,1,2...), oddiy indeks, ×100 qilinmaydi.
+MUHIM (umumiy shart/groupPrompt): "questionText" ga faqat o'sha savolga xos qisqa topshiriqni yozing (raqamlashsiz — "33." kabi prefiks yozmang, buni interfeys o'zi qo'shadi), umumiy shart matnini "questionText" ichiga QO'SHMANG — u faqat "groupPrompt" da, guruhdagi HAR BIR savolda AYNAN BIR XIL holda takrorlanadi. Agar guruhda umumiy shart/matn bo'lmasa (kamdan-kam), "groupPrompt": null qoldiring.
+MUHIM (chizma/rasm): chizma/rasm matn orqali berilmaydi — "questionImage" har doim null qoldiriladi, admin uni keyinroq savolni tahrirlash sahifasida qo'lda (guruhdagi istalgan bitta savolga) yuklaydi.
 
 3) TWO_PART (ikki qismli) — bitta savolda ikkita mustaqil raqamli javob (a va b), variant yo'q (odatda 36-45 savollar):
 {
@@ -113,10 +120,11 @@ MUHIM: TWO_PART uchun "correctAnswer" — "a" javobi, "correctAnswerB" — "b" j
 
 UMUMIY QOIDALAR:
 - SINGLE: correctAnswer 0=A, 1=B, 2=C, 3=D; options da 4 ta variant SHART
-- MATCHING: correctAnswer — oddiy indeks (×100 QILINMAYDI), options 4 tadan ko'p bo'lishi mumkin
+- MATCHING: correctAnswer — oddiy indeks (×100 QILINMAYDI), options 4 tadan ko'p bo'lishi mumkin; umumiy shart "groupPrompt" da (barcha guruh a'zolarida bir xil), "questionText" faqat qisqa topshiriq (raqamsiz)
 - TWO_PART: options: [] (bo'sh massiv), correctAnswer va correctAnswerB — ikkalasi ham ×100 kodlangan
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
+- Takrorlanuvchi raqamlar/naqsh (masalan "2222...2, 50 ta raqam"): \\underbrace{...}_{\\text{...}} bilan yozing, MASALAN: $\\underbrace{2222\\ldots2}_{50\\ \\text{ta raqam}}$ — bu \\underbrace{}_{} (pastki belgili) shakl, avtomatik $ bilan o'ralmaydi, butun ifodani qo'lda $ ... $ ichiga oling
 - Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa, o'sha variant matnini ham shu qator-qator formatda yozing
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - TWO_PART savolning "a)" va "b)" qismlarini questionText ichida "\\n" bilan ajratib yozing`;
@@ -145,6 +153,7 @@ QOIDALAR:
 - options da 4 ta variant SHART
 - Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
+- Takrorlanuvchi raqamlar/naqsh (masalan "2222...2, 50 ta raqam"): \\underbrace{...}_{\\text{...}} bilan yozing, MASALAN: $\\underbrace{2222\\ldots2}_{50\\ \\text{ta raqam}}$ — bu \\underbrace{}_{} (pastki belgili) shakl, avtomatik $ bilan o'ralmaydi, butun ifodani qo'lda $ ... $ ichiga oling
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — MUHIM: agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa (masalan x/y qiymatlar jadvali), o'sha variant matnini ham vergul bilan ajratilgan ro'yxat emas, aynan shu qator-qator formatda yozing: "x | y\\n-5 | 6\\n-6 | 9\\n-8 | -4"
 - analysis: savol bo'yicha AI tahlil matni (ixtiyoriy). Ichidagi formulalarni ham LaTeX bilan yozing

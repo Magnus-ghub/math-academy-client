@@ -6,6 +6,7 @@ import Link from "next/link";
 import { GET_ME } from "@/lib/graphql/user";
 import { GET_MY_RESULTS } from "@/lib/graphql/result";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { getResultScoreDisplay } from "@/lib/resultScore";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -89,7 +90,9 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {results.slice(0, 5).map((result: any) => (
+          {results.slice(0, 5).map((result: any) => {
+            const display = getResultScoreDisplay(result);
+            return (
             <Link key={result.id} href={`/dashboard/results/${result.id}`}>
               <div className="bg-background rounded-2xl border border-border p-4 hover:shadow-md transition-all">
                 <div className="flex items-center justify-between">
@@ -97,16 +100,14 @@ export default function DashboardPage() {
                     <p className="font-semibold text-sm">{result.testTitle ?? "Test"}</p>
                     <p className="text-xs text-muted-foreground">{new Date(result.createdAt).toLocaleDateString("uz-UZ")}</p>
                   </div>
-                  <div className={`text-2xl font-black ${
-                    result.score >= 80 ? "text-green-600" :
-                    result.score >= 60 ? "text-accent" : "text-red-500"
-                  }`}>
-                    {result.satScore != null ? `${result.satScore} / 800` : `${Math.round(result.score)}%`}
+                  <div className={`text-sm font-bold text-right shrink-0 ml-3 ${display.colorClass}`}>
+                    {display.label}
                   </div>
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

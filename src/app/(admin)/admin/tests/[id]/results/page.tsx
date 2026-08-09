@@ -6,6 +6,7 @@ import { useQuery } from "@apollo/client/react";
 import { ChevronLeft, FileSpreadsheet, FileText } from "lucide-react";
 import { GET_ALL_RESULTS_FOR_TEST } from "@/lib/graphql/result";
 import { exportResultsToExcel, exportResultsToPdf } from "@/lib/export/resultExport";
+import { getResultScoreDisplay } from "@/lib/resultScore";
 
 const statusColors: Record<string, string> = {
   COMPLETED: "bg-green-100 text-green-700",
@@ -126,7 +127,7 @@ export default function AdminTestResultsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm font-medium">
-                      {r.satScore != null ? `${r.satScore} / 800` : `${Number(r.score).toFixed(1)}%`}
+                      {getResultScoreDisplay(r).label}
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
                       {r.correctAnswers}/{r.totalQuestions}

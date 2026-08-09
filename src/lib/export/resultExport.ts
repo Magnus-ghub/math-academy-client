@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getResultScoreDisplay } from "@/lib/resultScore";
 
 interface ResultRow {
   userName?: string | null;
@@ -8,7 +9,11 @@ interface ResultRow {
   userPhone?: string | null;
   userEmail?: string | null;
   resultStatus: string;
+  testType?: string | null;
   score: number;
+  satScore?: number | null;
+  rawPoints?: number | null;
+  totalPoints?: number | null;
   correctAnswers: number;
   totalQuestions: number;
   duration: number;
@@ -35,7 +40,7 @@ function toRows(results: ResultRow[]) {
     Telefon: r.userPhone ?? "—",
     Email: r.userEmail ?? "—",
     Holat: statusLabels[r.resultStatus] ?? r.resultStatus,
-    "Ball (%)": Number(r.score).toFixed(1),
+    Ball: getResultScoreDisplay(r).label,
     "To'g'ri javob": `${r.correctAnswers}/${r.totalQuestions}`,
     "Davomiylik (daqiqa)": r.duration,
     Sana: new Date(r.finishedAt ?? r.createdAt).toLocaleDateString("uz-UZ"),

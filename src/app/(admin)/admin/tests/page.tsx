@@ -1,8 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Plus, Search, Clock, FileQuestion, Eye, Pencil, Trash2, BarChart3 } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Clock,
+  FileQuestion,
+  Eye,
+  Pencil,
+  Trash2,
+  BarChart3,
+  LayoutGrid,
+  CheckCircle2,
+  FileText,
+  Archive,
+  Info,
+  ChevronDown,
+  Check,
+} from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -51,19 +67,52 @@ const statusLabels: Record<string, string> = {
   ARCHIVED: "Arxiv",
 };
 
+const statusDotColors: Record<string, string> = {
+  DRAFT: "bg-gray-400",
+  PUBLISHED: "bg-green-500",
+  ARCHIVED: "bg-red-500",
+};
+
+const STATUS_OPTIONS = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
+
 const PAGE_SIZE = 10;
+
+const statusTabs = [
+  { key: "ALL", label: "Barchasi", icon: LayoutGrid },
+  { key: "PUBLISHED", label: "Nashr etilgan", icon: CheckCircle2 },
+  { key: "DRAFT", label: "Qoralama", icon: FileText },
+  { key: "ARCHIVED", label: "Arxiv", icon: Archive },
+] as const;
+
+const statusTabHints: Record<string, string> = {
+  DRAFT: "Qoralamalar talaba panelida ko'rinmaydi. Nashr qilinguncha uni faqat tahrirlash sahifasidagi \"Ko'rish\" tugmasi orqali sinab ko'rishingiz mumkin.",
+  ARCHIVED: "Arxivlangan testlar talaba panelidan yashiriladi, ammo avval topshirilgan natijalar saqlanib qoladi. Kerak bo'lsa qayta nashr qilib qaytarish mumkin.",
+};
 
 export default function AdminTestsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [dtmFilter, setDtmFilter] = useState("");
+  const [statusTab, setStatusTab] = useState<"ALL" | "PUBLISHED" | "DRAFT" | "ARCHIVED">("PUBLISHED");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
-  const [showArchived, setShowArchived] = useState(false);
+  const [statusMenuFor, setStatusMenuFor] = useState<string | null>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!statusMenuFor) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setStatusMenuFor(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [statusMenuFor]);
 
   const { data, loading, refetch } = useQuery<{ getAllTests: any[] }>(GET_ALL_TESTS, {
-    variables: { includeArchived: showArchived },
+    variables: { includeArchived: true },
   });
   const tests = data?.getAllTests || [];
 
@@ -84,12 +133,20 @@ export default function AdminTestsPage() {
     onError: () => toast.error("O'chirishda xatolik yuz berdi"),
   });
 
-  const filtered = tests.filter((t: any) => {
+  const bySearchAndType = tests.filter((t: any) => {
     const matchSearch = t.testTitle.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "ALL" || t.testType === typeFilter;
     const matchDtm = typeFilter !== "DTM" || !dtmFilter || t.dtmType === dtmFilter;
     return matchSearch && matchType && matchDtm;
   });
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: bySearchAndType.length, PUBLISHED: 0, DRAFT: 0, ARCHIVED: 0 };
+    for (const t of bySearchAndType) counts[t.testStatus] = (counts[t.testStatus] ?? 0) + 1;
+    return counts;
+  }, [bySearchAndType]);
+
+  const filtered = statusTab === "ALL" ? bySearchAndType : bySearchAndType.filter((t: any) => t.testStatus === statusTab);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -121,13 +178,21 @@ export default function AdminTestsPage() {
           <h1 className="text-2xl font-bold">Testlar</h1>
           <p className="text-muted-foreground text-sm">{filtered.length} ta test</p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Yangi test
-        </button>
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/tests/trash"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Savatcha
+          </Link>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Yangi test
+          </button>
+        </div>
       </div>
 
       {showModal && (
@@ -164,6 +229,36 @@ export default function AdminTestsPage() {
         </div>
       )}
 
+      {/* Status tabs */}
+      <div className="flex gap-1 mb-4 border-b border-border overflow-x-auto">
+        {statusTabs.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => { setStatusTab(key); setPage(1); }}
+            className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
+              statusTab === key
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+            <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-xs ${
+              statusTab === key ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+            }`}>
+              {statusCounts[key] ?? 0}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {statusTabHints[statusTab] && (
+        <div className="flex items-start gap-2 mb-4 p-3 rounded-xl bg-muted/60 text-xs text-muted-foreground">
+          <Info className="w-4 h-4 shrink-0 mt-0.5" />
+          <p>{statusTabHints[statusTab]}</p>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
@@ -177,7 +272,7 @@ export default function AdminTestsPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           {[
-            { key: "ALL", label: "Barchasi" },
+            { key: "ALL", label: "Hammasi" },
             { key: "MILLIY_SERTIFIKAT", label: "Milliy" },
             { key: "ATTESTATSIYA", label: "Attestatsiya" },
             { key: "SAT", label: "SAT" },
@@ -191,14 +286,6 @@ export default function AdminTestsPage() {
             </button>
           ))}
         </div>
-        <button
-          onClick={() => { setShowArchived((v) => !v); setPage(1); }}
-          className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors shrink-0 ${
-            showArchived ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground hover:bg-muted/80"
-          }`}
-        >
-          {showArchived ? "Arxivlanganlar ko'rsatilmoqda" : "Arxivlanganlarni ko'rsatish"}
-        </button>
       </div>
 
       {/* DTM sub-filter */}
@@ -225,22 +312,52 @@ export default function AdminTestsPage() {
       {/* Cards grid */}
       {paginated.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground text-sm">
-          Testlar topilmadi
+          {statusTab === "ALL" && "Testlar topilmadi"}
+          {statusTab === "PUBLISHED" && "Nashr etilgan testlar topilmadi"}
+          {statusTab === "DRAFT" && "Qoralama testlar yo'q"}
+          {statusTab === "ARCHIVED" && "Arxivlangan testlar yo'q"}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {paginated.map((test: any) => {
             const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
+            const isArchived = test.testStatus === "ARCHIVED";
             return (
-            <div key={test.id} className={`border rounded-2xl p-5 flex flex-col gap-3 hover:shadow-sm transition-all ${style?.cardBg ?? "bg-background border-border"} ${style?.ring ?? "hover:border-primary/30"}`}>
+            <div key={test.id} className={`border rounded-2xl p-5 flex flex-col gap-3 hover:shadow-sm transition-all ${style?.cardBg ?? "bg-background border-border"} ${style?.ring ?? "hover:border-primary/30"} ${isArchived ? "opacity-70 saturate-50" : ""}`}>
               {/* Top badges */}
               <div className="flex items-center justify-between">
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${style?.badge ?? "bg-muted text-muted-foreground"}`}>
                   {testTypeLabel(test)}
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[test.testStatus]}`}>
-                  {statusLabels[test.testStatus]}
-                </span>
+
+                <div className="relative" ref={statusMenuFor === test.id ? statusMenuRef : undefined}>
+                  <button
+                    onClick={() => setStatusMenuFor(statusMenuFor === test.id ? null : test.id)}
+                    className={`flex items-center gap-1 pl-2 pr-1.5 py-0.5 rounded-full text-xs font-medium transition-colors hover:brightness-95 ${statusColors[test.testStatus]}`}
+                  >
+                    {statusLabels[test.testStatus]}
+                    <ChevronDown className={`w-3 h-3 transition-transform ${statusMenuFor === test.id ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {statusMenuFor === test.id && (
+                    <div className="absolute z-20 top-full right-0 mt-1.5 w-40 rounded-xl border border-border bg-background shadow-lg p-1">
+                      {STATUS_OPTIONS.map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => {
+                            if (s !== test.testStatus) handleStatusChange(test, s);
+                            setStatusMenuFor(null);
+                          }}
+                          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium hover:bg-muted transition-colors text-left"
+                        >
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${statusDotColors[s]}`} />
+                          <span className="flex-1">{statusLabels[s]}</span>
+                          {test.testStatus === s && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Title */}
@@ -288,24 +405,18 @@ export default function AdminTestsPage() {
                   </button>
                 </Link>
 
-                {test.testStatus === "DRAFT" && (
-                  <button onClick={() => handleStatusChange(test, "PUBLISHED")}
-                    className="flex-1 py-1.5 rounded-lg bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors">
-                    Nashr
+                <a
+                  href={`${test.testType === "SAT" ? `/sat/${test.id}` : `/exam/${test.id}`}?retake=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1"
+                  title="Talaba ko'radigan sahifada ko'ring. Natija saqlanmaydi"
+                >
+                  <button className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors">
+                    <Eye className="w-3 h-3" />
+                    Ko'rish
                   </button>
-                )}
-                {test.testStatus === "PUBLISHED" && (
-                  <button onClick={() => handleStatusChange(test, "ARCHIVED")}
-                    className="flex-1 py-1.5 rounded-lg bg-orange-100 text-orange-700 text-xs font-medium hover:bg-orange-200 transition-colors">
-                    Arxiv
-                  </button>
-                )}
-                {test.testStatus === "ARCHIVED" && (
-                  <button onClick={() => handleStatusChange(test, "PUBLISHED")}
-                    className="flex-1 py-1.5 rounded-lg bg-green-100 text-green-700 text-xs font-medium hover:bg-green-200 transition-colors">
-                    Qayta nashr
-                  </button>
-                )}
+                </a>
 
                 <button onClick={() => setDeleteTarget({ id: test.id, title: test.testTitle })}
                   className="p-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0">

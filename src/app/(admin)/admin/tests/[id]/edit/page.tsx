@@ -36,6 +36,7 @@ interface QuestionRow {
   id?: string;
   questionType?: string;
   section?: string;
+  groupPrompt?: string;
   questionText: string;
   questionImage: string;
   options: string[];
@@ -76,6 +77,7 @@ interface QuestionsData {
     id: string;
     questionType?: string;
     section?: string;
+    groupPrompt?: string;
     questionText?: string;
     questionImage?: string;
     options?: string[];
@@ -126,6 +128,7 @@ function makeRow(q?: any): QuestionRow {
     id: q?.id,
     questionType: q?.questionType,
     section: q?.section,
+    groupPrompt: q?.groupPrompt,
     questionText: q?.questionText ?? "",
     questionImage: q?.questionImage ?? "",
     options: q?.options ?? ["", "", "", ""],
@@ -379,6 +382,7 @@ function EditTestPageContent() {
         const payload = {
           questionText: q.questionText,
           questionImage: q.questionImage || undefined,
+          groupPrompt: q.groupPrompt || undefined,
           options: q.options,
           optionImages: q.optionImages,
           correctAnswer: q.correctAnswer,
@@ -998,17 +1002,56 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
             ko'rish uchun ko'rsatilmoqda, qo'lda o'zgartirib bo'lmaydi.
           </div>
 
-          <div className="p-3 rounded-lg border border-border bg-muted/30 text-sm">
-            <LatexPreview text={q.questionText} />
+          {q.questionType === "MATCHING" && q.groupPrompt && (
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Guruhning umumiy sharti (groupPrompt):</p>
+              <div className="p-3 rounded-lg border border-primary/30 bg-primary/5 text-sm">
+                <LatexPreview text={q.groupPrompt} />
+              </div>
+            </div>
+          )}
+
+          <div>
+            {q.questionType === "MATCHING" && (
+              <p className="text-xs text-muted-foreground mb-1">Bu savolning o&apos;ziga xos qisqa matni:</p>
+            )}
+            <div className="p-3 rounded-lg border border-border bg-muted/30 text-sm">
+              <LatexPreview text={q.questionText} />
+            </div>
           </div>
 
-          {q.questionImage && (
-            <img src={q.questionImage} alt="savol rasmi" className="max-h-48 rounded-lg border border-border object-contain" />
-          )}
+          <div>
+            {q.questionImage ? (
+              <div className="relative inline-block">
+                <img src={q.questionImage} alt="savol rasmi" className="max-h-48 rounded-lg border border-border object-contain" />
+                <button
+                  onClick={() => onUpdate(q.uid, "questionImage", "")}
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => fileRef.current?.click()}
+                disabled={q.uploading}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+              >
+                {q.uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                {q.uploading ? "Yuklanmoqda..." : "Rasm biriktirish (guruhning umumiy chizmasi)"}
+              </button>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onImagePick(f); e.target.value = ""; }} />
+          </div>
 
           {q.questionType === "MATCHING" ? (
             <div className="space-y-1.5">
-              {q.section && <p className="text-xs text-muted-foreground">Guruh (section): {q.section}</p>}
+              {q.section && (
+                <p className="text-xs text-muted-foreground">
+                  Guruh (section): {q.section} — rasmni guruhdagi bitta savolga biriktirsangiz kifoya, u butun guruh uchun bir marta ko'rsatiladi
+                </p>
+              )}
               {q.options.map((opt, i) => (
                 <div
                   key={i}

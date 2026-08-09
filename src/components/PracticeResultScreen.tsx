@@ -4,13 +4,15 @@ import { useState } from "react";
 import Image from "next/image";
 import { CheckCircle, XCircle, Clock, Info, ShieldOff, Bot } from "lucide-react";
 import { MathText } from "@/components/MathText";
-import { parseSprAnswer } from "@/lib/utils";
+import { parseSprAnswer, splitTwoPartText } from "@/lib/utils";
 
 interface Question {
   id: string;
   questionText: string;
   questionImage?: string;
   questionType?: string;
+  section?: string;
+  groupPrompt?: string;
   options?: string[];
   correctAnswer: number;
   correctAnswerB?: number | null;
@@ -86,6 +88,23 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
   const scoreColor = score >= 80 ? "text-green-600" : score >= 60 ? "text-amber-500" : "text-red-500";
   const scoreBg = score >= 80 ? "bg-green-100" : score >= 60 ? "bg-amber-50" : "bg-red-100";
   const scoreBar = score >= 80 ? "bg-green-500" : score >= 60 ? "bg-amber-400" : "bg-red-500";
+
+  // MATCHING guruhidagi savollar bitta umumiy rasm va umumiy shart (groupPrompt)ga
+  // ega bo'lishi mumkin, lekin admin ularni guruhning istalgan savoliga biriktirgan
+  // bo'lishi mumkin — shu sabab har bir "section" uchun topilgan birinchisi butun
+  // guruhga qo'llaniladi.
+  const matchingSectionImages = new Map<string, string>();
+  const matchingSectionPrompts = new Map<string, string>();
+  for (const q of questions) {
+    if (q.questionType === "MATCHING" && q.section) {
+      if (q.questionImage && !matchingSectionImages.has(q.section)) {
+        matchingSectionImages.set(q.section, q.questionImage);
+      }
+      if (q.groupPrompt && !matchingSectionPrompts.has(q.section)) {
+        matchingSectionPrompts.set(q.section, q.groupPrompt);
+      }
+    }
+  }
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -165,7 +184,12 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
         <div className="space-y-3 mb-6">
           {questions.map((q, i) => {
             const isTwoPart = q.questionType === "TWO_PART";
+            const isMatching = q.questionType === "MATCHING";
             const isSpr = !isTwoPart && (!q.options || q.options.length === 0);
+            // TWO_PART'da "a)"/"b)" shartlari umumiy shartdan ajratilib, har biri
+            // o'z javobi ustida ko'rsatiladi. Ajratib bo'lmasa (eski format),
+            // twoPart.partA/partB bo'sh qoladi — bare "a)"/"b)" belgiga qaytiladi.
+            const twoPart = isTwoPart ? splitTwoPartText(q.questionText) : null;
             const raw = answers[q.id];
             const selected = normalizeSelected(q, raw);
             const rawB = answersB[q.id];
@@ -219,22 +243,33 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
+                    {isMatching && q.section && matchingSectionPrompts.has(q.section) && (
+                      <p className="text-sm font-semibold mb-2 leading-relaxed">
+                        <MathText text={matchingSectionPrompts.get(q.section)!} />
+                      </p>
+                    )}
                     <p className="text-sm font-medium mb-3 leading-relaxed">
-                      {displayNumber}. <MathText text={q.questionText} />
+                      {displayNumber}. <MathText text={twoPart ? twoPart.stem : q.questionText} />
                     </p>
 
-                    {q.questionImage && (
-                      <img
-                        src={q.questionImage}
-                        alt="savol rasmi"
-                        className="mb-3 mx-auto block rounded-xl max-h-56 object-contain border border-border"
-                      />
-                    )}
+                    {(() => {
+                      const img = q.questionImage
+                        || (isMatching && q.section ? matchingSectionImages.get(q.section) : undefined);
+                      return img ? (
+                        <img
+                          src={img}
+                          alt="savol rasmi"
+                          className="mb-3 mx-auto block rounded-xl max-h-56 object-contain border border-border"
+                        />
+                      ) : null;
+                    })()}
 
                     {isTwoPart ? (
                       <div className="space-y-3 text-sm">
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">a)</p>
+                          <p className="text-sm font-semibold mb-1.5 leading-relaxed">
+                            {twoPart?.partA ? <MathText text={twoPart.partA} /> : "a)"}
+                          </p>
                           <p>
                             <span className="text-muted-foreground">Sizning javobingiz: </span>
                             <span className={`font-semibold ${isCorrectA ? "text-green-700" : "text-red-600"}`}>
@@ -249,7 +284,9 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
                           )}
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">b)</p>
+                          <p className="text-sm font-semibold mb-1.5 leading-relaxed">
+                            {twoPart?.partB ? <MathText text={twoPart.partB} /> : "b)"}
+                          </p>
                           <p>
                             <span className="text-muted-foreground">Sizning javobingiz: </span>
                             <span className={`font-semibold ${isCorrectB ? "text-green-700" : "text-red-600"}`}>

@@ -571,7 +571,14 @@ function SatExamPageContent() {
         <div className="max-w-5xl mx-auto w-full flex items-center gap-4">
           {isRetake && (
             <button
-              onClick={() => router.back()}
+              onClick={() => {
+                // Admin preview'ni yangi tabda ochadi (target="_blank") — bunday
+                // tabda oldingi sahifa umuman bo'lmaydi, shu holatda router.back()
+                // hech narsa qilmaydi. Talaba retake'ni esa shu tab ichida
+                // router.push bilan ochadi, shu holatda tarixda oldingi sahifa bor.
+                if (window.history.length > 1) router.back();
+                else router.push("/admin/tests");
+              }}
               className="shrink-0 p-2 rounded-xl hover:bg-white/10 text-white/70 transition-colors"
               title="Chiqish — natija saqlanmaydi"
             >

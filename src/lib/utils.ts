@@ -16,6 +16,33 @@ export function limitWords(text: string, maxWords: number): string {
   return words.slice(0, maxWords).join(" ")
 }
 
+// TWO_PART (Milliy Sertifikat) savolining questionText'i umumiy shart va "a)"/"b)"
+// qismlarini bitta matnda "\n" bilan ajratib saqlaydi (AI promptidagi konventsiya).
+// Har bir qism o'z javob maydoni ustida alohida ko'rsatilishi uchun shu matnni
+// uchga ajratamiz. Format mos kelmasa (eski/formatlanmagan ma'lumot), stem'ga
+// butun matnni qaytaramiz, partA/partB bo'sh qoladi — chaqiruvchi shu holda
+// eski (butun matn + bare "a)"/"b)" belgi) ko'rinishga qaytishi kerak.
+export function splitTwoPartText(text: string): { stem: string; partA: string; partB: string } {
+  // Ba'zan AI natijasida haqiqiy qator ko'chirish o'rniga so'zma-so'z "\n"
+  // (backslash+n, ikkita belgi) tushib qoladi (MathText'dagi
+  // normalizeLiteralNewlines bilan bir xil muammo) — shuning uchun "a)"/"b)"
+  // belgisidan oldingi shunday holatlarni ham haqiqiy qatorga aylantiramiz.
+  // Faqat "a)"/"b)"dan oldingi holatga tegamiz — \nabla kabi haqiqiy LaTeX
+  // buyruqlarga (keyingi harf ")" bilan davom etmagani uchun) tegilmaydi.
+  const normalized = text.replace(/\\n(?=\s*[ab]\))/gi, "\n")
+  const lines = normalized.split("\n")
+  const aIndex = lines.findIndex((l) => /^\s*a\)/i.test(l))
+  const bIndex = lines.findIndex((l) => /^\s*b\)/i.test(l))
+  if (aIndex === -1 || bIndex === -1 || bIndex <= aIndex) {
+    return { stem: text, partA: "", partB: "" }
+  }
+  return {
+    stem: lines.slice(0, aIndex).join("\n"),
+    partA: lines.slice(aIndex, bIndex).join("\n"),
+    partB: lines.slice(bIndex).join("\n"),
+  }
+}
+
 // SAT SPR javoblarini backend bilan bir xil encoding'da son ko'rinishga o'giradi (masalan "7/2" -> 350)
 export function parseSprAnswer(raw: string): number {
   const s = raw.trim()

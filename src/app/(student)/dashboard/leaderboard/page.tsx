@@ -6,6 +6,7 @@ import { Trophy, Clock, Medal, Flame, ChevronDown } from "lucide-react";
 import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
 import { GET_LEADERBOARD, GET_TOP_STUDENTS } from "@/lib/graphql/result";
 import { useAuthStore } from "@/lib/store/auth.store";
+import { getResultScoreDisplay } from "@/lib/resultScore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,7 +97,7 @@ function TopStudentsBoard({ period }: { period: Period }) {
   );
 }
 
-function TestLeaderboardList({ testId }: { testId: string }) {
+function TestLeaderboardList({ testId, testType }: { testId: string; testType?: string }) {
   const { data, loading } = useQuery<{ getLeaderboard: any[] }>(GET_LEADERBOARD, {
     variables: { testId },
   });
@@ -118,7 +119,9 @@ function TestLeaderboardList({ testId }: { testId: string }) {
 
   return (
     <div className="bg-background rounded-2xl border border-border overflow-hidden">
-      {entries.map((entry: any, i: number) => (
+      {entries.map((entry: any, i: number) => {
+        const display = getResultScoreDisplay({ ...entry, testType });
+        return (
         <div
           key={entry.id}
           className={`flex items-center gap-4 px-5 py-4 border-b border-border last:border-0 ${
@@ -160,14 +163,12 @@ function TestLeaderboardList({ testId }: { testId: string }) {
           </div>
 
           {/* Score */}
-          <div className={`text-xl font-black ${
-            entry.score >= 80 ? "text-green-600" :
-            entry.score >= 60 ? "text-accent" : "text-red-500"
-          }`}>
-            {entry.satScore != null ? `${entry.satScore} / 800` : `${Math.round(entry.score)}%`}
+          <div className={`text-xl font-black ${display.colorClass}`}>
+            {display.label}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -238,7 +239,10 @@ export default function LeaderboardPage() {
           </div>
 
           {selectedTest ? (
-            <TestLeaderboardList testId={selectedTest} />
+            <TestLeaderboardList
+              testId={selectedTest}
+              testType={tests.find((t: any) => t.id === selectedTest)?.testType}
+            />
           ) : (
             <div className="bg-background rounded-2xl border border-border p-12 text-center text-muted-foreground">
               <Trophy className="w-12 h-12 mx-auto mb-4 opacity-30" />

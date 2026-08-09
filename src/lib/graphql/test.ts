@@ -90,6 +90,7 @@ export const GET_QUESTIONS = gql`
       youtubeUrl
       analysis
       section
+      groupPrompt
       orderIndex
     }
   }
@@ -110,6 +111,29 @@ export const GET_ALL_TESTS = gql`
       testPdfUrl
       closesAt
       createdAt
+    }
+  }
+`;
+
+export const GET_DELETED_TESTS = gql`
+  query GetDeletedTests {
+    getDeletedTests {
+      id
+      testTitle
+      testType
+      dtmType
+      testAccess
+      totalQuestions
+      createdAt
+    }
+  }
+`;
+
+export const RESTORE_TEST = gql`
+  mutation RestoreTest($testId: String!) {
+    restoreTest(testId: $testId) {
+      id
+      testStatus
     }
   }
 `;

@@ -95,6 +95,8 @@ export const GET_LEADERBOARD = gql`
       userImage
       score
       satScore
+      rawPoints
+      totalPoints
       correctAnswers
       totalQuestions
       duration
@@ -121,6 +123,7 @@ export const GET_ALL_RESULTS_FOR_TEST = gql`
       id
       userId
       testTitle
+      testType
       userName
       userLastName
       userPhone
@@ -130,6 +133,8 @@ export const GET_ALL_RESULTS_FOR_TEST = gql`
       correctAnswers
       score
       satScore
+      rawPoints
+      totalPoints
       duration
       finishedAt
       createdAt

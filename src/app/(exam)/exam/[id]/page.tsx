@@ -25,7 +25,7 @@ import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
 import { MathText } from "@/components/MathText";
 import { SprInput, SprInputHandle } from "@/components/SprInput";
 import { AnswerKeyboard } from "@/components/AnswerKeyboard";
-import { parseSprAnswer } from "@/lib/utils";
+import { parseSprAnswer, splitTwoPartText } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
 
@@ -166,6 +166,11 @@ function ExamPageContent() {
   const totalSteps = steps.length;
   const step = steps[currentIndex];
   const q = step?.kind === "single" ? step.question : undefined;
+  // TWO_PART savolda "a)"/"b)" shartlari umumiy shartdan ajratilib, har biri
+  // o'z javob maydoni ustida ko'rsatiladi. Ajratib bo'lmasa (eski format),
+  // twoPart.partA bo'sh qoladi — pastda butun matn + bare "a)"/"b)" belgiga qaytiladi.
+  const twoPart =
+    q?.questionType === "TWO_PART" ? splitTwoPartText(q.questionText) : null;
   const isFirst = currentIndex === 0;
   const isLast = currentIndex === totalSteps - 1;
 
@@ -200,8 +205,13 @@ function ExamPageContent() {
       totalQuestions > 0;
   });
 
-  // browser back + tab yopishni bloklash (faqat exam aktiv bo'lganda)
+  // browser back + tab yopishni bloklash (faqat exam aktiv bo'lganda).
+  // Amaliyot (retake) rejimida bu himoya o'rnatilmaydi — natija baholanmaydi,
+  // shuning uchun orqaga qaytishni bloklash shart emas, aks holda "Chiqish"
+  // tugmasi ham (u ham popstate orqali ishlaydi) ishlamay qoladi.
   useEffect(() => {
+    if (isRetake) return;
+
     window.history.pushState(null, "", window.location.href);
 
     const handlePopState = () => {
@@ -223,7 +233,7 @@ function ExamPageContent() {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [isRetake]);
 
   // Klaviaturaning chap/o'ng strelkalari — Oldingi/Keyingi tugmalariga bog'langan
   useEffect(() => {
@@ -430,7 +440,14 @@ function ExamPageContent() {
         <div className="max-w-5xl mx-auto flex items-center gap-4">
           {isRetake && (
             <button
-              onClick={() => router.back()}
+              onClick={() => {
+                // Admin preview'ni yangi tabda ochadi (target="_blank") — bunday
+                // tabda oldingi sahifa umuman bo'lmaydi, shu holatda router.back()
+                // hech narsa qilmaydi. Talaba retake'ni esa shu tab ichida
+                // router.push bilan ochadi, shu holatda tarixda oldingi sahifa bor.
+                if (window.history.length > 1) router.back();
+                else router.push("/admin/tests");
+              }}
               className="shrink-0 p-2 rounded-xl hover:bg-muted text-muted-foreground transition-colors"
               title="Chiqish — natija saqlanmaydi"
             >
@@ -509,7 +526,7 @@ function ExamPageContent() {
       {/* ── BODY ── */}
       <div className="flex flex-1 overflow-hidden max-w-5xl mx-auto w-full">
         {/* ── LEFT: Single question ── */}
-        <main className={`flex-1 overflow-y-auto px-4 py-6 flex flex-col ${activeSprPart ? "pb-[380px] md:pb-6" : ""}`}>
+        <main className={`flex-1 overflow-y-auto px-4 py-6 flex flex-col ${activeSprPart ? "pb-95 md:pb-6" : ""}`}>
           {step && (
             <div className="flex-1">
               {/* Question card */}
@@ -575,77 +592,120 @@ function ExamPageContent() {
 
                 {step.kind === "matching" ? (
                   <>
-                    {/* Moslashtirish qismi — umumiy javob banki bitta marta ko'rsatiladi,
-                        har bir savol o'z dropdown'idan mustaqil tanlaydi (variantlar
-                        takrorlanishi mumkin). */}
-                    <div className="space-y-2.5 mb-5">
-                      {step.questions[0].options.map((opt: string, oi: number) => (
-                        <div
-                          key={oi}
-                          className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border"
-                        >
-                          <div className="w-7 h-7 rounded-full border-2 border-muted-foreground/40 flex items-center justify-center text-xs font-bold shrink-0">
-                            {String.fromCharCode(65 + oi)}
+                    {/* PDF'dagi ko'rinishga mos: umumiy shart header sifatida yuqorida,
+                        pastda ikki ustun — chapda rasm+savollar, o'ngda javob banki jadvali.
+                        Admin shart/rasmni guruhdagi istalgan savolga biriktirgan bo'lishi
+                        mumkin, shuning uchun birinchi topilgani olinadi. */}
+                    {(() => {
+                      const groupPrompt = step.questions.find((mq: any) => mq.groupPrompt)?.groupPrompt;
+                      const groupImage = step.questions.find((mq: any) => mq.questionImage)?.questionImage;
+                      // PDF'dagi "Topshiriqlar (33-35) va javob (A-F) larni o'zaro
+                      // moslashtiring" sarlavhasi — bu DB'da alohida saqlanmaydi,
+                      // chunki mavjud ma'lumotdan (savol raqamlari va variantlar
+                      // soni) to'liq hisoblab chiqarish mumkin.
+                      const firstNum = step.questions[0].orderIndex;
+                      const lastNum = step.questions[step.questions.length - 1].orderIndex;
+                      const lastLetter = String.fromCharCode(65 + step.questions[0].options.length - 1);
+                      const instruction = `Topshiriqlar (${firstNum}-${lastNum}) va javob (A-${lastLetter}) larni o'zaro moslashtiring.`;
+                      return (
+                        <div className="mb-5 rounded-2xl border border-border overflow-hidden">
+                          <div className="px-4 py-2.5 bg-primary/10 border-b border-border">
+                            <p className="text-sm font-bold text-primary">{instruction}</p>
                           </div>
-                          <span className="text-sm font-semibold">
-                            <MathText text={opt} />
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-4">
-                      {step.questions.map((mq: any, mi: number) => (
-                        <div key={mq.id} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-semibold">
-                              {mq.orderIndex}. <MathText text={mq.questionText} />
-                            </p>
-                            <div className="shrink-0 ml-2 flex items-center gap-1">
-                              <button
-                                onClick={() => setReportTarget({ questionId: mq.id, number: mq.orderIndex })}
-                                className="flex items-center gap-1 px-2 py-1 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                                title="E'tiroz bildirish"
-                              >
-                                <TriangleAlert className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => toggleFlag(mq.id)}
-                                className={`p-1.5 rounded-lg transition-colors ${
-                                  flagged.has(mq.id)
-                                    ? "bg-amber-100 text-amber-600"
-                                    : "hover:bg-muted text-muted-foreground"
-                                }`}
-                                title="Belgilash"
-                              >
-                                <Flag className="w-3.5 h-3.5" />
-                              </button>
+                          {groupPrompt && (
+                            <div className="px-4 py-3 bg-muted/40 border-b border-border">
+                              <p className="text-sm font-semibold leading-relaxed">
+                                <MathText text={groupPrompt} />
+                              </p>
+                            </div>
+                          )}
+                          <div className="flex flex-col md:flex-row">
+                            {/* Chap ustun — rasm va alohida savollar */}
+                            <div className="flex-1 p-4 md:border-r border-border">
+                              {groupImage && (
+                                <img
+                                  src={groupImage}
+                                  alt="savol rasmi"
+                                  className="mb-4 mx-auto block rounded-xl max-h-56 object-contain border border-border"
+                                />
+                              )}
+                              <div className="space-y-4">
+                                {step.questions.map((mq: any) => (
+                                  <div key={mq.id} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <p className="text-sm font-semibold">
+                                        {mq.orderIndex}. <MathText text={mq.questionText} />
+                                      </p>
+                                      <div className="shrink-0 ml-2 flex items-center gap-1">
+                                        <button
+                                          onClick={() => setReportTarget({ questionId: mq.id, number: mq.orderIndex })}
+                                          className="flex items-center gap-1 px-2 py-1 rounded-lg border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                                          title="E'tiroz bildirish"
+                                        >
+                                          <TriangleAlert className="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                          onClick={() => toggleFlag(mq.id)}
+                                          className={`p-1.5 rounded-lg transition-colors ${
+                                            flagged.has(mq.id)
+                                              ? "bg-amber-100 text-amber-600"
+                                              : "hover:bg-muted text-muted-foreground"
+                                          }`}
+                                          title="Belgilash"
+                                        >
+                                          <Flag className="w-3.5 h-3.5" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <select
+                                      value={answers[mq.id] ?? ""}
+                                      onChange={(e) =>
+                                        setAnswers((prev) => ({ ...prev, [mq.id]: Number(e.target.value) }))
+                                      }
+                                      className="w-full px-4 py-3 rounded-xl border-2 border-border text-sm font-semibold bg-background focus:border-primary focus:outline-none"
+                                    >
+                                      <option value="" disabled>
+                                        Javobni tanlang...
+                                      </option>
+                                      {step.questions[0].options.map((_: string, oi: number) => (
+                                        <option key={oi} value={oi}>
+                                          {String.fromCharCode(65 + oi)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* O'ng ustun — umumiy javob banki. Kenglik kontentga moslashadi
+                                (eng uzun variant qancha joy olsa, shuncha), qattiq kenglik
+                                berilmaydi. overflow-visible — .math-text'ning overflow-x-auto
+                                qoidasi tufayli KaTeX kasrlar balandligi kesilib qolmasligi
+                                uchun aniq bekor qilinadi. */}
+                            <div className="p-4 md:w-fit md:max-w-60 md:shrink-0">
+                              <div className="space-y-3">
+                                {step.questions[0].options.map((opt: string, oi: number) => (
+                                  <div key={oi} className="flex items-center gap-2 text-base overflow-visible">
+                                    <span className="font-bold shrink-0">{String.fromCharCode(65 + oi)})</span>
+                                    <span className="font-semibold whitespace-nowrap overflow-visible">
+                                      <MathText text={opt} className="overflow-visible" />
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                          <select
-                            value={answers[mq.id] ?? ""}
-                            onChange={(e) =>
-                              setAnswers((prev) => ({ ...prev, [mq.id]: Number(e.target.value) }))
-                            }
-                            className="w-full px-4 py-3 rounded-xl border-2 border-border text-sm font-semibold bg-background focus:border-primary focus:outline-none"
-                          >
-                            <option value="" disabled>
-                              Javobni tanlang...
-                            </option>
-                            {step.questions[0].options.map((_: string, oi: number) => (
-                              <option key={oi} value={oi}>
-                                {String.fromCharCode(65 + oi)}
-                              </option>
-                            ))}
-                          </select>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })()}
                   </>
                 ) : (
                   <>
-                {/* Question text */}
+                {/* Question text — TWO_PART'da faqat umumiy shart (a/b shartlari pastda,
+                    har biri o'z javob maydoni ustida alohida ko'rsatiladi) */}
                 <div className="text-base font-semibold mb-5 leading-relaxed">
-                  <MathText text={q.questionText} />
+                  <MathText text={twoPart ? twoPart.stem : q.questionText} />
                 </div>
 
                 {/* Question image */}
@@ -660,7 +720,9 @@ function ExamPageContent() {
                 {q.questionType === "TWO_PART" ? (
                   <div className="space-y-6">
                     <div>
-                      <p className="text-sm font-bold text-muted-foreground mb-1">a)</p>
+                      <p className="text-sm font-semibold mb-2 leading-relaxed">
+                        {twoPart?.partA ? <MathText text={twoPart.partA} /> : "a)"}
+                      </p>
                       <SprInput
                         ref={sprRefA}
                         value={String(answers[q.id] ?? "")}
@@ -671,7 +733,9 @@ function ExamPageContent() {
                       />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-muted-foreground mb-1">b)</p>
+                      <p className="text-sm font-semibold mb-2 leading-relaxed">
+                        {twoPart?.partB ? <MathText text={twoPart.partB} /> : "b)"}
+                      </p>
                       <SprInput
                         ref={sprRefB}
                         value={answersB[q.id] ?? ""}

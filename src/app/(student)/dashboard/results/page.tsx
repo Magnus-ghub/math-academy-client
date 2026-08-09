@@ -4,6 +4,7 @@ import { useQuery } from "@apollo/client/react";
 import { Trophy, Clock, CheckCircle, Target } from "lucide-react";
 import Link from "next/link";
 import { GET_MY_RESULTS } from "@/lib/graphql/result";
+import { getResultScoreDisplay } from "@/lib/resultScore";
 
 const typeColors: Record<string, string> = {
   DTM: "bg-primary/10 text-primary",
@@ -17,18 +18,6 @@ const typeColors: Record<string, string> = {
   ATTESTATSIYA_GROUP: "bg-purple-200 text-purple-700",
   MAJBURIY_BLOK_GROUP: "bg-orange-200 text-orange-700",
 };
-
-function scoreColor(score: number) {
-  if (score >= 80) return "text-green-600";
-  if (score >= 60) return "text-amber-500";
-  return "text-red-500";
-}
-
-function scoreLabel(score: number) {
-  if (score >= 80) return "A'lo";
-  if (score >= 60) return "Yaxshi";
-  return "Qoniqarli";
-}
 
 function scoreBg(score: number) {
   if (score >= 80) return "bg-green-500";
@@ -76,7 +65,7 @@ export default function ResultsPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {results.map((result: any) => {
-            const isSat = result.testType === "SAT";
+            const display = getResultScoreDisplay(result);
             return (
             <Link key={result.id} href={`/dashboard/results/${result.id}`}>
               <div className="bg-background border border-border rounded-2xl p-5 hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer flex flex-col gap-3 h-full">
@@ -113,16 +102,16 @@ export default function ResultsPage() {
                           stroke="currentColor" strokeWidth="4"
                           strokeDasharray={`${(result.score / 100) * 113} 113`}
                           strokeLinecap="round"
-                          className={scoreColor(result.score)}
+                          className={display.colorClass}
                         />
                       </svg>
-                      <span className={`absolute inset-0 flex items-center justify-center font-bold ${scoreColor(result.score)} ${isSat ? "text-[10px]" : "text-xs"}`}>
-                        {isSat ? (result.satScore ?? "-") : `${Math.round(result.score)}%`}
+                      <span className={`absolute inset-0 flex items-center justify-center text-center font-bold leading-none px-1 ${display.colorClass} text-[10px]`}>
+                        {display.value}
                       </span>
                     </div>
                     <div>
-                      <p className={`text-sm font-bold ${scoreColor(result.score)}`}>
-                        {isSat ? `${result.satScore ?? "-"} / 800` : scoreLabel(result.score)}
+                      <p className={`text-sm font-bold ${display.colorClass}`}>
+                        {display.label}
                       </p>
                       <p className="text-xs text-muted-foreground">{result.correctAnswers}/{result.totalQuestions} to'g'ri</p>
                     </div>
