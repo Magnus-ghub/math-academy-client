@@ -18,12 +18,12 @@ FORMAT:
 QOIDALAR:
 - correctAnswer: 0=A, 1=B, 2=C, 3=D
 - options da 4 ta variant SHART
-- Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Formulalar: $x^2$ (inline). Kasrlar uchun \\frac EMAS, HAR DOIM \\dfrac ishlating (dfrac kasrni kattaroq va aniqroq ko'rsatadi, hatto matn ichida — inline holatda — bo'lsa ham): $\\dfrac{a}{b}$ (matn ichida ham), yoki $$\\dfrac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
-- Takrorlanuvchi raqamlar/naqsh (masalan "2222...2, 50 ta raqam"): \\underbrace{...}_{\\text{...}} bilan yozing, MASALAN: $\\underbrace{2222\\ldots2}_{50\\ \\text{ta raqam}}$ — natijada raqamlar ostida figurali qavs va izoh chiqadi. MUHIM: bu \\underbrace{}_{}  (pastki belgili) shakl, \\frac{}{} kabi ikkita ketma-ket qavs EMAS, shuning uchun avtomatik $ bilan o'ralmaydi — butun ifodani (pastki izohi bilan birga) qo'lda $ ... $ ichiga oling
+- Takrorlanuvchi raqamlar/naqsh (masalan "2222...2, 50 ta raqam"): \\underbrace{...}_{\\text{...}} bilan yozing, MASALAN: $\\underbrace{2222\\ldots2}_{50\\ \\text{ta raqam}}$ — natijada raqamlar ostida figurali qavs va izoh chiqadi. MUHIM: bu \\underbrace{}_{}  (pastki belgili) shakl, \\dfrac{}{} kabi ikkita ketma-ket qavs EMAS, shuning uchun avtomatik $ bilan o'ralmaydi — butun ifodani (pastki izohi bilan birga) qo'lda $ ... $ ichiga oling
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — MUHIM: agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa (masalan x/y qiymatlar jadvali), o'sha variant matnini ham vergul bilan ajratilgan ro'yxat emas, aynan shu qator-qator formatda yozing: "x | y\\n-5 | 6\\n-6 | 9\\n-8 | -4"
-- analysis: savol bo'yicha AI tahlil matni (ixtiyoriy, bo'sh qoldirsa ham bo'ladi). Ichidagi formulalarni ham $x^2$, $$\\frac{a}{b}$$ kabi LaTeX bilan yozing — oddiy matn emas
+- analysis: savolning TO'LIQ yechim tahlili (ixtiyoriy, bo'sh qoldirsa ham bo'ladi, lekin to'ldirilsa quyidagicha tuzilishda yozing): yechimni aniq qadamlarga bo'ling, har birini "1-qadam:", "2-qadam:" kabi belgilab boshlang; har bir qadamdan keyin bo'sh qator qoldiring (qadamlar orasida "\\n\\n" bo'lsin) — matn bir qatorga tiqilib qolmasin, o'qish oson bo'lsin; oxirida yakuniy javobni alohida qatorda "Javob: ..." deb ko'rsating. Formulalarni ham $x^2$, $\\dfrac{a}{b}$ kabi LaTeX bilan yozing — oddiy matn emas
 - youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;
 
 export const AI_PROMPT_SAT = `Quyidagi SAT Math testini JSON formatiga o'tkazing. Faqat questions massivini qaytaring.
@@ -61,11 +61,11 @@ QOIDALAR:
     kasr      1/2   → correctAnswer: 50
     kasr      3/4   → correctAnswer: 75
 - SAT da har 22 savoldan taxminan 5-6 tasi SPR bo'ladi
-- Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Formulalar: $x^2$ (inline). Kasrlar uchun \\frac EMAS, HAR DOIM \\dfrac ishlating (dfrac kasrni kattaroq va aniqroq ko'rsatadi, hatto matn ichida — inline holatda — bo'lsa ham): $\\dfrac{a}{b}$ (matn ichida ham), yoki $$\\dfrac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — MUHIM: agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa (masalan x/y qiymatlar jadvali), o'sha variant matnini ham vergul bilan ajratilgan ro'yxat emas, aynan shu qator-qator formatda yozing: "x | y\\n-5 | 6\\n-6 | 9\\n-8 | -4"
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
-- analysis: savol bo'yicha AI tahlil matni (ixtiyoriy). Ichidagi formulalarni ham $x^2$, $$\\frac{a}{b}$$ kabi LaTeX bilan yozing — oddiy matn emas
+- analysis: savolning TO'LIQ yechim tahlili (ixtiyoriy, lekin to'ldirilsa quyidagicha tuzilishda yozing): yechimni aniq qadamlarga bo'ling, har birini "1-qadam:", "2-qadam:" kabi belgilab boshlang; har bir qadamdan keyin bo'sh qator qoldiring (qadamlar orasida "\\n\\n" bo'lsin) — matn bir qatorga tiqilib qolmasin, o'qish oson bo'lsin; oxirida yakuniy javobni alohida qatorda "Javob: ..." deb ko'rsating. Formulalarni ham $x^2$, $\\dfrac{a}{b}$ kabi LaTeX bilan yozing — oddiy matn emas
 - youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;
 
 export const AI_PROMPT_MILLIY_SERTIFIKAT = `Quyidagi Milliy Sertifikat matematika testini JSON formatiga o'tkazing. Faqat questions massivini qaytaring.
@@ -78,7 +78,9 @@ Test 45 ta ko'rinadigan savoldan iborat (questions massivida ham 45 ta element b
   "questionImage": null,
   "options": ["A variant", "B variant", "C variant", "D variant"],
   "correctAnswer": 0,
-  "explanation": ""
+  "explanation": "",
+  "analysis": "Bu savolning to'liq, qadam-baqadam yechim tahlili (ixtiyoriy)",
+  "youtubeUrl": ""
 }
 
 2) MATCHING (moslashtirish) — bir nechta ketma-ket savol UMUMIY javob bankidan (masalan A-F, 6 ta) tanlaydi (odatda 33-35 savollar). Bu savollar odatda bitta UMUMIY SHART (masalan piramida/shar haqida chizma va matn) ostida keladi — bu shart alohida savol emas, "groupPrompt" maydonida beriladi, "questionText" esa har bir savolning O'ZIGA XOS QISQA topshirig'i (raqamsiz, umumiy shartsiz):
@@ -89,7 +91,9 @@ Test 45 ta ko'rinadigan savoldan iborat (questions massivida ham 45 ta element b
   "questionText": "Sharning radiusini toping.",
   "questionImage": null,
   "options": ["√2/2", "√3/2", "√3/4", "4√3/9", "1/2", "2/3"],
-  "correctAnswer": 2
+  "correctAnswer": 2,
+  "analysis": "Bu savolning to'liq, qadam-baqadam yechim tahlili (ixtiyoriy)",
+  "youtubeUrl": ""
 },
 {
   "questionType": "MATCHING",
@@ -98,7 +102,9 @@ Test 45 ta ko'rinadigan savoldan iborat (questions massivida ham 45 ta element b
   "questionText": "Sharning piramida yon yoqiga urilgan nuqtasidan piramidaning asosigacha bo'lgan eng qisqa masofani toping.",
   "questionImage": null,
   "options": ["√2/2", "√3/2", "√3/4", "4√3/9", "1/2", "2/3"],
-  "correctAnswer": 4
+  "correctAnswer": 4,
+  "analysis": "Bu savolning to'liq, qadam-baqadam yechim tahlili (ixtiyoriy)",
+  "youtubeUrl": ""
 }
 MUHIM: bir guruhdagi barcha MATCHING savollar bir xil "section" qiymatiga, bir xil "options" bankiga VA bir xil "groupPrompt" matniga ega bo'lishi SHART (ketma-ket joylashtiring). correctAnswer — bu shu bankdagi variant indeksi (0,1,2...), oddiy indeks, ×100 qilinmaydi.
 MUHIM (umumiy shart/groupPrompt): "questionText" ga faqat o'sha savolga xos qisqa topshiriqni yozing (raqamlashsiz — "33." kabi prefiks yozmang, buni interfeys o'zi qo'shadi), umumiy shart matnini "questionText" ichiga QO'SHMANG — u faqat "groupPrompt" da, guruhdagi HAR BIR savolda AYNAN BIR XIL holda takrorlanadi. Agar guruhda umumiy shart/matn bo'lmasa (kamdan-kam), "groupPrompt": null qoldiring.
@@ -110,7 +116,9 @@ MUHIM (chizma/rasm): chizma/rasm matn orqali berilmaydi — "questionImage" har 
   "questionText": "Tenglamani yeching: $x^4-12x^2+16\\\\sqrt{2}x-12=0$\\na) Tenglama nechta turli haqiqiy ildizga ega?\\nb) Tenglamaning turli haqiqiy ildizlari ko'paytmasini toping.",
   "options": [],
   "correctAnswer": 300,
-  "correctAnswerB": -1200
+  "correctAnswerB": -1200,
+  "analysis": "Bu savolning to'liq, qadam-baqadam yechim tahlili (ixtiyoriy)",
+  "youtubeUrl": ""
 }
 MUHIM: TWO_PART uchun "correctAnswer" — "a" javobi, "correctAnswerB" — "b" javobi. Ikkalasi ham ×100 qilib kodlanadi (SPR bilan bir xil qoida):
     butun son  3    → 300
@@ -122,12 +130,14 @@ UMUMIY QOIDALAR:
 - SINGLE: correctAnswer 0=A, 1=B, 2=C, 3=D; options da 4 ta variant SHART
 - MATCHING: correctAnswer — oddiy indeks (×100 QILINMAYDI), options 4 tadan ko'p bo'lishi mumkin; umumiy shart "groupPrompt" da (barcha guruh a'zolarida bir xil), "questionText" faqat qisqa topshiriq (raqamsiz)
 - TWO_PART: options: [] (bo'sh massiv), correctAnswer va correctAnswerB — ikkalasi ham ×100 kodlangan
-- Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Formulalar: $x^2$ (inline). Kasrlar uchun \\frac EMAS, HAR DOIM \\dfrac ishlating (dfrac kasrni kattaroq va aniqroq ko'rsatadi, hatto matn ichida — inline holatda — bo'lsa ham): $\\dfrac{a}{b}$ (matn ichida ham), yoki $$\\dfrac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Takrorlanuvchi raqamlar/naqsh (masalan "2222...2, 50 ta raqam"): \\underbrace{...}_{\\text{...}} bilan yozing, MASALAN: $\\underbrace{2222\\ldots2}_{50\\ \\text{ta raqam}}$ — bu \\underbrace{}_{} (pastki belgili) shakl, avtomatik $ bilan o'ralmaydi, butun ifodani qo'lda $ ... $ ichiga oling
 - Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa, o'sha variant matnini ham shu qator-qator formatda yozing
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
-- TWO_PART savolning "a)" va "b)" qismlarini questionText ichida "\\n" bilan ajratib yozing`;
+- TWO_PART savolning "a)" va "b)" qismlarini questionText ichida "\\n" bilan ajratib yozing
+- analysis: savolning TO'LIQ yechim tahlili (ixtiyoriy, HAR UCH turda — SINGLE, MATCHING, TWO_PART — ham qo'shishingiz mumkin, lekin to'ldirilsa quyidagicha tuzilishda yozing): yechimni aniq qadamlarga bo'ling, har birini "1-qadam:", "2-qadam:" kabi belgilab boshlang; har bir qadamdan keyin bo'sh qator qoldiring (qadamlar orasida "\\n\\n" bo'lsin) — matn bir qatorga tiqilib qolmasin, o'qish oson bo'lsin; oxirida yakuniy javobni alohida qatorda "Javob: ..." deb ko'rsating. Formulalarni ham $x^2$, $\\dfrac{a}{b}$ kabi LaTeX bilan yozing — oddiy matn emas. MATCHING'da analysis har bir sub-savolga alohida yoziladi (groupPrompt kabi umumiy emas)
+- youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy), HAR UCH turda ham qo'shsa bo'ladi`;
 
 export function getAiPrompt(testType: string): string {
   if (testType === "SAT") return AI_PROMPT_SAT;
@@ -151,10 +161,10 @@ FORMAT:
 QOIDALAR:
 - correctAnswer: 0=A, 1=B, 2=C, 3=D
 - options da 4 ta variant SHART
-- Formulalar: $x^2$ (inline), $$\\frac{a}{b}$$ (block)
+- Formulalar: $x^2$ (inline). Kasrlar uchun \\frac EMAS, HAR DOIM \\dfrac ishlating (dfrac kasrni kattaroq va aniqroq ko'rsatadi, hatto matn ichida — inline holatda — bo'lsa ham): $\\dfrac{a}{b}$ (matn ichida ham), yoki $$\\dfrac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Takrorlanuvchi raqamlar/naqsh (masalan "2222...2, 50 ta raqam"): \\underbrace{...}_{\\text{...}} bilan yozing, MASALAN: $\\underbrace{2222\\ldots2}_{50\\ \\text{ta raqam}}$ — bu \\underbrace{}_{} (pastki belgili) shakl, avtomatik $ bilan o'ralmaydi, butun ifodani qo'lda $ ... $ ichiga oling
 - Rasmli savolda questionImage: null, questionText ga "(rasmga qarang)" yozing
 - Jadvallar: qator-qator "ustun1 | ustun2\\nqiymat1 | qiymat2" formatida yozing (yoki <table> HTML) — MUHIM: agar javob varianti (options ichidagi bitta element)ning o'zi jadval bo'lsa (masalan x/y qiymatlar jadvali), o'sha variant matnini ham vergul bilan ajratilgan ro'yxat emas, aynan shu qator-qator formatda yozing: "x | y\\n-5 | 6\\n-6 | 9\\n-8 | -4"
-- analysis: savol bo'yicha AI tahlil matni (ixtiyoriy). Ichidagi formulalarni ham LaTeX bilan yozing
+- analysis: savolning TO'LIQ yechim tahlili (ixtiyoriy, lekin to'ldirilsa quyidagicha tuzilishda yozing): yechimni aniq qadamlarga bo'ling, har birini "1-qadam:", "2-qadam:" kabi belgilab boshlang; har bir qadamdan keyin bo'sh qator qoldiring (qadamlar orasida "\\n\\n" bo'lsin) — matn bir qatorga tiqilib qolmasin, o'qish oson bo'lsin; oxirida yakuniy javobni alohida qatorda "Javob: ..." deb ko'rsating. Formulalarni ham $x^2$, $\\dfrac{a}{b}$ kabi LaTeX bilan yozing — oddiy matn emas
 - youtubeUrl: savol bo'yicha YouTube link (ixtiyoriy)`;
