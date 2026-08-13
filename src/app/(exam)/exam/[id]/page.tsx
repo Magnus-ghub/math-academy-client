@@ -633,8 +633,9 @@ function ExamPageContent() {
                                 {step.questions.map((mq: any) => (
                                   <div key={mq.id} className="border-t border-border/60 pt-4 first:border-t-0 first:pt-0">
                                     <div className="flex items-center justify-between mb-2">
-                                      <p className="text-sm font-semibold">
-                                        {mq.orderIndex}. <MathText text={mq.questionText} />
+                                      <p className="text-sm font-semibold flex-1 min-w-0 flex items-start gap-1">
+                                        <span className="shrink-0">{mq.orderIndex}.</span>
+                                        <MathText text={mq.questionText} className="min-w-0" />
                                       </p>
                                       <div className="shrink-0 ml-2 flex items-center gap-1">
                                         <button
