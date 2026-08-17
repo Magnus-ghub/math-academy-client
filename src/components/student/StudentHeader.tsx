@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Sun, Moon, LogOut, House } from "lucide-react";
+import { Flag, Sun, Moon, LogOut, House } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { useAuthStore } from "@/lib/store/auth.store";
 import { LogoutConfirmModal } from "@/components/LogoutConfirmModal";
 import { GET_UNSEEN_REPORTS_COUNT } from "@/lib/graphql/report";
+import NotificationBell from "@/components/student/NotificationBell";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -70,13 +71,16 @@ export default function StudentHeader() {
             <Moon className="absolute top-2 left-2 h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </button>
 
-          {/* Notification bell */}
+          {/* General notifications (new tests, etc.) */}
+          <NotificationBell />
+
+          {/* Report replies */}
           <Link
             href="/dashboard/reports"
             className="relative p-2 rounded-xl hover:bg-muted transition-colors"
-            title="Bildirishnomalar"
+            title="E'tirozlarim"
           >
-            <Bell className="w-5 h-5 text-muted-foreground" />
+            <Flag className="w-5 h-5 text-muted-foreground" />
             {unseenCount > 0 && (
               <span className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center leading-none">
                 {unseenCount > 99 ? "99+" : unseenCount}

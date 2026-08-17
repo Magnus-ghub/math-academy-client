@@ -58,7 +58,7 @@ const typeLabels: Record<string, string> = {
   ADJUSTMENT: "Admin tuzatishi",
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 100;
 
 export default function AdminPaymentsPage() {
   const [search, setSearch] = useState("");

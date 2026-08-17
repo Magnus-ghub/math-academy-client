@@ -90,11 +90,15 @@ export default function AdminHeader() {
             )}
           </Link>
 
-          {/* Student dashboard — admin ham talaba panelini tekshirishi uchun */}
+          {/* Student dashboard — admin ham talaba panelini tekshirishi uchun.
+              Yangi tabda ochiladi, aks holda admin sessiyasi/ko'rinishi
+              almashtirilib, adminga qaytish qiyinlashadi. */}
           <Link
             href="/dashboard"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title="Talaba panelini ko'rish"
+            title="Talaba panelini ko'rish (yangi oynada)"
           >
             <LayoutDashboard className="w-4 h-4" />
             <span className="hidden sm:inline">Talaba paneli</span>
