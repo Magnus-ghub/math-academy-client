@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { Search, Ban, Pencil, ShieldCheck, Link2, RefreshCw } from "lucide-react";
+import { Search, Ban, Pencil, ShieldCheck, Link2, RefreshCw, Wallet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GET_ALL_USERS, ADMIN_UPDATE_USER } from "@/lib/graphql/user";
 import { ADMIN_GENERATE_LOGIN_LINK, ADMIN_GENERATE_REBIND_LINK } from "@/lib/graphql/auth";
 import { toast } from "sonner";
 import EditUserModal from "@/components/admin/EditUserModal";
+import AdjustBalanceModal from "@/components/admin/AdjustBalanceModal";
 
 const roleColors: Record<string, string> = {
   STUDENT: "bg-gray-100 text-gray-700",
@@ -35,6 +36,7 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [page, setPage] = useState(1);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [adjustingUser, setAdjustingUser] = useState<any>(null);
 
   const { data, loading, refetch } = useQuery<{ getAllUsers: any[] }>(GET_ALL_USERS);
   const users = data?.getAllUsers || [];
@@ -142,6 +144,7 @@ export default function AdminUsersPage() {
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Foydalanuvchi</th>
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Telefon</th>
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Rol</th>
+                <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Balans</th>
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Holat</th>
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Kirish</th>
                 <th className="text-left text-xs font-semibold text-muted-foreground px-4 py-3">Sana</th>
@@ -177,6 +180,9 @@ export default function AdminUsersPage() {
                       {roleLabels[user.userRole]}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-sm font-medium">
+                    {(user.balance ?? 0).toLocaleString("uz-UZ")} so'm
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[user.userStatus] || "bg-gray-100 text-gray-600"}`}>
                       {user.userStatus === "ACTIVE" ? "Faol" : "Bloklangan"}
@@ -196,6 +202,13 @@ export default function AdminUsersPage() {
                         title="Tahrirlash"
                       >
                         <Pencil className="w-3.5 h-3.5 text-blue-600" />
+                      </button>
+                      <button
+                        onClick={() => setAdjustingUser(user)}
+                        className="p-1.5 rounded-lg hover:bg-green-50 transition-colors"
+                        title="Balansni tuzatish"
+                      >
+                        <Wallet className="w-3.5 h-3.5 text-green-600" />
                       </button>
                       {user.telegramId && (
                         <button
@@ -267,6 +280,11 @@ export default function AdminUsersPage() {
       <EditUserModal
         user={editingUser}
         onClose={() => setEditingUser(null)}
+        onSaved={() => refetch()}
+      />
+      <AdjustBalanceModal
+        user={adjustingUser}
+        onClose={() => setAdjustingUser(null)}
         onSaved={() => refetch()}
       />
     </div>

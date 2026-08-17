@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { Clock, FileQuestion, Lock, Trophy, X, FileText, RotateCcw } from "lucide-react";
+import { Clock, FileQuestion, Lock, Crown, Trophy, X, FileText, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { GET_TESTS } from "@/lib/graphql/test";
 import { GET_LEADERBOARD, GET_MY_RESULTS } from "@/lib/graphql/result";
+import { GET_MY_PURCHASED_TEST_IDS } from "@/lib/graphql/payment";
 import PaymentModal from "@/components/PaymentModal";
 import { StartTestModal } from "@/components/StartTestModal";
 import { RetakeExplainModal } from "@/components/RetakeExplainModal";
@@ -220,6 +221,12 @@ export default function StudentTestsPage() {
     (myResultsData?.getMyResults ?? []).map((r: any) => [r.testId, r.id])
   );
 
+  const { data: purchasedData } = useQuery<{ getMyPurchasedTestIds: string[] }>(
+    GET_MY_PURCHASED_TEST_IDS,
+    { fetchPolicy: "cache-and-network" }
+  );
+  const purchasedTestIds = new Set(purchasedData?.getMyPurchasedTestIds ?? []);
+
   const handleMainFilter = (key: string) => {
     setTypeFilter(key);
     setDtmFilter("");
@@ -291,6 +298,8 @@ export default function StudentTestsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((test: any) => {
             const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
+            const isPurchased = test.testAccess === "PREMIUM" && purchasedTestIds.has(test.id);
+            const isUnlocked = test.testAccess === "PUBLIC" || isPurchased;
             return (
             <div
               key={test.id}
@@ -304,6 +313,11 @@ export default function StudentTestsPage() {
                 {test.testAccess === "PUBLIC" ? (
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full">
                     ✓ Bepul
+                  </div>
+                ) : isPurchased ? (
+                  <div className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-full">
+                    <Crown className="w-3 h-3" />
+                    Premium
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground bg-muted border border-border px-2.5 py-1 rounded-full">
@@ -361,7 +375,7 @@ export default function StudentTestsPage() {
               <div className="flex-1" />
 
               {/* Start button */}
-              {test.testAccess === "PUBLIC" && attemptedTestIds.has(test.id) ? (
+              {isUnlocked && attemptedTestIds.has(test.id) ? (
                 <div className="flex gap-2 mt-4">
                   <Link href={`/dashboard/results/${resultByTestId.get(test.id)}`} className="flex-1">
                     <button className="w-full py-2.5 rounded-xl text-sm font-semibold bg-muted text-foreground border border-border hover:bg-muted/70 transition-colors">
@@ -376,7 +390,7 @@ export default function StudentTestsPage() {
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 </div>
-              ) : test.testAccess === "PUBLIC" ? (
+              ) : isUnlocked ? (
                 <button
                   onClick={() => setStartModal(test)}
                   className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white hover:bg-primary/90 transition-colors"

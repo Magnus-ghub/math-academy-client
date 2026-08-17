@@ -16,10 +16,14 @@ export default function AdminDashboardPage() {
   const payments = paymentsData?.getAllPayments || [];
 
   const pendingPayments = payments.filter((p) => p.paymentStatus === "PENDING").length;
-  const confirmedPayments = payments.filter((p) => p.paymentStatus === "CONFIRMED").length;
-  const totalRevenue = payments
-    .filter((p) => p.paymentStatus === "CONFIRMED")
-    .reduce((sum, p) => sum + (p.amount || 0), 0);
+  // Daromad — faqat haqiqiy xaridlar (test/guruh); balans to'ldirish (TOPUP)
+  // va admin tuzatishlari (ADJUSTMENT) kirmaydi — admin/payments sahifasidagi
+  // hisob bilan bir xil mantiq
+  const revenuePayments = payments.filter(
+    (p) => p.paymentStatus === "CONFIRMED" && p.paymentType !== "TOPUP" && p.paymentType !== "ADJUSTMENT"
+  );
+  const confirmedPayments = revenuePayments.length;
+  const totalRevenue = revenuePayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
   const premiumUsers = users.filter((u) => u.userRole === "ACADEM_STUDENT").length;
   const publishedTests = tests.filter((t) => t.testStatus === "PUBLISHED").length;

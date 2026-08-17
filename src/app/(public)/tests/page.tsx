@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
-import { Clock, FileQuestion, Lock, Search, Trophy, X, FileText, RotateCcw } from "lucide-react";
+import { Clock, FileQuestion, Lock, Crown, Search, Trophy, X, FileText, RotateCcw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { GET_PUBLIC_TESTS } from "@/lib/graphql/test";
 import { GET_LEADERBOARD, GET_MY_RESULTS } from "@/lib/graphql/result";
+import { GET_MY_PURCHASED_TEST_IDS } from "@/lib/graphql/payment";
 import { useAuthStore } from "@/lib/store/auth.store";
 import PaymentModal from "@/components/PaymentModal";
 import { StartTestModal } from "@/components/StartTestModal";
@@ -240,8 +241,16 @@ export default function TestsPage() {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
 
+  const { data: purchasedData } = useQuery<{ getMyPurchasedTestIds: string[] }>(
+    GET_MY_PURCHASED_TEST_IDS,
+    { skip: !isAuthenticated, fetchPolicy: "cache-and-network" }
+  );
+  const purchasedTestIds = new Set(purchasedData?.getMyPurchasedTestIds ?? []);
+  const isUnlocked = (test: any) =>
+    test.testAccess === "PUBLIC" || (test.testAccess === "PREMIUM" && purchasedTestIds.has(test.id));
+
   const handleStart = (test: any) => {
-    if (test.testAccess !== "PUBLIC") {
+    if (!isUnlocked(test)) {
       setPaymentTest(test);
       return;
     }
@@ -366,6 +375,7 @@ export default function TestsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((test: any) => {
             const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
+            const isPurchased = test.testAccess === "PREMIUM" && purchasedTestIds.has(test.id);
             return (
             <div
               key={test.id}
@@ -379,6 +389,11 @@ export default function TestsPage() {
                 {test.testAccess === "PUBLIC" ? (
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-3 py-1.5 rounded-full">
                     ✓ Bepul
+                  </div>
+                ) : isPurchased ? (
+                  <div className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-full">
+                    <Crown className="w-3 h-3" />
+                    Premium
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted border border-border px-2 py-1 rounded-full font-semibold">
@@ -436,7 +451,7 @@ export default function TestsPage() {
               <div className="flex-1" />
 
               {/* Start button */}
-              {test.testAccess === "PUBLIC" && attemptedTestIds.has(test.id) ? (
+              {isUnlocked(test) && attemptedTestIds.has(test.id) ? (
                 <div className="flex gap-2 mt-4">
                   <button
                     onClick={() => router.push(`/dashboard/results/${resultByTestId.get(test.id)}`)}
@@ -456,12 +471,12 @@ export default function TestsPage() {
                 <button
                   onClick={() => handleStart(test)}
                   className={`w-full mt-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                    test.testAccess === "PUBLIC"
+                    isUnlocked(test)
                       ? "bg-primary text-white hover:bg-primary/90"
                       : "bg-muted text-muted-foreground border border-border hover:bg-muted/70"
                   }`}
                 >
-                  {test.testAccess === "PUBLIC" ? "Boshlash →" : test.testAccess === "PREMIUM" ? "🔒 Premium" : "🔒 Guruh"}
+                  {isUnlocked(test) ? "Boshlash →" : test.testAccess === "PREMIUM" ? "🔒 Premium" : "🔒 Guruh"}
                 </button>
               )}
             </div>

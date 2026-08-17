@@ -4,6 +4,8 @@ export interface Payment {
   id: string;
   userId: string;
   groupId?: string;
+  testId?: string;
+  testTitle?: string;
   paymentType: PaymentType;
   paymentProvider: PaymentProvider;
   paymentStatus: PaymentStatus;

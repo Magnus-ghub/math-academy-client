@@ -18,11 +18,13 @@ import {
   Info,
   ChevronDown,
   Check,
+  ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { GET_ALL_TESTS, UPDATE_TEST, DELETE_TEST } from "@/lib/graphql/test";
+import { GET_TEST_SALES_STATS } from "@/lib/graphql/payment";
 import CreateTestModal from "@/components/admin/CreateTestModal";
 import { testTypeStyles } from "@/lib/testTypeStyles";
 
@@ -115,6 +117,13 @@ export default function AdminTestsPage() {
     variables: { includeArchived: true },
   });
   const tests = data?.getAllTests || [];
+
+  const { data: salesData } = useQuery<{
+    getTestSalesStats: { testId: string; count: number; revenue: number }[];
+  }>(GET_TEST_SALES_STATS);
+  const salesByTestId = new Map(
+    (salesData?.getTestSalesStats ?? []).map((s) => [s.testId, s])
+  );
 
   const [updateTest] = useMutation(UPDATE_TEST, {
     onCompleted: () => {
@@ -322,6 +331,7 @@ export default function AdminTestsPage() {
           {paginated.map((test: any) => {
             const style = testTypeStyles[test.testType as keyof typeof testTypeStyles];
             const isArchived = test.testStatus === "ARCHIVED";
+            const sales = salesByTestId.get(test.id);
             return (
             <div key={test.id} className={`border rounded-2xl p-5 flex flex-col gap-3 hover:shadow-sm transition-all ${style?.cardBg ?? "bg-background border-border"} ${style?.ring ?? "hover:border-primary/30"} ${isArchived ? "opacity-70 saturate-50" : ""}`}>
               {/* Top badges */}
@@ -369,9 +379,20 @@ export default function AdminTestsPage() {
               </div>
 
               {/* Access */}
-              <span className={`w-fit px-2 py-0.5 rounded-full text-xs font-medium ${accessColors[test.testAccess]}`}>
-                {accessLabels[test.testAccess]}
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`w-fit px-2 py-0.5 rounded-full text-xs font-medium ${accessColors[test.testAccess]}`}>
+                  {accessLabels[test.testAccess]}
+                </span>
+                {test.testAccess === "PREMIUM" && (
+                  <span
+                    className="flex items-center gap-1 w-fit px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700"
+                    title={sales ? `Jami daromad: ${sales.revenue.toLocaleString("uz-UZ")} so'm` : undefined}
+                  >
+                    <ShoppingCart className="w-3 h-3" />
+                    {sales ? `${sales.count} marta sotildi` : "Hali sotilmagan"}
+                  </span>
+                )}
+              </div>
 
               {/* Stats */}
               <div className="flex items-center gap-4 text-xs text-muted-foreground">

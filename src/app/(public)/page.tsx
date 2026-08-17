@@ -10,6 +10,7 @@ import BookSection from "@/components/home/BookSection";
 import HowItWorksSection from "@/components/home/HowItWorksSection";
 import FAQSection from "@/components/home/FAQSection";
 import EventsSection from "@/components/home/EventsSection";
+import ClickPartnerSection from "@/components/home/ClickPartnerSection";
 
 export default function HomePage() {
   return (
@@ -24,6 +25,7 @@ export default function HomePage() {
       <SuccessStoriesSection />
       <TestimonialsSection />
       <FAQSection />
+      <ClickPartnerSection />
       <CTASection />
     </>
   );

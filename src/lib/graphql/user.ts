@@ -62,6 +62,7 @@ export const GET_ALL_USERS = gql`
       userAuthType
       userPhone
       telegramId
+      balance
       createdAt
     }
   }

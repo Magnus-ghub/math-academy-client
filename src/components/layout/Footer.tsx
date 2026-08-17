@@ -100,6 +100,12 @@ export function Footer() {
 
         <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
           <p>© 2026 Saidxonov Academy. Barcha huquqlar himoyalangan.</p>
+          <div className="flex items-center gap-1.5 text-xs">
+            <span>To'lovlar</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/click-logo.svg" alt="Click" className="h-3.5 w-auto" />
+            <span>bilan rasmiy hamkorlikda amalga oshiriladi</span>
+          </div>
           <p className="text-xs">
             <span className="text-primary font-semibold">Saidxonov Academy</span> — Matematika tayyorgarlik platformasi
           </p>
