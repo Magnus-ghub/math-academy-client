@@ -1032,14 +1032,23 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={q.uploading}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+              <div
+                tabIndex={0}
+                onPaste={(e) => { e.stopPropagation(); extractPastedImage(e, onImagePick); }}
+                className="flex items-center gap-2 flex-wrap focus:outline-none"
               >
-                {q.uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
-                {q.uploading ? "Yuklanmoqda..." : "Rasm biriktirish (guruhning umumiy chizmasi)"}
-              </button>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={q.uploading}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                >
+                  {q.uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                  {q.uploading ? "Yuklanmoqda..." : "Rasm biriktirish (guruhning umumiy chizmasi)"}
+                </button>
+                {!q.uploading && (
+                  <span className="text-xs text-muted-foreground">yoki shu yerga bosib <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-xs">Ctrl+V</kbd> bilan rasmni joylashtiring</span>
+                )}
+              </div>
             )}
             <input ref={fileRef} type="file" accept="image/*" className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) onImagePick(f); e.target.value = ""; }} />

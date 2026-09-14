@@ -14,10 +14,12 @@ import {
   LayoutGrid,
   X,
   Calculator,
+  BookOpen,
 } from "lucide-react";
 import { ReportQuestionModal } from "@/components/ReportQuestionModal";
 import { RequestRetakeModal } from "@/components/RequestRetakeModal";
 import { FloatingCalculator } from "@/components/FloatingCalculator";
+import { MilliyFormulaSheet } from "@/components/MilliyFormulaSheet";
 import { PracticeResultScreen } from "@/components/PracticeResultScreen";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
@@ -77,6 +79,7 @@ function ExamPageContent() {
   const sprRefB = useRef<SprInputHandle>(null);
   const [showGrid, setShowGrid] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
+  const [showRef, setShowRef] = useState(false);
   const [reportTarget, setReportTarget] = useState<{
     questionId: string;
     number: number;
@@ -238,7 +241,7 @@ function ExamPageContent() {
   // Klaviaturaning chap/o'ng strelkalari — Oldingi/Keyingi tugmalariga bog'langan
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!examActiveRef.current || showConfirm || showGrid || showCalc || reportTarget) return;
+      if (!examActiveRef.current || showConfirm || showGrid || showCalc || showRef || reportTarget) return;
 
       if (e.key === "ArrowLeft") {
         setCurrentIndex((i) => Math.max(0, i - 1));
@@ -249,7 +252,7 @@ function ExamPageContent() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [showConfirm, showGrid, showCalc, reportTarget, isLast, totalSteps]);
+  }, [showConfirm, showGrid, showCalc, showRef, reportTarget, isLast, totalSteps]);
 
   useEffect(() => {
     if (test?.duration && timeLeft === 0) {
@@ -308,6 +311,8 @@ function ExamPageContent() {
                   questionId: q.id,
                   selectedAnswer: parseSprAnswer(String(answers[q.id] ?? "")),
                   selectedAnswerB: parseSprAnswer(String(answersB[q.id] ?? "")),
+                  selectedAnswerText: String(answers[q.id] ?? ""),
+                  selectedAnswerBText: String(answersB[q.id] ?? ""),
                   timeSpent: 0,
                 }
               : {
@@ -437,7 +442,11 @@ function ExamPageContent() {
     <>
       {/* ── HEADER ── */}
       <header className="shrink-0 bg-background border-b border-border px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center gap-4">
+        <div
+          className={`max-w-5xl mx-auto flex items-center gap-4 transition-[margin] duration-300 ${
+            showRef && isMilliySertifikat ? "md:mr-112" : ""
+          }`}
+        >
           {isRetake && (
             <button
               onClick={() => {
@@ -485,8 +494,8 @@ function ExamPageContent() {
             </p>
           </div>
 
-          {/* Calculator (Attestatsiya va Milliy Sertifikat) */}
-          {(isAttestatsiya || isMilliySertifikat) && (
+          {/* Calculator (Attestatsiya) */}
+          {isAttestatsiya && (
             <button
               onClick={() => setShowCalc((v) => !v)}
               className={`shrink-0 p-2 rounded-xl transition-colors ${
@@ -497,6 +506,20 @@ function ExamPageContent() {
               title="Kalkulyator"
             >
               <Calculator className="w-4 h-4" />
+            </button>
+          )}
+          {/* Reference (Milliy Sertifikat) */}
+          {isMilliySertifikat && (
+            <button
+              onClick={() => setShowRef((v) => !v)}
+              className={`shrink-0 p-2 rounded-xl transition-colors ${
+                showRef
+                  ? "bg-primary text-white"
+                  : "hover:bg-muted text-muted-foreground"
+              }`}
+              title="Formulalar"
+            >
+              <BookOpen className="w-4 h-4" />
             </button>
           )}
           {/* Timer */}
@@ -524,7 +547,11 @@ function ExamPageContent() {
       </header>
 
       {/* ── BODY ── */}
-      <div className="flex flex-1 overflow-hidden max-w-5xl mx-auto w-full">
+      <div
+        className={`flex flex-1 overflow-hidden max-w-5xl mx-auto w-full transition-[margin] duration-300 ${
+          showRef && isMilliySertifikat ? "md:mr-112" : ""
+        }`}
+      >
         {/* ── LEFT: Single question ── */}
         <main className={`flex-1 overflow-y-auto px-4 py-6 flex flex-col ${activeSprPart ? "pb-95 md:pb-6" : ""}`}>
           {step && (
@@ -660,19 +687,31 @@ function ExamPageContent() {
                                     </div>
                                     <select
                                       value={answers[mq.id] ?? ""}
-                                      onChange={(e) =>
-                                        setAnswers((prev) => ({ ...prev, [mq.id]: Number(e.target.value) }))
-                                      }
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setAnswers((prev) => {
+                                          if (val === "") {
+                                            const next = { ...prev };
+                                            delete next[mq.id];
+                                            return next;
+                                          }
+                                          return { ...prev, [mq.id]: Number(val) };
+                                        });
+                                      }}
                                       className="w-full px-4 py-3 rounded-xl border-2 border-border text-sm font-semibold bg-background focus:border-primary focus:outline-none"
                                     >
-                                      <option value="" disabled>
-                                        Javobni tanlang...
-                                      </option>
-                                      {step.questions[0].options.map((_: string, oi: number) => (
-                                        <option key={oi} value={oi}>
-                                          {String.fromCharCode(65 + oi)}
-                                        </option>
-                                      ))}
+                                      <option value="">Javobni tanlang...</option>
+                                      {step.questions[0].options.map((_: string, oi: number) => {
+                                        const takenByOther = step.questions.some(
+                                          (other: any) => other.id !== mq.id && answers[other.id] === oi
+                                        );
+                                        if (takenByOther) return null;
+                                        return (
+                                          <option key={oi} value={oi}>
+                                            {String.fromCharCode(65 + oi)}
+                                          </option>
+                                        );
+                                      })}
                                     </select>
                                   </div>
                                 ))}
@@ -719,7 +758,7 @@ function ExamPageContent() {
                 )}
 
                 {q.questionType === "TWO_PART" ? (
-                  <div className="space-y-6">
+                  <div className="space-y-3">
                     <div>
                       <p className="text-sm font-semibold mb-2 leading-relaxed">
                         {twoPart?.partA ? <MathText text={twoPart.partA} /> : "a)"}
@@ -728,8 +767,8 @@ function ExamPageContent() {
                         ref={sprRefA}
                         value={String(answers[q.id] ?? "")}
                         onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
-                        maxLength={12}
                         useVirtualKeyboard={isMilliySertifikat}
+                        showPreview={!isMilliySertifikat}
                         onFocus={() => setActiveSprPart("a")}
                       />
                     </div>
@@ -741,8 +780,8 @@ function ExamPageContent() {
                         ref={sprRefB}
                         value={answersB[q.id] ?? ""}
                         onChange={(v) => setAnswersB((prev) => ({ ...prev, [q.id]: v }))}
-                        maxLength={12}
                         useVirtualKeyboard={isMilliySertifikat}
+                        showPreview={!isMilliySertifikat}
                         onFocus={() => setActiveSprPart("b")}
                       />
                     </div>
@@ -1095,8 +1134,13 @@ function ExamPageContent() {
       )}
 
       {/* ── CALCULATOR ── */}
-      {showCalc && (isAttestatsiya || isMilliySertifikat) && (
+      {showCalc && isAttestatsiya && (
         <FloatingCalculator onClose={() => setShowCalc(false)} />
+      )}
+
+      {/* ── REFERENCE SHEET ── */}
+      {showRef && isMilliySertifikat && (
+        <MilliyFormulaSheet onClose={() => setShowRef(false)} />
       )}
 
       {/* ── REPORT MODAL ── */}

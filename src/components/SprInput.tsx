@@ -27,9 +27,16 @@ export const SprInput = forwardRef<SprInputHandle, {
   maxLength?: number;
   onFocus?: () => void;
   useVirtualKeyboard?: boolean;
-}>(function SprInput({ value, onChange, maxLength = 6, onFocus, useVirtualKeyboard = false }, ref) {
+  showPreview?: boolean;
+}>(function SprInput({ value, onChange, maxLength, onFocus, useVirtualKeyboard = false, showPreview = true }, ref) {
   const ALLOWED = /^-?[\d./]*$/;
-  const boxWidth = 130 + Math.max(0, maxLength - 6) * 16;
+  // Input kengligi maxLength'ga emas, haqiqiy yozilgan matn uzunligiga
+  // qarab o'sadi — Milliy Sertifikatda cheklov yo'q (uzunroq formula ham
+  // yozilishi mumkin), shuning uchun kenglik ham shunga moslashadi.
+  const boxWidth = Math.min(340, Math.max(160, 40 + value.length * 16));
+  // Kasr/formula kabi uzunroq javob yozilganda raqam inputga moslashib
+  // birozgina kichrayadi — aks holda qutidan toshib chiqib ketadi.
+  const fontSize = value.length > 6 ? Math.max(13, 18 - (value.length - 6) * 1.1) : 18;
   const inputRef = useRef<HTMLInputElement>(null);
   const cursorRef = useRef({ start: value.length, end: value.length });
 
@@ -50,7 +57,7 @@ export const SprInput = forwardRef<SprInputHandle, {
     insertAtCursor: (text: string) => {
       const { start, end } = cursorRef.current;
       const next = value.slice(0, start) + text + value.slice(end);
-      if (next.length > maxLength) return;
+      if (maxLength != null && next.length > maxLength) return;
       onChange(next);
       placeCursor(start + text.length);
     },
@@ -72,11 +79,16 @@ export const SprInput = forwardRef<SprInputHandle, {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
-    if (v.length <= maxLength && ALLOWED.test(v)) onChange(v);
+    if ((maxLength == null || v.length <= maxLength) && ALLOWED.test(v)) onChange(v);
   };
 
+  // Kasr ("7/2") yozilganda inputning o'zi ichida qog'ozdagidek tepa/past
+  // ko'rinishda (KaTeX) ko'rsatiladi — pastki matn shaffof qilinadi, real
+  // input esa (kursor/klaviatura ishlashi uchun) joyida qoladi.
+  const frac = value.match(/^(-?\d+)\/(\d+)$/);
+
   return (
-    <div className="mt-6">
+    <div>
       {/* Input box — SAT style */}
       <div className="flex flex-col items-start gap-4">
         <div className="relative" style={{ width: boxWidth }}>
@@ -96,14 +108,16 @@ export const SprInput = forwardRef<SprInputHandle, {
               width: boxWidth,
               height: 52,
               fontFamily: "monospace",
-              fontSize: 22,
-              fontWeight: 600,
+              fontSize,
+              fontWeight: 500,
               textAlign: "center",
               border: "2px solid #6b7280",
+              borderRadius: 12,
               background: "#fff",
               outline: "none",
               letterSpacing: "0.1em",
-              color: "#111827",
+              color: frac ? "transparent" : "#111827",
+              caretColor: frac ? "transparent" : "auto",
               display: "block",
               cursor: useVirtualKeyboard ? "default" : "text",
             }}
@@ -121,17 +135,14 @@ export const SprInput = forwardRef<SprInputHandle, {
             }}
             onBlur={(e) => (e.target.style.borderColor = "#6b7280")}
           />
-          {/* bottom underline like real SAT */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 3,
-              background: "#6b7280",
-            }}
-          />
+          {frac && (
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ pointerEvents: "none", fontSize: Math.min(fontSize, 20) }}
+            >
+              <MathText text={`$$\\frac{${frac[1]}}{${frac[2]}}$$`} />
+            </div>
+          )}
         </div>
 
         {/* Clear */}
@@ -146,24 +157,26 @@ export const SprInput = forwardRef<SprInputHandle, {
       </div>
 
       {/* Answer Preview — like real SAT */}
-      <div className="mt-6 border-t border-gray-200 pt-4">
-        <p className="text-sm font-bold text-gray-700 mb-1">Answer Preview:</p>
-        <div style={{ minHeight: 36, fontSize: 20 }}>
-          {(() => {
-            const frac = value.match(/^(-?\d+)\/(\d+)$/);
-            if (frac) return <MathText text={`$$\\frac{${frac[1]}}{${frac[2]}}$$`} />;
-            return <span style={{ fontFamily: "monospace", fontSize: 22 }}>{value}</span>;
-          })()}
+      {showPreview && (
+        <div className="mt-6 border-t border-gray-200 pt-4">
+          <p className="text-sm font-bold text-gray-700 mb-1">Answer Preview:</p>
+          <div style={{ minHeight: 36, fontSize: 20 }}>
+            {frac
+              ? <MathText text={`$$\\frac{${frac[1]}}{${frac[2]}}$$`} />
+              : <span style={{ fontFamily: "monospace", fontSize: 22 }}>{value}</span>}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Accepted formats */}
-      <p className="mt-3 text-xs text-gray-400">
-        Formatlar:{" "}
-        <span className="font-mono">3.5</span> ·{" "}
-        <span className="font-mono">7/2</span> ·{" "}
-        <span className="font-mono">-4</span>
-      </p>
+      {showPreview && (
+        <p className="mt-3 text-xs text-gray-400">
+          Formatlar:{" "}
+          <span className="font-mono">3.5</span> ·{" "}
+          <span className="font-mono">7/2</span> ·{" "}
+          <span className="font-mono">-4</span>
+        </p>
+      )}
     </div>
   );
 });

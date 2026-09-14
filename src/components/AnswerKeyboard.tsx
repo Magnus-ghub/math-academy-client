@@ -102,23 +102,23 @@ export function AnswerKeyboard({ onInsert, onBackspace, onMoveCursor, onClose, o
   const advancedRows: B[][] = [
     [
       { t: "□/□", a: () => onInsert("/"), c: sci },
-      { t: "□²", a: () => onInsert("^2"), c: sci },
+      { t: "□²", a: () => onInsert("²"), c: sci },
       { t: "□^□", a: () => onInsert("^"), c: sci },
       { t: "sin(□)", a: () => onInsert("sin("), c: sci },
-      { t: "sin⁻¹(□)", a: () => onInsert("asin("), c: sci },
+      { t: "sin⁻¹(□)", a: () => onInsert("sin⁻¹("), c: sci },
     ],
     [
-      { t: "√□", a: () => onInsert("sqrt("), c: sci },
-      { t: "ⁿ√□", a: () => onInsert("root("), c: sci },
+      { t: "√□", a: () => onInsert("√"), c: sci },
+      { t: "ⁿ√□", a: () => onInsert("ⁿ√"), c: sci },
       { t: "cos(□)", a: () => onInsert("cos("), c: sci },
-      { t: "cos⁻¹(□)", a: () => onInsert("acos("), c: sci },
+      { t: "cos⁻¹(□)", a: () => onInsert("cos⁻¹("), c: sci },
       { t: "", a: () => {}, c: "invisible" },
     ],
     [
       { t: "log□(□)", a: () => onInsert("log("), c: sci },
       { t: "ln(□)", a: () => onInsert("ln("), c: sci },
       { t: "tan(□)", a: () => onInsert("tan("), c: sci },
-      { t: "tan⁻¹(□)", a: () => onInsert("atan("), c: sci },
+      { t: "tan⁻¹(□)", a: () => onInsert("tan⁻¹("), c: sci },
       { t: "", a: () => {}, c: "invisible" },
     ],
     [

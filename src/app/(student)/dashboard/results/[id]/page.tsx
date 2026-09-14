@@ -589,7 +589,11 @@ export default function ResultDetailPage() {
                             <p>
                               <span className="text-muted-foreground">Sizning javobingiz: </span>
                               <span className={`font-semibold ${answer.isCorrect ? "text-green-700" : "text-red-600"}`}>
-                                {answer.selectedAnswer === -1 ? "Javob belgilanmagan" : answer.selectedAnswer / 100}
+                                {answer.selectedAnswerText?.trim()
+                                  ? answer.selectedAnswerText
+                                  : answer.selectedAnswer === -1
+                                  ? "Javob belgilanmagan"
+                                  : answer.selectedAnswer / 100}
                               </span>
                             </p>
                             {!answer.isCorrect && (
@@ -606,7 +610,9 @@ export default function ResultDetailPage() {
                             <p>
                               <span className="text-muted-foreground">Sizning javobingiz: </span>
                               <span className={`font-semibold ${answer.isCorrectB ? "text-green-700" : "text-red-600"}`}>
-                                {answer.selectedAnswerB == null || answer.selectedAnswerB === -1
+                                {answer.selectedAnswerBText?.trim()
+                                  ? answer.selectedAnswerBText
+                                  : answer.selectedAnswerB == null || answer.selectedAnswerB === -1
                                   ? "Javob belgilanmagan"
                                   : answer.selectedAnswerB / 100}
                               </span>

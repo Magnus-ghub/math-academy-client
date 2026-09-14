@@ -16,6 +16,8 @@ export const SUBMIT_TEST = gql`
         questionId
         selectedAnswer
         selectedAnswerB
+        selectedAnswerText
+        selectedAnswerBText
         isCorrect
         isCorrectB
         timeSpent
@@ -76,6 +78,8 @@ export const GET_RESULT = gql`
         questionId
         selectedAnswer
         selectedAnswerB
+        selectedAnswerText
+        selectedAnswerBText
         isCorrect
         isCorrectB
         timeSpent
