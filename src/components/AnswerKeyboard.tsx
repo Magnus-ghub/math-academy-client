@@ -9,11 +9,37 @@ interface Props {
   onMoveCursor: (dir: -1 | 1) => void;
   onClose: () => void;
   onDone: () => void;
+  // Fokuslangan input maydonining ekrandagi joyi — shunga qarab klaviatura
+  // imkon bo'lsa uning ostiga, joy yetmasa ustiga qo'yiladi (input ustiga
+  // chiqib, uni to'sib qo'ymasligi uchun).
+  anchorRect?: DOMRect | null;
+}
+
+const KEYBOARD_WIDTH = 340;
+const KEYBOARD_EST_HEIGHT = 320;
+const SCREEN_MARGIN = 12;
+
+const HORIZONTAL_OFFSET = 240;
+
+function computeAnchoredPos(anchorRect?: DOMRect | null) {
+  if (typeof window === "undefined" || !anchorRect) return { x: 40, y: 80 };
+  let x = anchorRect.left + HORIZONTAL_OFFSET;
+  let y = anchorRect.bottom + SCREEN_MARGIN;
+  // Pastda joy yetmasa — inputning ustiga EMAS (u yerda savol matni/rasmi
+  // bo'lishi mumkin), ekranning pastki chetiga tirab qo'yamiz. Shu holda
+  // klaviatura hamisha ko'rinadigan joyda turadi va savol kontentini
+  // to'smaydi.
+  if (y + KEYBOARD_EST_HEIGHT > window.innerHeight - SCREEN_MARGIN) {
+    y = Math.max(SCREEN_MARGIN, window.innerHeight - KEYBOARD_EST_HEIGHT - SCREEN_MARGIN);
+  }
+  x = Math.min(x, window.innerWidth - KEYBOARD_WIDTH - SCREEN_MARGIN);
+  x = Math.max(SCREEN_MARGIN, x);
+  return { x, y };
 }
 
 // Real SAT'dagi "Answer entry keyboard"ga o'xshash — hisoblamaydi, faqat
 // bosilgan belgini javob maydoniga (kursor turgan joyga) yozadi.
-export function AnswerKeyboard({ onInsert, onBackspace, onMoveCursor, onClose, onDone }: Props) {
+export function AnswerKeyboard({ onInsert, onBackspace, onMoveCursor, onClose, onDone, anchorRect }: Props) {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -22,7 +48,7 @@ export function AnswerKeyboard({ onInsert, onBackspace, onMoveCursor, onClose, o
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const [pos, setPos] = useState({ x: 40, y: 80 });
+  const [pos, setPos] = useState(() => computeAnchoredPos(anchorRect));
   const dragging = useRef(false);
   const offset = useRef({ x: 0, y: 0 });
   const onDragStart = (e: React.MouseEvent) => {

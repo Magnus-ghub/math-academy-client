@@ -75,6 +75,7 @@ function ExamPageContent() {
   // umumiy AnswerKeyboard shulardan qaysi biri faol bo'lsa o'shanga yoziladi,
   // shunda ikkalasi uchun alohida-alohida ikkita klaviatura chiqmaydi.
   const [activeSprPart, setActiveSprPart] = useState<"a" | "b" | null>(null);
+  const [sprAnchorRect, setSprAnchorRect] = useState<DOMRect | null>(null);
   const sprRefA = useRef<SprInputHandle>(null);
   const sprRefB = useRef<SprInputHandle>(null);
   const [showGrid, setShowGrid] = useState(false);
@@ -242,6 +243,11 @@ function ExamPageContent() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!examActiveRef.current || showConfirm || showGrid || showCalc || showRef || reportTarget) return;
+      // Talaba SPR inputida (endi kompyuter klaviaturasidan ham yozadi)
+      // matn ichida strelkalar bilan kursorni siljitayotganda savol
+      // almashib ketmasin.
+      const tag = (document.activeElement?.tagName ?? "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
 
       if (e.key === "ArrowLeft") {
         setCurrentIndex((i) => Math.max(0, i - 1));
@@ -769,7 +775,7 @@ function ExamPageContent() {
                         onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
                         useVirtualKeyboard={isMilliySertifikat}
                         showPreview={!isMilliySertifikat}
-                        onFocus={() => setActiveSprPart("a")}
+                        onFocus={(rect) => { setActiveSprPart("a"); setSprAnchorRect(rect); }}
                       />
                     </div>
                     <div>
@@ -782,11 +788,13 @@ function ExamPageContent() {
                         onChange={(v) => setAnswersB((prev) => ({ ...prev, [q.id]: v }))}
                         useVirtualKeyboard={isMilliySertifikat}
                         showPreview={!isMilliySertifikat}
-                        onFocus={() => setActiveSprPart("b")}
+                        onFocus={(rect) => { setActiveSprPart("b"); setSprAnchorRect(rect); }}
                       />
                     </div>
                     {isMilliySertifikat && activeSprPart && (
                       <AnswerKeyboard
+                        key={activeSprPart}
+                        anchorRect={sprAnchorRect}
                         onInsert={(t) => (activeSprPart === "a" ? sprRefA : sprRefB).current?.insertAtCursor(t)}
                         onBackspace={() => (activeSprPart === "a" ? sprRefA : sprRefB).current?.backspaceAtCursor()}
                         onMoveCursor={(d) => (activeSprPart === "a" ? sprRefA : sprRefB).current?.moveCursor(d)}

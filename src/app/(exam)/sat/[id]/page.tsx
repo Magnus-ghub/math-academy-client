@@ -173,6 +173,10 @@ function SatExamPageContent() {
       ) {
         return;
       }
+      // SPR inputida matn ichida strelka bilan kursor siljitilayotganda
+      // savol almashib ketmasin.
+      const tag = (document.activeElement?.tagName ?? "").toLowerCase();
+      if (tag === "input" || tag === "textarea") return;
 
       if (e.key === "ArrowLeft") {
         setIdx((i) => Math.max(0, i - 1));
