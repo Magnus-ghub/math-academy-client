@@ -44,10 +44,12 @@ export function splitTwoPartText(text: string): { stem: string; partA: string; p
 }
 
 // SAT SPR javoblarini backend bilan bir xil encoding'da son ko'rinishga o'giradi (masalan "7/2" -> 350)
+// Milliy Sertifikat (MathLive) LaTeX ("\frac{7}{2}") qaytarganda ham ishlaydi.
 export function parseSprAnswer(raw: string): number {
   const s = raw.trim()
   if (!s) return -1
-  const fraction = s.match(/^(-?\d+)\/(\d+)$/)
+  const latexFraction = s.match(/^\\frac\{(-?\d+)\}\{(-?\d+)\}$/)
+  const fraction = latexFraction || s.match(/^(-?\d+)\/(\d+)$/)
   if (fraction) {
     const den = parseInt(fraction[2], 10)
     if (den === 0) return -1

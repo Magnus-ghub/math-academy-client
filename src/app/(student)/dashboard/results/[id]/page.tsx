@@ -590,7 +590,7 @@ export default function ResultDetailPage() {
                               <span className="text-muted-foreground">Sizning javobingiz: </span>
                               <span className={`font-semibold ${answer.isCorrect ? "text-green-700" : "text-red-600"}`}>
                                 {answer.selectedAnswerText?.trim()
-                                  ? answer.selectedAnswerText
+                                  ? <MathText text={`$${answer.selectedAnswerText}$`} />
                                   : answer.selectedAnswer === -1
                                   ? "Javob belgilanmagan"
                                   : answer.selectedAnswer / 100}
@@ -611,7 +611,7 @@ export default function ResultDetailPage() {
                               <span className="text-muted-foreground">Sizning javobingiz: </span>
                               <span className={`font-semibold ${answer.isCorrectB ? "text-green-700" : "text-red-600"}`}>
                                 {answer.selectedAnswerBText?.trim()
-                                  ? answer.selectedAnswerBText
+                                  ? <MathText text={`$${answer.selectedAnswerBText}$`} />
                                   : answer.selectedAnswerB == null || answer.selectedAnswerB === -1
                                   ? "Javob belgilanmagan"
                                   : answer.selectedAnswerB / 100}

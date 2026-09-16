@@ -25,8 +25,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { GET_TEST, GET_QUESTIONS } from "@/lib/graphql/test";
 import { SUBMIT_TEST, CHECK_MY_ATTEMPT } from "@/lib/graphql/result";
 import { MathText } from "@/components/MathText";
-import { SprInput, SprInputHandle } from "@/components/SprInput";
-import { AnswerKeyboard } from "@/components/AnswerKeyboard";
+import { MathLiveInput } from "@/components/MathLiveInput";
 import { parseSprAnswer, splitTwoPartText } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthStore } from "@/lib/store/auth.store";
@@ -71,13 +70,6 @@ function ExamPageContent() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [startTime] = useState(Date.now());
   const [currentIndex, setCurrentIndex] = useState(0);
-  // TWO_PART (Milliy Sertifikat) savolida ikkita input (a/b) bor — bitta
-  // umumiy AnswerKeyboard shulardan qaysi biri faol bo'lsa o'shanga yoziladi,
-  // shunda ikkalasi uchun alohida-alohida ikkita klaviatura chiqmaydi.
-  const [activeSprPart, setActiveSprPart] = useState<"a" | "b" | null>(null);
-  const [sprAnchorRect, setSprAnchorRect] = useState<DOMRect | null>(null);
-  const sprRefA = useRef<SprInputHandle>(null);
-  const sprRefB = useRef<SprInputHandle>(null);
   const [showGrid, setShowGrid] = useState(false);
   const [showCalc, setShowCalc] = useState(false);
   const [showRef, setShowRef] = useState(false);
@@ -265,11 +257,6 @@ function ExamPageContent() {
       setTimeLeft(test.duration * 60);
     }
   }, [test]);
-
-  // Boshqa savolga o'tganda klaviatura oldingi savolda ochiq qolib ketmasin.
-  useEffect(() => {
-    setActiveSprPart(null);
-  }, [currentIndex]);
 
   useEffect(() => {
     if (isFinished || timeLeft <= 0) return;
@@ -559,7 +546,7 @@ function ExamPageContent() {
         }`}
       >
         {/* ── LEFT: Single question ── */}
-        <main className={`flex-1 overflow-y-auto px-4 py-6 flex flex-col ${activeSprPart ? "pb-95 md:pb-6" : ""}`}>
+        <main className="flex-1 overflow-y-auto px-4 py-6 flex flex-col">
           {step && (
             <div className="flex-1">
               {/* Question card */}
@@ -769,39 +756,20 @@ function ExamPageContent() {
                       <p className="text-sm font-semibold mb-2 leading-relaxed">
                         {twoPart?.partA ? <MathText text={twoPart.partA} /> : "a)"}
                       </p>
-                      <SprInput
-                        ref={sprRefA}
+                      <MathLiveInput
                         value={String(answers[q.id] ?? "")}
                         onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
-                        useVirtualKeyboard={isMilliySertifikat}
-                        showPreview={!isMilliySertifikat}
-                        onFocus={(rect) => { setActiveSprPart("a"); setSprAnchorRect(rect); }}
                       />
                     </div>
                     <div>
                       <p className="text-sm font-semibold mb-2 leading-relaxed">
                         {twoPart?.partB ? <MathText text={twoPart.partB} /> : "b)"}
                       </p>
-                      <SprInput
-                        ref={sprRefB}
-                        value={answersB[q.id] ?? ""}
+                      <MathLiveInput
+                        value={String(answersB[q.id] ?? "")}
                         onChange={(v) => setAnswersB((prev) => ({ ...prev, [q.id]: v }))}
-                        useVirtualKeyboard={isMilliySertifikat}
-                        showPreview={!isMilliySertifikat}
-                        onFocus={(rect) => { setActiveSprPart("b"); setSprAnchorRect(rect); }}
                       />
                     </div>
-                    {isMilliySertifikat && activeSprPart && (
-                      <AnswerKeyboard
-                        key={activeSprPart}
-                        anchorRect={sprAnchorRect}
-                        onInsert={(t) => (activeSprPart === "a" ? sprRefA : sprRefB).current?.insertAtCursor(t)}
-                        onBackspace={() => (activeSprPart === "a" ? sprRefA : sprRefB).current?.backspaceAtCursor()}
-                        onMoveCursor={(d) => (activeSprPart === "a" ? sprRefA : sprRefB).current?.moveCursor(d)}
-                        onClose={() => setActiveSprPart(null)}
-                        onDone={() => setActiveSprPart(null)}
-                      />
-                    )}
                   </div>
                 ) : (
                   <div className="space-y-2.5">
