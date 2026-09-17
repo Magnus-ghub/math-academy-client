@@ -1,8 +1,83 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { MathfieldElement } from "mathlive";
+import type { MathfieldElement, VirtualKeyboardLayout } from "mathlive";
 import "mathlive/fonts.css";
+import { initKeyboardDrag } from "@/lib/mathliveKeyboardDrag";
+
+// Eski (qo'lda qurilgan) AnswerKeyboard'dagi aynan shu tugmalar to'plami —
+// standart MathLive klaviaturasi juda ko'p (harflar, yunon, ramzlar)
+// qatlamlarni ko'rsatib, Milliy Sertifikat uchun ortiqcha edi. Ikki qatlam:
+// "numeric" (raqamlar, standart) va "functions" (kasr/ildiz/trigonometrik —
+// pastki chap tugma bilan ochiladi, "123" bilan qaytiladi).
+const SMALL = "small";
+// Belgi tugmalarining "□" ikonkasi — \Box amssymb buyrug'i KaTeX/MathLive'da
+// qo'llab-quvvatlanadi, haqiqiy matematik shrift bilan render bo'ladi.
+const CUSTOM_LAYOUT: VirtualKeyboardLayout = {
+  layers: [
+    {
+      id: "numeric",
+      rows: [
+        [
+          { latex: "x", class: SMALL },
+          { latex: "y", class: SMALL },
+          { latex: "\\pi", class: SMALL },
+          { latex: "e", class: SMALL },
+          { latex: "\\Box^\\circ", insert: "#@^{\\circ}", class: SMALL },
+        ],
+        ["7", "8", "9", "\\times", { latex: "\\div", insert: "\\frac{#@}{#?}" }],
+        ["4", "5", "6", "+", "-"],
+        ["1", "2", "3", ".", "[backspace]"],
+        [
+          { label: "<span style='display:flex;flex-direction:column;line-height:1.05;font-size:10px'>sin<span>&radic;x&sup2;</span></span>", command: ["switchKeyboardLayer", "functions"] },
+          "0",
+          "[left]",
+          "[right]",
+          { label: "&#9166;", command: "hideVirtualKeyboard", class: "action" },
+        ],
+      ],
+    },
+    {
+      id: "functions",
+      rows: [
+        [
+          { latex: "x", class: SMALL },
+          { latex: "y", class: SMALL },
+          { latex: "\\pi", class: SMALL },
+          { latex: "e", class: SMALL },
+          { latex: "\\Box^\\circ", insert: "#@^{\\circ}", class: SMALL },
+        ],
+        [
+          { latex: "\\frac{\\Box}{\\Box}", insert: "\\frac{#@}{#?}" },
+          { latex: "\\Box^2", insert: "#@^{2}" },
+          { latex: "\\Box^\\Box", insert: "#@^{#?}" },
+          { latex: "\\sin(\\Box)", insert: "\\sin(#?)" },
+          { latex: "\\sin^{-1}(\\Box)", insert: "\\sin^{-1}(#?)" },
+        ],
+        [
+          { latex: "\\sqrt{\\Box}", insert: "\\sqrt{#0}" },
+          { latex: "\\sqrt[n]{\\Box}", insert: "\\sqrt[#?]{#0}" },
+          { latex: "\\cos(\\Box)", insert: "\\cos(#?)" },
+          { latex: "\\cos^{-1}(\\Box)", insert: "\\cos^{-1}(#?)" },
+        ],
+        [
+          { latex: "\\log_\\Box(\\Box)", insert: "\\log_{#?}(#?)" },
+          { latex: "\\ln(\\Box)", insert: "\\ln(#?)" },
+          { latex: "\\tan(\\Box)", insert: "\\tan(#?)" },
+          { latex: "\\tan^{-1}(\\Box)", insert: "\\tan^{-1}(#?)" },
+        ],
+        [
+          { label: "123", command: ["switchKeyboardLayer", "numeric"] },
+          "(",
+          ")",
+          "[left]",
+          "[right]",
+          "[backspace]",
+        ],
+      ],
+    },
+  ],
+};
 
 // TypeScript/JSX <math-field> haqida bilmaydi — bu maxsus elementni
 // tanitib qo'yamiz (React 19'da JSX nomlar maydoni React ichida joylashgan).
@@ -47,10 +122,18 @@ export function MathLiveInput({ value, onChange }: Props) {
     if (!ready || !fieldRef.current) return;
     const mf = fieldRef.current;
     mf.placeholder = "\\text{Javobni kiriting}";
-    // Klaviaturani o'zimiz boshqaramiz: maydon fokuslanganda ko'rsatamiz,
-    // fokusdan chiqqanda yashiramiz — bir nechta math-field (masalan
-    // TWO_PART'ning a/b qismlari) bo'lsa ham, klaviatura doim FAOL
-    // maydonga ergashadi.
+    // Standart MathLive klaviaturasi (harflar, yunon, ramzlar qatlamlari)
+    // o'rniga faqat kerakli tugmalardan iborat maxsus layout.
+    if (window.mathVirtualKeyboard) window.mathVirtualKeyboard.layouts = CUSTOM_LAYOUT;
+    // Suriladigan tutqichni sozlaydi (idempotent) va uning ko'rinishini
+    // klaviaturaning HAQIQIY ochiq/yopiqligiga bog'laydi.
+    initKeyboardDrag();
+    // Klaviaturani o'zimiz boshqaramiz: maydon fokuslanganda ko'rsatamiz.
+    // Yopish ENDI faqat "X" tugmasi yoki maydon ichidagi klaviatura
+    // belgisi orqali sodir bo'ladi — ekranning istalgan joyiga bosish
+    // (masalan tutqichni sudrash yoki boshqa savol elementiga tegish)
+    // klaviaturani yopmasligi kerak, shuning uchun "focusout"da ATAYLAB
+    // yashirmaymiz.
     mf.mathVirtualKeyboardPolicy = "manual";
     const show = () => {
       window.mathVirtualKeyboard?.show();
@@ -59,15 +142,11 @@ export function MathLiveInput({ value, onChange }: Props) {
       // aylantiramiz.
       setTimeout(() => mf.scrollIntoView({ behavior: "smooth", block: "center" }), 250);
     };
-    const hide = () => window.mathVirtualKeyboard?.hide();
     mf.addEventListener("focusin", show);
-    mf.addEventListener("focusout", hide);
     return () => {
       mf.removeEventListener("focusin", show);
-      mf.removeEventListener("focusout", hide);
-      // Savol almashib, maydon fokusda turgan holda DOM'dan olib
-      // tashlanganda ba'zi brauzerlar "focusout"ni chaqirmaydi — klaviatura
-      // ochiq qolib ketmasligi uchun bu yerda ham yashiramiz.
+      // Savol almashib, maydon DOM'dan olib tashlanganda klaviatura ochiq
+      // qolib ketmasligi uchun shu yerda yashiramiz.
       window.mathVirtualKeyboard?.hide();
     };
   }, [ready]);
@@ -100,6 +179,11 @@ export function MathLiveInput({ value, onChange }: Props) {
           outline: none;
           box-shadow: none;
         }
+        /* Ichkaridagi "menyu" (hamburger, ≡) tugmasi kerak emas — faqat
+           klaviatura ochish belgisi qolsin. */
+        math-field::part(menu-toggle) {
+          display: none;
+        }
         /* "zoom" MathLive'ning o'zi JS orqali hisoblab qo'ygan balandligi
            bilan mos kelmay, pastki qatorni kesib qo'yardi — shuning uchun
            kutubxonaning o'zi tan oladigan o'lcham o'zgaruvchilaridan
@@ -114,6 +198,20 @@ export function MathLiveInput({ value, onChange }: Props) {
             --keycap-shift-font-size: 10px;
             --keycap-small-font-size: 10px;
             --keyboard-toolbar-font-size: 15px;
+          }
+        }
+        /* Klaviatura standart holda butun ekran kengligida chiqadi.
+           MathLive balandlik/chiqish-animatsiyasini (top, bottom, height,
+           --_keyboard-height CSS o'zgaruvchisi) o'zi hisoblab boshqaradi —
+           shunga UMUMAN TEGMASDAN, faqat KENGLIKni cheklab ekran o'rtasiga
+           torraytiramiz. (Konteynerni almashtirish — mathVirtualKeyboard
+           .container — klaviaturani butunlay ko'rinmas qilib qo'ygani
+           uchun ataylab ishlatilmayapti.) */
+        @media (min-width: 640px) {
+          body > .ML__keyboard {
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            width: min(420px, calc(100vw - 24px)) !important;
           }
         }
       `}</style>
