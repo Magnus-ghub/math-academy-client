@@ -660,16 +660,16 @@ export const SprInput = forwardRef<SprInputHandle, {
     if (n.kind === "row") return renderRow(n, scale);
     if (n.kind === "fraction") return (
       <span key={n.id} className="inline-flex flex-col items-stretch justify-center align-middle mx-1" style={{ lineHeight: 1 }}>
-        <span className="flex justify-center px-1 py-0.5 min-h-[30px]">{renderRow(n.numerator, scale * 0.9)}</span>
-        <span className="h-[2px] bg-gray-800 w-full min-w-[34px]" />
-        <span className="flex justify-center px-1 py-0.5 min-h-[30px]">{renderRow(n.denominator, scale * 0.9)}</span>
+        <span className="flex justify-center px-1 py-0.5 min-h-7.5">{renderRow(n.numerator, scale * 0.9)}</span>
+        <span className="h-0.5 bg-gray-800 w-full min-w-8.5" />
+        <span className="flex justify-center px-1 py-0.5 min-h-7.5">{renderRow(n.denominator, scale * 0.9)}</span>
       </span>
     );
     if (n.kind === "root") return (
       <span key={n.id} className="inline-flex items-center align-middle mx-1">
         {n.nth ? <input ref={setRef(n.index.id)} value={n.index.value} onChange={(e) => handleSlotChange(n.index.id, e)} onFocus={(e) => handleSlotFocus(n.index.id, e)} onClick={() => setActiveId(n.index.id)} onKeyUp={(e) => { cursorRef.current = { start: e.currentTarget.selectionStart ?? 0, end: e.currentTarget.selectionEnd ?? 0 }; }} onKeyDown={(e) => handleKeyDown(n.index.id, e)} className={slotClass} style={{ width: 22, height: 22, fontSize: 12, alignSelf: "flex-start" }} /> : null}
         <span className="font-serif" style={{ fontSize: 26 * scale, lineHeight: 0.8 }}>√</span>
-        <span className="border-t-2 border-gray-800 pt-1 min-w-[28px]">{renderRow(n.body, scale * 0.95)}</span>
+        <span className="border-t-2 border-gray-800 pt-1 min-w-7">{renderRow(n.body, scale * 0.95)}</span>
       </span>
     );
     if (n.kind === "power") return (
@@ -699,7 +699,7 @@ export const SprInput = forwardRef<SprInputHandle, {
     <div>
       <div className="flex flex-col items-start gap-3">
         <div className="relative rounded-xl border-2 border-gray-500 bg-white px-3 py-2 flex items-center justify-center" style={{ minWidth: boxWidth, minHeight: 82 }}>
-          <div className="flex items-center justify-center overflow-x-auto max-w-[520px] py-2">{renderRow(tree)}</div>
+          <div className="flex items-center justify-center overflow-x-auto max-w-130 py-2">{renderRow(tree)}</div>
         </div>
         {serialized.trim() && <button type="button" onClick={clear} className="text-xs text-gray-400 hover:text-red-500 transition-colors underline underline-offset-2">Clear</button>}
       </div>
