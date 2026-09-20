@@ -15,10 +15,12 @@ import {
   DELETE_QUESTION,
 } from "@/lib/graphql/test";
 import { useAuthStore } from "@/lib/store/auth.store";
-import { countWords, limitWords } from "@/lib/utils";
+import { countWords, limitWords, parseSprAnswer } from "@/lib/utils";
 import { JsonReplaceQuestionsModal } from "@/components/admin/JsonReplaceQuestionsModal";
 import { ImportHistoricalResultsModal } from "@/components/admin/ImportHistoricalResultsModal";
 import { LatexPreview } from "@/components/admin/LatexPreview";
+import { MathLiveInput } from "@/components/MathLiveInput";
+import { FormulaInsertButton } from "@/components/admin/FormulaInsertButton";
 import { AI_PROMPT_SINGLE_QUESTION } from "@/lib/ai-test-prompt";
 import { validateLatex } from "@/components/MathText";
 import { toast } from "sonner";
@@ -44,6 +46,8 @@ interface QuestionRow {
   optionUploading: boolean[];
   correctAnswer: number;
   correctAnswerB?: number | null;
+  correctAnswerText?: string;
+  correctAnswerBText?: string;
   explanation: string;
   youtubeUrl: string;
   analysis: string;
@@ -84,6 +88,8 @@ interface QuestionsData {
     optionImages?: string[];
     correctAnswer?: number;
     correctAnswerB?: number | null;
+    correctAnswerText?: string | null;
+    correctAnswerBText?: string | null;
     explanation?: string;
   }>;
 }
@@ -136,6 +142,8 @@ function makeRow(q?: any): QuestionRow {
     optionUploading: [false, false, false, false],
     correctAnswer: q?.correctAnswer ?? 0,
     correctAnswerB: q?.correctAnswerB,
+    correctAnswerText: q?.correctAnswerText ?? "",
+    correctAnswerBText: q?.correctAnswerBText ?? "",
     explanation: q?.explanation ?? "",
     youtubeUrl: q?.youtubeUrl ?? "",
     analysis: q?.analysis ?? "",
@@ -151,6 +159,7 @@ function EditTestPageContent() {
   const searchParams = useSearchParams();
   const highlightQuestionId = searchParams.get("questionId");
   const { accessToken } = useAuthStore();
+  const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -386,6 +395,9 @@ function EditTestPageContent() {
           options: q.options,
           optionImages: q.optionImages,
           correctAnswer: q.correctAnswer,
+          correctAnswerB: q.correctAnswerB ?? undefined,
+          correctAnswerText: q.correctAnswerText || undefined,
+          correctAnswerBText: q.correctAnswerBText || undefined,
           explanation: q.explanation || undefined,
           youtubeUrl: q.youtubeUrl || undefined,
           analysis: q.analysis || undefined,
@@ -715,52 +727,80 @@ function EditTestPageContent() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="flex justify-end">
+        <div className="flex items-start gap-4">
+          {/* Savollar ko'p (masalan Milliy Sertifikatda 40-45 ta) bo'lganda
+              pastga scroll qilib kerakli savolni qidirish noqulay —
+              shuning uchun chap tomonda bosilganda o'sha savolga sirg'alib
+              o'tadigan raqamlar xaritasi. `sticky` (fixed emas) ishlatilgan —
+              faqat shu scrollable kontent ichida joylashadi, sahifaning
+              qolgan qismiga (sidebar/navbar) ta'sir qilmaydi. */}
+          <nav className="hidden lg:grid grid-cols-4 gap-1 sticky top-4 shrink-0 w-40 max-h-[calc(100vh-7rem)] overflow-y-auto bg-background border border-border rounded-xl p-2 content-start">
+            {questions.map((q, i) => {
+              const num =
+                testInfo.testType === "SAT" && i >= SAT_MODULE_QUESTIONS
+                  ? i - SAT_MODULE_QUESTIONS + 1
+                  : i + 1;
+              return (
+                <button
+                  key={q.uid}
+                  type="button"
+                  onClick={() => questionRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  title={`${num}-savol${testInfo.testType === "SAT" && i >= SAT_MODULE_QUESTIONS ? " (2-modul)" : ""}`}
+                  className="aspect-square rounded-lg text-xs font-medium flex items-center justify-center border border-transparent text-muted-foreground hover:border-primary hover:text-primary hover:bg-primary/5 transition-colors"
+                >
+                  {num}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="flex-1 min-w-0 space-y-4">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowJsonReplace(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                JSON orqali qayta yaratish
+              </button>
+            </div>
+
+            {questions.map((q, i) => (
+              <div key={q.uid} ref={(el) => { questionRefs.current[i] = el; }}>
+                {testInfo.testType === "SAT" && i === 0 && (
+                  <SatModuleDivider module={1} from={1} to={SAT_MODULE_QUESTIONS} />
+                )}
+                {testInfo.testType === "SAT" && i === SAT_MODULE_QUESTIONS && (
+                  <SatModuleDivider module={2} from={1} to={SAT_MODULE_QUESTIONS} />
+                )}
+                <EditQuestionCard
+                  q={q}
+                  index={
+                    testInfo.testType === "SAT" && i >= SAT_MODULE_QUESTIONS
+                      ? i - SAT_MODULE_QUESTIONS
+                      : i
+                  }
+                  highlighted={!!q.id && q.id === highlightQuestionId}
+                  onUpdate={setQ}
+                  onBulkUpdate={setQBulk}
+                  onUpdateOption={setOption}
+                  onRemove={() => removeQuestion(q.uid, q.id)}
+                  onImagePick={(file) => uploadImage(file, q.uid)}
+                  onOptionImagePick={(file, idx) => uploadOptionImage(file, q.uid, idx)}
+                  onOptionImageRemove={(idx) => setOptionImage(q.uid, idx, "")}
+                  canRemove={questions.length > 1}
+                />
+              </div>
+            ))}
+
             <button
-              onClick={() => setShowJsonReplace(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-border text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+              onClick={() => setQuestions((qs) => [...qs, makeRow()])}
+              className="w-full border-2 border-dashed border-border hover:border-primary rounded-2xl py-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5" />
-              JSON orqali qayta yaratish
+              <Plus className="w-4 h-4" />
+              Savol qo'shish
             </button>
           </div>
-
-          {questions.map((q, i) => (
-            <div key={q.uid}>
-              {testInfo.testType === "SAT" && i === 0 && (
-                <SatModuleDivider module={1} from={1} to={SAT_MODULE_QUESTIONS} />
-              )}
-              {testInfo.testType === "SAT" && i === SAT_MODULE_QUESTIONS && (
-                <SatModuleDivider module={2} from={1} to={SAT_MODULE_QUESTIONS} />
-              )}
-              <EditQuestionCard
-                q={q}
-                index={
-                  testInfo.testType === "SAT" && i >= SAT_MODULE_QUESTIONS
-                    ? i - SAT_MODULE_QUESTIONS
-                    : i
-                }
-                highlighted={!!q.id && q.id === highlightQuestionId}
-                onUpdate={setQ}
-                onBulkUpdate={setQBulk}
-                onUpdateOption={setOption}
-                onRemove={() => removeQuestion(q.uid, q.id)}
-                onImagePick={(file) => uploadImage(file, q.uid)}
-                onOptionImagePick={(file, idx) => uploadOptionImage(file, q.uid, idx)}
-                onOptionImageRemove={(idx) => setOptionImage(q.uid, idx, "")}
-                canRemove={questions.length > 1}
-              />
-            </div>
-          ))}
-
-          <button
-            onClick={() => setQuestions((qs) => [...qs, makeRow()])}
-            className="w-full border-2 border-dashed border-border hover:border-primary rounded-2xl py-4 flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Savol qo'shish
-          </button>
         </div>
       )}
 
@@ -823,6 +863,7 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const optionFileRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const questionTextRef = useRef<HTMLTextAreaElement>(null);
   const [showJson, setShowJson] = useState(false);
   const [jsonText, setJsonText] = useState("");
   const [jsonError, setJsonError] = useState("");
@@ -995,7 +1036,121 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
         </div>
       )}
 
-      {q.questionType && q.questionType !== "SINGLE" ? (
+      {q.questionType === "TWO_PART" ? (
+        <div className="space-y-3">
+          <textarea
+            ref={questionTextRef}
+            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+            rows={4}
+            placeholder={'Umumiy shart...\na) birinchi qism savoli...\nb) ikkinchi qism savoli...'}
+            value={q.questionText}
+            onChange={(e) => onUpdate(q.uid, "questionText", e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground -mt-2">
+            Umumiy shartdan keyin &quot;a)&quot; va &quot;b)&quot; bilan boshlanadigan qatorlarga alohida joylashtiring — har biri javob maydoni ustida shu tarzda ajratib ko&apos;rsatiladi.
+          </p>
+
+          <FormulaInsertButton
+            targetRef={questionTextRef}
+            value={q.questionText}
+            onChange={(v) => onUpdate(q.uid, "questionText", v)}
+          />
+
+          <LatexPreview text={q.questionText} />
+
+          <div>
+            {q.questionImage ? (
+              <div className="relative inline-block">
+                <img src={q.questionImage} alt="savol rasmi" className="max-h-48 rounded-lg border border-border object-contain" />
+                <button
+                  onClick={() => onUpdate(q.uid, "questionImage", "")}
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <div
+                tabIndex={0}
+                onPaste={(e) => { e.stopPropagation(); extractPastedImage(e, onImagePick); }}
+                className="flex items-center gap-2 flex-wrap focus:outline-none"
+              >
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  disabled={q.uploading}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-border text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                >
+                  {q.uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                  {q.uploading ? "Yuklanmoqda..." : "Fayl tanlash"}
+                </button>
+                {!q.uploading && (
+                  <span className="text-xs text-muted-foreground">yoki shu yerga bosib <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-xs">Ctrl+V</kbd> bilan rasmni joylashtiring</span>
+                )}
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onImagePick(f); e.target.value = ""; }} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">a) to&apos;g&apos;ri javob</p>
+              <MathLiveInput
+                value={q.correctAnswerText || String(q.correctAnswer / 100)}
+                onChange={(v) => onBulkUpdate(q.uid, { correctAnswerText: v, correctAnswer: parseSprAnswer(v) })}
+              />
+              <p className="text-xs text-muted-foreground">
+                {q.correctAnswer !== -1
+                  ? <>= {q.correctAnswer / 100}</>
+                  : <span className="text-red-600">Ifodani hisoblab bo&apos;lmadi</span>}
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground">b) to&apos;g&apos;ri javob</p>
+              <MathLiveInput
+                value={q.correctAnswerBText || (q.correctAnswerB != null ? String(q.correctAnswerB / 100) : "")}
+                onChange={(v) => onBulkUpdate(q.uid, { correctAnswerBText: v, correctAnswerB: parseSprAnswer(v) })}
+              />
+              <p className="text-xs text-muted-foreground">
+                {q.correctAnswerB != null && q.correctAnswerB !== -1
+                  ? <>= {q.correctAnswerB / 100}</>
+                  : <span className="text-red-600">Ifodani hisoblab bo&apos;lmadi</span>}
+              </p>
+            </div>
+          </div>
+
+          <Input placeholder="Javob izohi (ixtiyoriy)" value={q.explanation}
+            onChange={(e) => onUpdate(q.uid, "explanation", e.target.value)} />
+
+          <div className="pt-1 border-t border-border/50 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tahlil (ixtiyoriy)</p>
+              {q.analysis.trim() && (
+                <button
+                  type="button"
+                  onClick={() => setShowAnalysisPreview((v) => !v)}
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {showAnalysisPreview ? "Preview'ni yashirish" : "Preview ko'rish"}
+                </button>
+              )}
+            </div>
+            <Input
+              placeholder="YouTube link (masalan: https://youtu.be/...)"
+              value={q.youtubeUrl}
+              onChange={(e) => onUpdate(q.uid, "youtubeUrl", e.target.value)}
+            />
+            <textarea
+              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+              rows={2}
+              placeholder="AI tahlil matni (bu savol uchun tushuntirish)..."
+              value={q.analysis}
+              onChange={(e) => onUpdate(q.uid, "analysis", e.target.value)}
+            />
+            {showAnalysisPreview && <LatexPreview text={q.analysis} />}
+          </div>
+        </div>
+      ) : q.questionType && q.questionType !== "SINGLE" ? (
         <div className="space-y-3">
           <div className="p-2.5 rounded-lg border border-dashed border-amber-300 bg-amber-50 text-xs text-amber-800">
             Bu savol turi ({q.questionType}) hozircha faqat JSON orqali tahrirlanadi — quyida faqat
@@ -1097,11 +1252,18 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
       ) : (
       <div className="space-y-3">
         <textarea
+          ref={questionTextRef}
           className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
           rows={2}
           placeholder="Savol matnini kiriting..."
           value={q.questionText}
           onChange={(e) => onUpdate(q.uid, "questionText", e.target.value)}
+        />
+
+        <FormulaInsertButton
+          targetRef={questionTextRef}
+          value={q.questionText}
+          onChange={(v) => onUpdate(q.uid, "questionText", v)}
         />
 
         <LatexPreview text={q.questionText} />

@@ -126,10 +126,24 @@ MUHIM: TWO_PART uchun "correctAnswer" — "a" javobi, "correctAnswerB" — "b" j
     manfiy    -12   → -1200
     kasr      1/2   → 50
 
+MUHIM (ildizli/irratsional javoblar — "correctAnswerText"): agar javob $\\sqrt{}$, $\\pi$ kabi irratsional ifoda bo'lsa, uni QO'LDA o'nlik songa hisoblab ×100 qilish O'RNIGA (bu xatoga juda moyil), "correctAnswer"/"correctAnswerB" o'rniga (yoki ular bilan birga) "correctAnswerText"/"correctAnswerBText" maydoniga XOM LaTeX formulani yozing — tizim buni o'zi aniq hisoblab ×100 songa aylantiradi:
+{
+  "questionType": "TWO_PART",
+  "questionText": "...\\na) ...\\nb) Funksiyaning eng katta qiymatini toping.",
+  "options": [],
+  "correctAnswer": 300,
+  "correctAnswerBText": "8\\\\sqrt{5}/5",
+  "analysis": "",
+  "youtubeUrl": ""
+}
+- "correctAnswerText"/"correctAnswerBText" — oddiy LaTeX matn (masalan "8\\\\sqrt{5}/5", "\\\\dfrac{9-3\\\\sqrt{5}}{2}", "18\\\\pi") — hech qanday qo'shimcha $ belgisi kerak emas
+- Ratsional (butun/o'nlik/oddiy kasr) javoblar uchun eski "correctAnswer"/"correctAnswerB" (×100 son) usuli ham to'liq ishlaydi — faqat ILDIZLI/IRRATSIONAL javoblarda "...Text" maydonini ishlating
+- Har bir qism (a va b) mustaqil — biri oddiy son ("correctAnswer"), ikkinchisi formula ("correctAnswerBText") bo'lishi ham mumkin (yuqoridagi misoldagidek)
+
 UMUMIY QOIDALAR:
 - SINGLE: correctAnswer 0=A, 1=B, 2=C, 3=D; options da 4 ta variant SHART
 - MATCHING: correctAnswer — oddiy indeks (×100 QILINMAYDI), options 4 tadan ko'p bo'lishi mumkin; umumiy shart "groupPrompt" da (barcha guruh a'zolarida bir xil), "questionText" faqat qisqa topshiriq (raqamsiz)
-- TWO_PART: options: [] (bo'sh massiv), correctAnswer va correctAnswerB — ikkalasi ham ×100 kodlangan
+- TWO_PART: options: [] (bo'sh massiv), correctAnswer va correctAnswerB — ikkalasi ham ×100 kodlangan (ildizli/irratsional javoblarda buning o'rniga correctAnswerText/correctAnswerBText'ga xom LaTeX formula yozing — yuqoridagi misolga qarang)
 - Formulalar: $x^2$ (inline). Kasrlar uchun \\frac EMAS, HAR DOIM \\dfrac ishlating (dfrac kasrni kattaroq va aniqroq ko'rsatadi, hatto matn ichida — inline holatda — bo'lsa ham): $\\dfrac{a}{b}$ (matn ichida ham), yoki $$\\dfrac{a}{b}$$ (block)
 - Pul miqdori yozsangiz "$" belgisini backslash bilan qoching: \\$9, \\$6 — aks holda LaTeX formula chegarasi deb noto'g'ri o'qiladi
 - Takrorlanuvchi raqamlar/naqsh (masalan "2222...2, 50 ta raqam"): \\underbrace{...}_{\\text{...}} bilan yozing, MASALAN: $\\underbrace{2222\\ldots2}_{50\\ \\text{ta raqam}}$ — bu \\underbrace{}_{} (pastki belgili) shakl, avtomatik $ bilan o'ralmaydi, butun ifodani qo'lda $ ... $ ichiga oling

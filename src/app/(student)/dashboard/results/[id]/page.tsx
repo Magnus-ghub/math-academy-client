@@ -234,6 +234,7 @@ export default function ResultDetailPage() {
   const [testAnalysisOpen, setTestAnalysisOpen] = useState(false);
   const [openQuestionAnalysis, setOpenQuestionAnalysis] = useState<string | null>(null);
   const [showRetakeRequest, setShowRetakeRequest] = useState(false);
+  const answerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const { data: resultData, loading: resultLoading } = useQuery<{ getResult: any }>(GET_RESULT, {
     variables: { resultId: id },
@@ -315,7 +316,46 @@ export default function ResultDetailPage() {
   const hasTestYoutube  = !!test?.testYoutubeUrl;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="flex gap-4 items-start justify-center">
+      {/* Savollar ko'p bo'lganda (Attestatsiya/Milliy Sertifikatda 40-50 ta)
+          kerakli savolni pastga scroll qilib qidirish noqulay — shuning
+          uchun chap tomonda bosilganda o'sha savolga sirg'alib o'tadigan,
+          to'g'ri/noto'g'ri rang bilan ajratilgan raqamlar xaritasi.
+          `fixed`+pixel bilan chap sidebar (StudentSidebar, 256px) ustiga
+          chiqib ketgani uchun (ekran kengligiga qarab joy hisoblash
+          ishonchsiz chiqdi) — endi admin panelidagidek `sticky`, hujjat
+          oqimi ichidagi flex-ustun sifatida: sidebar kengligidan qat'i
+          nazar avtomatik to'g'ri joylashadi, hech qanday pixel taxmin
+          kerak emas. */}
+      {result.answers && result.answers.length > 0 && (
+        <nav className="hidden xl:grid grid-cols-4 gap-1 sticky top-4 shrink-0 w-36 max-h-[calc(100vh-2rem)] overflow-y-auto bg-background border border-border rounded-xl p-2 content-start shadow-sm">
+          {result.answers.map((answer: any, i: number) => {
+            const question = questions.find((q: any) => q.id === answer.questionId);
+            const isTwoPart = question?.questionType === "TWO_PART";
+            const isPartial = isTwoPart && answer.isCorrect !== answer.isCorrectB;
+            const displayNumber = isSat && i >= 22 ? i - 22 + 1 : i + 1;
+            return (
+              <button
+                key={answer.questionId}
+                type="button"
+                onClick={() => answerRefs.current[i]?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                title={`${displayNumber}-savol — ${answer.isCorrect ? "to'g'ri" : isPartial ? "qisman to'g'ri" : "noto'g'ri"}`}
+                className={`aspect-square rounded-lg text-xs font-semibold flex items-center justify-center transition-opacity hover:opacity-70 ${
+                  answer.isCorrect
+                    ? "bg-green-100 text-green-700"
+                    : isPartial
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-red-100 text-red-600"
+                }`}
+              >
+                {displayNumber}
+              </button>
+            );
+          })}
+        </nav>
+      )}
+
+      <div className="max-w-2xl w-full">
       {/* Back */}
       <Link href="/dashboard/results">
         <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6 transition-colors">
@@ -512,7 +552,7 @@ export default function ResultDetailPage() {
               const isPartial = isTwoPart && answer.isCorrect !== answer.isCorrectB;
               const displayNumber = isSat && i >= 22 ? i - 22 + 1 : i + 1;
               return (
-                <div key={answer.questionId}>
+                <div key={answer.questionId} ref={(el) => { answerRefs.current[i] = el; }}>
                 {isSat && i === 0 && <SatModuleDivider module={1} />}
                 {isSat && i === 22 && <SatModuleDivider module={2} />}
                 <div
@@ -590,7 +630,7 @@ export default function ResultDetailPage() {
                               <span className="text-muted-foreground">Sizning javobingiz: </span>
                               <span className={`font-semibold ${answer.isCorrect ? "text-green-700" : "text-red-600"}`}>
                                 {answer.selectedAnswerText?.trim()
-                                  ? <MathText text={`$${answer.selectedAnswerText}$`} />
+                                  ? <MathText text={`$${answer.selectedAnswerText}$`} className="whitespace-nowrap!" />
                                   : answer.selectedAnswer === -1
                                   ? "Javob belgilanmagan"
                                   : answer.selectedAnswer / 100}
@@ -599,7 +639,11 @@ export default function ResultDetailPage() {
                             {!answer.isCorrect && (
                               <p>
                                 <span className="text-muted-foreground">To'g'ri javob: </span>
-                                <span className="font-semibold text-green-700">{question.correctAnswer / 100}</span>
+                                <span className="font-semibold text-green-700">
+                                  {question.correctAnswerText?.trim()
+                                    ? <MathText text={`$${question.correctAnswerText}$`} className="whitespace-nowrap!" />
+                                    : question.correctAnswer / 100}
+                                </span>
                               </p>
                             )}
                           </div>
@@ -611,7 +655,7 @@ export default function ResultDetailPage() {
                               <span className="text-muted-foreground">Sizning javobingiz: </span>
                               <span className={`font-semibold ${answer.isCorrectB ? "text-green-700" : "text-red-600"}`}>
                                 {answer.selectedAnswerBText?.trim()
-                                  ? <MathText text={`$${answer.selectedAnswerBText}$`} />
+                                  ? <MathText text={`$${answer.selectedAnswerBText}$`} className="whitespace-nowrap!" />
                                   : answer.selectedAnswerB == null || answer.selectedAnswerB === -1
                                   ? "Javob belgilanmagan"
                                   : answer.selectedAnswerB / 100}
@@ -620,7 +664,11 @@ export default function ResultDetailPage() {
                             {!answer.isCorrectB && question.correctAnswerB != null && (
                               <p>
                                 <span className="text-muted-foreground">To'g'ri javob: </span>
-                                <span className="font-semibold text-green-700">{question.correctAnswerB / 100}</span>
+                                <span className="font-semibold text-green-700">
+                                  {question.correctAnswerBText?.trim()
+                                    ? <MathText text={`$${question.correctAnswerBText}$`} className="whitespace-nowrap!" />
+                                    : question.correctAnswerB / 100}
+                                </span>
                               </p>
                             )}
                           </div>
@@ -763,6 +811,7 @@ export default function ResultDetailPage() {
       {youtubeUrl && (
         <YoutubeModal url={youtubeUrl} onClose={() => setYoutubeUrl(null)} />
       )}
+      </div>
     </div>
   );
 }

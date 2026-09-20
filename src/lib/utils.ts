@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { ComputeEngine } from "@cortex-js/compute-engine"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -43,18 +44,42 @@ export function splitTwoPartText(text: string): { stem: string; partA: string; p
   }
 }
 
+// MathLive kutubxonasi ichida allaqachon ishlatiladigan Compute Engine —
+// LaTeX ifodasini (masalan "\frac{9-3\sqrt{5}}{2}") HAQIQIY son qiymatiga
+// aylantira oladi. Oldingi versiya faqat regex bilan "\frac{butun}{butun}"
+// yoki oddiy o'nlik sonni tushunar edi — kvadrat ildiz ishtirok etgan har
+// qanday javobni (Milliy Sertifikatda juda keng tarqalgan) yo NOTO'G'RI
+// deb belgilar edi ("\frac{9-3\sqrt{5}}{2}" -1 qaytarardi), yo battari,
+// javobni jimgina buzib tashlardi ("18\sqrt{3}" parseFloat orqali shunchaki
+// "18" deb o'qilib, √3 ko'paytiruvchisi butunlay yo'qolib ketardi).
+let computeEngine: ComputeEngine | null = null
+
+function getEngine(): ComputeEngine {
+  if (!computeEngine) {
+    computeEngine = new ComputeEngine()
+    // Standart holda ComputeEngine "15^\circ" kabi darajali burchak
+    // belgisini RADIANGA aylantirib hisoblaydi (15° -> 0.2618) — lekin
+    // butun tizim (admin javob kaliti, "correctAnswer" konventsiyasi)
+    // burchakni har doim ODDIY GRADUS soni sifatida (masalan 15° -> 15,
+    // hech qanday aylantirishsiz) kutadi. Shu moslikni saqlash uchun
+    // "deg" rejimiga o'tkazamiz — shunda "15^\circ" to'g'ridan-to'g'ri
+    // 15 deb hisoblanadi.
+    computeEngine.angularUnit = "deg"
+  }
+  return computeEngine
+}
+
 // SAT SPR javoblarini backend bilan bir xil encoding'da son ko'rinishga o'giradi (masalan "7/2" -> 350)
-// Milliy Sertifikat (MathLive) LaTeX ("\frac{7}{2}") qaytarganda ham ishlaydi.
+// Milliy Sertifikat (MathLive) LaTeX ("\frac{9-3\sqrt{5}}{2}" kabi ildizli ifodalar) qaytarganda ham ishlaydi.
 export function parseSprAnswer(raw: string): number {
   const s = raw.trim()
   if (!s) return -1
-  const latexFraction = s.match(/^\\frac\{(-?\d+)\}\{(-?\d+)\}$/)
-  const fraction = latexFraction || s.match(/^(-?\d+)\/(\d+)$/)
-  if (fraction) {
-    const den = parseInt(fraction[2], 10)
-    if (den === 0) return -1
-    return Math.round((parseInt(fraction[1], 10) / den) * 100)
+  const computeEngine = getEngine()
+  try {
+    const n = computeEngine.parse(s).N()
+    if (!n.isReal || n.re === undefined || !Number.isFinite(n.re)) return -1
+    return Math.round(n.re * 100)
+  } catch {
+    return -1
   }
-  const n = parseFloat(s)
-  return isNaN(n) ? -1 : Math.round(n * 100)
 }

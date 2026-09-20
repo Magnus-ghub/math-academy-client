@@ -86,6 +86,8 @@ export const GET_QUESTIONS = gql`
       optionImages
       correctAnswer
       correctAnswerB
+      correctAnswerText
+      correctAnswerBText
       explanation
       youtubeUrl
       analysis
@@ -171,6 +173,9 @@ export const ADD_QUESTION = gql`
       options
       optionImages
       correctAnswer
+      correctAnswerB
+      correctAnswerText
+      correctAnswerBText
       orderIndex
     }
   }
@@ -185,6 +190,9 @@ export const UPDATE_QUESTION = gql`
       options
       optionImages
       correctAnswer
+      correctAnswerB
+      correctAnswerText
+      correctAnswerBText
       orderIndex
     }
   }

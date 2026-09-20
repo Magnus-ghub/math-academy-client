@@ -16,6 +16,8 @@ interface Question {
   options?: string[];
   correctAnswer: number;
   correctAnswerB?: number | null;
+  correctAnswerText?: string | null;
+  correctAnswerBText?: string | null;
   explanation?: string;
   analysis?: string;
 }
@@ -273,13 +275,19 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
                           <p>
                             <span className="text-muted-foreground">Sizning javobingiz: </span>
                             <span className={`font-semibold ${isCorrectA ? "text-green-700" : "text-red-600"}`}>
-                              {raw === undefined || raw === "" ? "Javob belgilanmagan" : String(raw)}
+                              {raw === undefined || raw === ""
+                                ? "Javob belgilanmagan"
+                                : <MathText text={`$${raw}$`} className="whitespace-nowrap!" />}
                             </span>
                           </p>
                           {!isCorrectA && (
                             <p>
                               <span className="text-muted-foreground">To'g'ri javob: </span>
-                              <span className="font-semibold text-green-700">{q.correctAnswer / 100}</span>
+                              <span className="font-semibold text-green-700">
+                                {q.correctAnswerText?.trim()
+                                  ? <MathText text={`$${q.correctAnswerText}$`} className="whitespace-nowrap!" />
+                                  : q.correctAnswer / 100}
+                              </span>
                             </p>
                           )}
                         </div>
@@ -290,13 +298,19 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
                           <p>
                             <span className="text-muted-foreground">Sizning javobingiz: </span>
                             <span className={`font-semibold ${isCorrectB ? "text-green-700" : "text-red-600"}`}>
-                              {rawB === undefined || rawB === "" ? "Javob belgilanmagan" : String(rawB)}
+                              {rawB === undefined || rawB === ""
+                                ? "Javob belgilanmagan"
+                                : <MathText text={`$${rawB}$`} className="whitespace-nowrap!" />}
                             </span>
                           </p>
                           {!isCorrectB && q.correctAnswerB != null && (
                             <p>
                               <span className="text-muted-foreground">To'g'ri javob: </span>
-                              <span className="font-semibold text-green-700">{q.correctAnswerB / 100}</span>
+                              <span className="font-semibold text-green-700">
+                                {q.correctAnswerBText?.trim()
+                                  ? <MathText text={`$${q.correctAnswerBText}$`} className="whitespace-nowrap!" />
+                                  : q.correctAnswerB / 100}
+                              </span>
                             </p>
                           )}
                         </div>
