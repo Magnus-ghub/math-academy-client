@@ -95,6 +95,15 @@ interface Props {
   onChange: (v: string) => void;
 }
 
+// LaTeX'da qochirilmagan "%" izoh (comment) belgisi hisoblanadi — undan
+// keyingi BUTUN qator (hatto "%" ning o'zi ham) MathLive tomonidan
+// jimgina o'chirib tashlanadi (masalan "25%" -> "25"). Foiz belgisi shu
+// sababli tashqi ma'lumotdan (JSON import, eski yozuvlar) qochirilmagan
+// holda kelsa yo'qolib qoladi — maydonga berishdan oldin "\%"ga aylantiramiz.
+function escapeLatexPercent(s: string): string {
+  return s.replace(/(?<!\\)%/g, "\\%");
+}
+
 // MathLive kutubxonasiga asoslangan to'liq strukturaviy matematik input —
 // kasr, ildiz, daraja, trigonometrik funksiyalar uchun HAQIQIY kursor
 // navigatsiyasi va o'zining virtual klaviaturasi bilan (endi bizga alohida
@@ -155,8 +164,9 @@ export function MathLiveInput({ value, onChange }: Props) {
   // sinxronlaymiz — lekin talaba yozayotganda o'z-o'ziga yozib qo'ymasin
   // deb, faqat HAQIQIY farq bo'lsa yangilaymiz.
   useEffect(() => {
-    if (ready && fieldRef.current && fieldRef.current.value !== value) {
-      fieldRef.current.value = value;
+    const safeValue = escapeLatexPercent(value);
+    if (ready && fieldRef.current && fieldRef.current.value !== safeValue) {
+      fieldRef.current.value = safeValue;
     }
   }, [value, ready]);
 
@@ -228,7 +238,7 @@ export function MathLiveInput({ value, onChange }: Props) {
           padding: "10px 14px",
         }}
       >
-        {value}
+        {escapeLatexPercent(value)}
       </math-field>
     </>
   );

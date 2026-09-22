@@ -142,8 +142,8 @@ function makeRow(q?: any): QuestionRow {
     optionUploading: [false, false, false, false],
     correctAnswer: q?.correctAnswer ?? 0,
     correctAnswerB: q?.correctAnswerB,
-    correctAnswerText: q?.correctAnswerText ?? "",
-    correctAnswerBText: q?.correctAnswerBText ?? "",
+    correctAnswerText: q?.correctAnswerText || (q?.correctAnswer != null ? String(q.correctAnswer / 100) : ""),
+    correctAnswerBText: q?.correctAnswerBText || (q?.correctAnswerB != null ? String(q.correctAnswerB / 100) : ""),
     explanation: q?.explanation ?? "",
     youtubeUrl: q?.youtubeUrl ?? "",
     analysis: q?.analysis ?? "",
@@ -1096,26 +1096,16 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
             <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground">a) to&apos;g&apos;ri javob</p>
               <MathLiveInput
-                value={q.correctAnswerText || String(q.correctAnswer / 100)}
+                value={q.correctAnswerText ?? ""}
                 onChange={(v) => onBulkUpdate(q.uid, { correctAnswerText: v, correctAnswer: parseSprAnswer(v) })}
               />
-              <p className="text-xs text-muted-foreground">
-                {q.correctAnswer !== -1
-                  ? <>= {q.correctAnswer / 100}</>
-                  : <span className="text-red-600">Ifodani hisoblab bo&apos;lmadi</span>}
-              </p>
             </div>
             <div className="space-y-1.5">
               <p className="text-xs text-muted-foreground">b) to&apos;g&apos;ri javob</p>
               <MathLiveInput
-                value={q.correctAnswerBText || (q.correctAnswerB != null ? String(q.correctAnswerB / 100) : "")}
+                value={q.correctAnswerBText ?? ""}
                 onChange={(v) => onBulkUpdate(q.uid, { correctAnswerBText: v, correctAnswerB: parseSprAnswer(v) })}
               />
-              <p className="text-xs text-muted-foreground">
-                {q.correctAnswerB != null && q.correctAnswerB !== -1
-                  ? <>= {q.correctAnswerB / 100}</>
-                  : <span className="text-red-600">Ifodani hisoblab bo&apos;lmadi</span>}
-              </p>
             </div>
           </div>
 
@@ -1238,11 +1228,11 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="p-2.5 rounded-lg border border-border">
                 <p className="text-xs text-muted-foreground mb-1">a) to'g'ri javob</p>
-                <p className="font-semibold">{q.correctAnswer / 100}</p>
+                <p className="font-semibold">{q.correctAnswerText}</p>
               </div>
               <div className="p-2.5 rounded-lg border border-border">
                 <p className="text-xs text-muted-foreground mb-1">b) to'g'ri javob</p>
-                <p className="font-semibold">{q.correctAnswerB != null ? q.correctAnswerB / 100 : "-"}</p>
+                <p className="font-semibold">{q.correctAnswerBText || "-"}</p>
               </div>
             </div>
           )}

@@ -76,7 +76,11 @@ export function parseSprAnswer(raw: string): number {
   if (!s) return -1
   const computeEngine = getEngine()
   try {
-    const n = computeEngine.parse(s).N()
+    // Qochirilmagan "%" LaTeX'da izoh (comment) belgisi — Compute Engine
+    // buni "foiz" deb emas, oddiy chegara deb o'qib, "25%" ni "25" (0.25
+    // emas!) deb hisoblab qo'yadi. JSON import/eski yozuvlarda "%" qochirilmay
+    // kelishi mumkin — shuning uchun bu yerda ham "\%"ga aylantiramiz.
+    const n = computeEngine.parse(s.replace(/(?<!\\)%/g, "\\%")).N()
     if (!n.isReal || n.re === undefined || !Number.isFinite(n.re)) return -1
     return Math.round(n.re * 100)
   } catch {
