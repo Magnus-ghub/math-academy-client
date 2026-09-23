@@ -283,7 +283,7 @@ function EditTestPageContent() {
         body: fd,
       });
       const data = await res.json();
-      if (data.url) setQ(uid, "questionImage", data.url);
+      if (data.url) setQuestionImage(uid, data.url);
       else toast.error("Rasm yuklanmadi");
     } catch {
       toast.error("Rasm yuklanmadi");
@@ -291,6 +291,23 @@ function EditTestPageContent() {
       setQ(uid, "uploading", false);
     }
   };
+
+  // MATCHING guruhining (bir xil section) umumiy rasmini imtihon sahifasi
+  // guruhdagi rasmli BIRINCHI savoldan oladi. Shuning uchun rasm o'chirilsa
+  // yoki almashtirilsa, guruhdagi boshqa savollardagi rasm ham tozalanadi —
+  // aks holda eski rasm boshqa savol orqali "qaytib" chiqib qoladi.
+  const setQuestionImage = (uid: string, url: string) =>
+    setQuestions((qs) => {
+      const target = qs.find((q) => q.uid === uid);
+      const isGroupSibling = (q: QuestionRow) =>
+        !!target && target.questionType === "MATCHING" && !!target.section &&
+        q.questionType === "MATCHING" && q.section === target.section;
+      return qs.map((q) => {
+        if (q.uid === uid) return { ...q, questionImage: url, dirty: true };
+        if (isGroupSibling(q) && q.questionImage) return { ...q, questionImage: "", dirty: true };
+        return q;
+      });
+    });
 
   const setQ = (uid: string, field: keyof QuestionRow, value: any) =>
     setQuestions((qs) => qs.map((q) => q.uid === uid ? { ...q, [field]: value, dirty: true } : q));
@@ -388,19 +405,23 @@ function EditTestPageContent() {
         const q = questions[i];
         if (!q.dirty && !q.isNew) continue;
 
+        // Update'da bo'sh qiymat "" sifatida yuboriladi — undefined bo'lsa
+        // maydon so'rovdan tushib qoladi va backend eski qiymatni (masalan,
+        // o'chirilgan rasmni) saqlab qoladi.
+        const clearable = (v: string | undefined) => (q.isNew ? v || undefined : v ?? "");
         const payload = {
           questionText: q.questionText,
-          questionImage: q.questionImage || undefined,
-          groupPrompt: q.groupPrompt || undefined,
+          questionImage: clearable(q.questionImage),
+          groupPrompt: clearable(q.groupPrompt),
           options: q.options,
           optionImages: q.optionImages,
           correctAnswer: q.correctAnswer,
           correctAnswerB: q.correctAnswerB ?? undefined,
           correctAnswerText: q.correctAnswerText || undefined,
           correctAnswerBText: q.correctAnswerBText || undefined,
-          explanation: q.explanation || undefined,
-          youtubeUrl: q.youtubeUrl || undefined,
-          analysis: q.analysis || undefined,
+          explanation: clearable(q.explanation),
+          youtubeUrl: clearable(q.youtubeUrl),
+          analysis: clearable(q.analysis),
         };
 
         if (q.isNew) {
@@ -786,6 +807,7 @@ function EditTestPageContent() {
                   onUpdateOption={setOption}
                   onRemove={() => removeQuestion(q.uid, q.id)}
                   onImagePick={(file) => uploadImage(file, q.uid)}
+                  onImageRemove={() => setQuestionImage(q.uid, "")}
                   onOptionImagePick={(file, idx) => uploadOptionImage(file, q.uid, idx)}
                   onOptionImageRemove={(idx) => setOptionImage(q.uid, idx, "")}
                   canRemove={questions.length > 1}
@@ -848,7 +870,7 @@ function SatModuleDivider({ module, from, to }: { module: number; from: number; 
   );
 }
 
-function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpdateOption, onRemove, onImagePick, onOptionImagePick, onOptionImageRemove, canRemove }: {
+function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpdateOption, onRemove, onImagePick, onImageRemove, onOptionImagePick, onOptionImageRemove, canRemove }: {
   q: QuestionRow;
   index: number;
   highlighted?: boolean;
@@ -857,6 +879,7 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
   onUpdateOption: (uid: string, idx: number, value: string) => void;
   onRemove: () => void;
   onImagePick: (file: File) => void;
+  onImageRemove: () => void;
   onOptionImagePick: (file: File, idx: number) => void;
   onOptionImageRemove: (idx: number) => void;
   canRemove: boolean;
@@ -1063,7 +1086,7 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
               <div className="relative inline-block">
                 <img src={q.questionImage} alt="savol rasmi" className="max-h-48 rounded-lg border border-border object-contain" />
                 <button
-                  onClick={() => onUpdate(q.uid, "questionImage", "")}
+                  onClick={onImageRemove}
                   className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
                 >
                   <X className="w-3 h-3" />
@@ -1170,7 +1193,7 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
               <div className="relative inline-block">
                 <img src={q.questionImage} alt="savol rasmi" className="max-h-48 rounded-lg border border-border object-contain" />
                 <button
-                  onClick={() => onUpdate(q.uid, "questionImage", "")}
+                  onClick={onImageRemove}
                   className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
                 >
                   <X className="w-3 h-3" />
@@ -1263,7 +1286,7 @@ function EditQuestionCard({ q, index, highlighted, onUpdate, onBulkUpdate, onUpd
             <div className="relative inline-block">
               <img src={q.questionImage} alt="savol rasmi" className="max-h-48 rounded-lg border border-border object-contain" />
               <button
-                onClick={() => onUpdate(q.uid, "questionImage", "")}
+                onClick={onImageRemove}
                 className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
               >
                 <X className="w-3 h-3" />
