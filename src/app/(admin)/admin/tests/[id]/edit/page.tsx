@@ -129,6 +129,7 @@ function dataUrlToFile(dataUrl: string, filename = "pasted-image.png"): File | n
 }
 
 function makeRow(q?: any): QuestionRow {
+  const options: string[] = q?.options ?? ["", "", "", ""];
   return {
     uid: q?.id ?? `new-${Date.now()}-${Math.random()}`,
     id: q?.id,
@@ -137,9 +138,12 @@ function makeRow(q?: any): QuestionRow {
     groupPrompt: q?.groupPrompt,
     questionText: q?.questionText ?? "",
     questionImage: q?.questionImage ?? "",
-    options: q?.options ?? ["", "", "", ""],
-    optionImages: q?.optionImages ?? ["", "", "", ""],
-    optionUploading: [false, false, false, false],
+    options,
+    // Import qilingan savollarda optionImages bo'sh massiv ([]) bo'lib keladi —
+    // variantlar soniga tenglashtiramiz, aks holda keyingi indeksga rasm
+    // qo'shilganda massivda "teshik" qolib, u JSON'da null bo'lib ketadi.
+    optionImages: options.map((_, i) => q?.optionImages?.[i] ?? ""),
+    optionUploading: options.map(() => false),
     correctAnswer: q?.correctAnswer ?? 0,
     correctAnswerB: q?.correctAnswerB,
     correctAnswerText: q?.correctAnswerText || (q?.correctAnswer != null ? String(q.correctAnswer / 100) : ""),
@@ -236,16 +240,16 @@ function EditTestPageContent() {
   }, [highlightQuestionId, questions.length]);
 
   const [updateTest] = useMutation(UPDATE_TEST, {
-    onError: () => toast.error("Test ma'lumotlari saqlanmadi"),
+    onError: (e) => toast.error(`Test ma'lumotlari saqlanmadi: ${e.message}`),
   });
   const [addQuestion] = useMutation<AddQuestionData>(ADD_QUESTION, {
-    onError: () => toast.error("Savol qo'shishda xatolik"),
+    onError: (e) => toast.error(`Savol qo'shishda xatolik: ${e.message}`),
   });
   const [updateQuestion] = useMutation(UPDATE_QUESTION, {
-    onError: () => toast.error("Savol yangilanmadi"),
+    onError: (e) => toast.error(`Savol yangilanmadi: ${e.message}`),
   });
   const [deleteQuestion] = useMutation(DELETE_QUESTION, {
-    onError: () => toast.error("Savol o'chirilmadi"),
+    onError: (e) => toast.error(`Savol o'chirilmadi: ${e.message}`),
   });
 
   const uploadPdf = async (file: File) => {
@@ -414,7 +418,8 @@ function EditTestPageContent() {
           questionImage: clearable(q.questionImage),
           groupPrompt: clearable(q.groupPrompt),
           options: q.options,
-          optionImages: q.optionImages,
+          // GraphQL [String!] — bo'sh o'rin (null) butun so'rovni rad ettiradi
+          optionImages: q.options.map((_, i) => q.optionImages[i] || ""),
           correctAnswer: q.correctAnswer,
           correctAnswerB: q.correctAnswerB ?? undefined,
           correctAnswerText: q.correctAnswerText || undefined,
