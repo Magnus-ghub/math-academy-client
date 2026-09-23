@@ -13,6 +13,10 @@ services:
       - PORT=3000
     volumes:
       - ./:/usr/src/math-academy-client
+      # Konteynerning Linux node_modules'i alohida volume'da turadi — aks holda
+      # konteyner ichidagi npm install host (Mac) node_modules'ini Linux
+      # binary'lari bilan almashtirib, lokal dev server'ni buzadi.
+      - /usr/src/math-academy-client/node_modules
     working_dir: /usr/src/math-academy-client
     networks:
       - client-network
