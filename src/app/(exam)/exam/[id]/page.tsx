@@ -713,9 +713,8 @@ function ExamPageContent() {
 
                             {/* O'ng ustun — umumiy javob banki. Kenglik kontentga moslashadi
                                 (eng uzun variant qancha joy olsa, shuncha), qattiq kenglik
-                                berilmaydi. overflow-visible — .math-text'ning overflow-x-auto
-                                qoidasi tufayli KaTeX kasrlar balandligi kesilib qolmasligi
-                                uchun aniq bekor qilinadi. */}
+                                berilmaydi. overflow-visible — KaTeX kasrlar balandligi
+                                kesilib qolmasligi uchun. */}
                             <div className="p-4 md:w-fit md:max-w-60 md:shrink-0">
                               <div className="space-y-3">
                                 {step.questions[0].options.map((opt: string, oi: number) => (

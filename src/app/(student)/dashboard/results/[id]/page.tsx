@@ -519,7 +519,7 @@ export default function ResultDetailPage() {
           )}
 
           {testAnalysisOpen && test?.testAnalysis && (
-            <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-base leading-relaxed wrap-break-word overflow-x-auto">
+            <div className="mt-3 p-4 bg-primary/5 rounded-xl border border-primary/20 text-base leading-relaxed wrap-break-word overflow-x-auto overflow-y-hidden">
               <MathText text={test.testAnalysis} />
               <p className="mt-3 text-[11px] text-red-500">AI tahlilda xatolik bo'lishi mumkin!</p>
             </div>
@@ -596,11 +596,11 @@ export default function ResultDetailPage() {
                         </button>
                       </div>
                       {isMatching && question?.section && matchingSectionPrompts.has(question.section) && (
-                        <p className="text-sm font-semibold mb-2 leading-relaxed wrap-break-word overflow-x-auto">
+                        <p className="text-sm font-semibold mb-2 py-0.5 leading-relaxed wrap-break-word overflow-x-auto overflow-y-hidden">
                           <MathText text={matchingSectionPrompts.get(question.section)!} />
                         </p>
                       )}
-                      <p className="text-sm font-medium mb-3 leading-relaxed wrap-break-word overflow-x-auto">
+                      <p className="text-sm font-medium mb-3 py-0.5 leading-relaxed wrap-break-word overflow-x-auto overflow-y-hidden">
                         {displayNumber}. {question
                           ? <MathText text={twoPart ? twoPart.stem : question.questionText} />
                           : questionsLoading
@@ -681,7 +681,7 @@ export default function ResultDetailPage() {
                             return (
                               <div
                                 key={j}
-                                className={`flex items-center gap-2 p-2.5 rounded-xl text-sm wrap-break-word overflow-x-auto ${
+                                className={`flex items-center gap-2 p-2.5 rounded-xl text-sm wrap-break-word overflow-x-auto overflow-y-hidden ${
                                   isSelected && answer.isCorrect
                                     ? "bg-green-50 text-green-700 font-medium"
                                     : isSelected && !answer.isCorrect
@@ -757,7 +757,7 @@ export default function ResultDetailPage() {
                       )}
 
                       {qAnalysisOpen && question?.analysis && (
-                        <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed wrap-break-word overflow-x-auto">
+                        <div className="mt-2 p-3 bg-primary/5 rounded-xl border border-primary/20 text-sm leading-relaxed wrap-break-word overflow-x-auto overflow-y-hidden">
                           <MathText text={question.analysis} />
                           <p className="mt-2 text-[10px] text-red-500">AI tahlilda xatolik bo'lishi mumkin!</p>
                         </div>
