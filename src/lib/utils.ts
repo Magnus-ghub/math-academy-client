@@ -80,7 +80,12 @@ export function parseSprAnswer(raw: string): number {
     // buni "foiz" deb emas, oddiy chegara deb o'qib, "25%" ni "25" (0.25
     // emas!) deb hisoblab qo'yadi. JSON import/eski yozuvlarda "%" qochirilmay
     // kelishi mumkin — shuning uchun bu yerda ham "\%"ga aylantiramiz.
-    const n = computeEngine.parse(s.replace(/(?<!\\)%/g, "\\%")).N()
+    // \dfrac/\tfrac — \frac'ning ko'rinish variantlari; backend'dagi eski
+    // Compute Engine ularni tanimaydi, ikki tomon bir xil ishlashi uchun bu
+    // yerda ham \frac'ga aylantiramiz.
+    const n = computeEngine
+      .parse(s.replace(/\\[dt]frac(?![a-zA-Z])/g, "\\frac").replace(/(?<!\\)%/g, "\\%"))
+      .N()
     if (!n.isReal || n.re === undefined || !Number.isFinite(n.re)) return -1
     return Math.round(n.re * 100)
   } catch {

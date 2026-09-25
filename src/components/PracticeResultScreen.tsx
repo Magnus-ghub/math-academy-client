@@ -69,11 +69,12 @@ function earnedPoints(
     const a = normalizeSelected(q, answers[q.id]);
     const b = normalizeB(answersB[q.id]);
     let pts = 0;
-    if (a !== undefined && a === q.correctAnswer) pts++;
-    if (b !== undefined && q.correctAnswerB != null && b === q.correctAnswerB) pts++;
+    if (a !== undefined && a !== -1 && a === q.correctAnswer) pts++;
+    if (b !== undefined && b !== -1 && q.correctAnswerB != null && b === q.correctAnswerB) pts++;
     return pts;
   }
-  return normalizeSelected(q, answers[q.id]) === q.correctAnswer ? 1 : 0;
+  const selected = normalizeSelected(q, answers[q.id]);
+  return selected !== undefined && selected !== -1 && selected === q.correctAnswer ? 1 : 0;
 }
 
 export function PracticeResultScreen({ questions, answers, answersB = {}, duration, testAnalysis, isSat = false, onClose }: Props) {
@@ -197,10 +198,10 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
             const rawB = answersB[q.id];
             const selectedB = normalizeB(rawB);
             const isCorrectA = isTwoPart
-              ? selected !== undefined && selected === q.correctAnswer
-              : selected !== undefined && selected === q.correctAnswer;
+              ? selected !== undefined && selected !== -1 && selected === q.correctAnswer
+              : selected !== undefined && selected !== -1 && selected === q.correctAnswer;
             const isCorrectB = isTwoPart
-              ? selectedB !== undefined && q.correctAnswerB != null && selectedB === q.correctAnswerB
+              ? selectedB !== undefined && selectedB !== -1 && q.correctAnswerB != null && selectedB === q.correctAnswerB
               : undefined;
             const isCorrect = isTwoPart ? isCorrectA && !!isCorrectB : isCorrectA;
             const isPartial = isTwoPart && isCorrectA !== isCorrectB;

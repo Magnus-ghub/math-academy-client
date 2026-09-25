@@ -171,12 +171,12 @@
   /* Inline ($...$) formulalar ham xuddi shunday — masalan matndagi "$" belgilar
      noto'g'ri joylashib, katta bo'lak matn formula sifatida o'qilib qolsa (bo'shliqsiz,
      bir chiziqda), konteyner chegarasidan chiqib ketish o'rniga gorizontal scroll beradi */
-  /* overflow-y ni aniq "visible" qilib qo'yamiz — aks holda faqat overflow-x
-     berilganda brauzer overflow-y'ni ham avtomatik "auto" deb hisoblaydi
-     (CSS'ning "overflow" hisoblash qoidasi), va baland KaTeX formulalar
-     (masalan \sqrt ichidagi kasrlar) tor qatorda kutilmagan vertikal
-     scrollbar bilan kesilib qoladi. */
+  /* overflow-y "visible" bo'lishi mumkin emas — overflow-x auto bo'lganda
+     brauzer uni baribir "auto"ga aylantiradi (CSS qoidasi), va baland KaTeX
+     formulalar (masalan \frac ichidagi \sqrt) yonida kulrang vertikal
+     scrollbar chiqib qoladi. Shuning uchun "hidden" + kichik vertikal
+     padding: scrollbar yo'q, formula tepasi/pasti ham kesilmaydi. */
   .math-text {
-    @apply overflow-x-auto overflow-y-visible max-w-full;
+    @apply overflow-x-auto overflow-y-hidden max-w-full py-0.5;
   }
 }
