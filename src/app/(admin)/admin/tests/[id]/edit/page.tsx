@@ -844,7 +844,7 @@ function EditTestPageContent() {
       {showImportResults && testId && (
         <ImportHistoricalResultsModal
           testId={testId}
-          currentQuestionCount={questions.length}
+          currentTotalPoints={questions.reduce((sum, q) => sum + (q.questionType === "TWO_PART" ? 2 : 1), 0)}
           onClose={() => setShowImportResults(false)}
           onSuccess={() => {}}
         />

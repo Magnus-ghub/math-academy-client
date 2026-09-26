@@ -537,7 +537,7 @@ export default function CreateTestPage() {
       {showImportResults && createdTestId && (
         <ImportHistoricalResultsModal
           testId={createdTestId}
-          currentQuestionCount={questions.length}
+          currentTotalPoints={questions.length}
           onClose={() => setShowImportResults(false)}
           onSuccess={() => {}}
         />

@@ -13,7 +13,8 @@ import {
 
 interface Props {
   testId: string;
-  currentQuestionCount: number;
+  /** Testning hozirgi jami bali (TWO_PART savol 2 ball) */
+  currentTotalPoints: number;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -24,8 +25,14 @@ interface ParsedFile {
   rows: Record<string, unknown>[];
 }
 
-const RAW_SCORE_HEADER_RE = /xom\s*bali/i;
-const ITEM_COLUMN_RE = /^v\d+$/i;
+// Jami (xom) ball ustuni: eski Rasch Excel'da "xom bali", test platformasi
+// eksportida "Correct" (yoki "To'g'ri", "Jami", "Ball").
+const RAW_SCORE_HEADER_RE = /xom\s*bal+i|^correct$|^to.?g.?ri$|^jami|^ball$|^score$/i;
+// Savol (item) ustunlari: "v1".."v55" yoki "1".."35", "36a".."45b".
+const ITEM_HEADER_RE = /^v?\d+[ab]?$/i;
+// Selectdagi maxsus qiymat — xom ball ustuni yo'q bo'lsa, savol ustunlaridagi
+// 0/1 larni qo'shib chiqamiz.
+const SUM_OF_ITEMS = "__sum_of_items__";
 
 function toNumberOrNull(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -35,10 +42,23 @@ function toNumberOrNull(value: unknown): number | null {
   return null;
 }
 
-export function ImportHistoricalResultsModal({ testId, currentQuestionCount, onClose, onSuccess }: Props) {
+// Header nomi item'ga o'xshasa-yu, ichida 0/1 dan boshqa qiymat bo'lsa (masalan
+// sarlavhasi tushib qolib, o'rniga "123351" kabi ID turgan ustun) — item emas.
+function detectItemColumns(headers: string[], rows: Record<string, unknown>[]): string[] {
+  return headers.filter((h) => {
+    if (!ITEM_HEADER_RE.test(h.trim())) return false;
+    return rows.every((row) => {
+      const v = toNumberOrNull(row[h]);
+      return v === null || v === 0 || v === 1;
+    });
+  });
+}
+
+export function ImportHistoricalResultsModal({ testId, currentTotalPoints, onClose, onSuccess }: Props) {
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
+  const [itemColumns, setItemColumns] = useState<string[]>([]);
   const [rawScoreColumn, setRawScoreColumn] = useState<string>("");
-  const [totalPoints, setTotalPoints] = useState<number>(currentQuestionCount || 0);
+  const [totalPoints, setTotalPoints] = useState<number>(currentTotalPoints || 0);
   const [parseError, setParseError] = useState("");
   const [confirmingClear, setConfirmingClear] = useState(false);
 
@@ -53,12 +73,53 @@ export function ImportHistoricalResultsModal({ testId, currentQuestionCount, onC
     CLEAR_IMPORTED_RESULTS,
   );
 
+  const sumOfItems = (row: Record<string, unknown>) =>
+    itemColumns.reduce((sum, h) => sum + (toNumberOrNull(row[h]) ?? 0), 0);
+
   const validScores = useMemo(() => {
     if (!parsed || !rawScoreColumn) return [];
     return parsed.rows
-      .map((row) => toNumberOrNull(row[rawScoreColumn]))
+      .map((row) => (rawScoreColumn === SUM_OF_ITEMS ? sumOfItems(row) : toNumberOrNull(row[rawScoreColumn])))
       .filter((n): n is number => n !== null && Number.isInteger(n) && n >= 0 && n <= totalPoints);
-  }, [parsed, rawScoreColumn, totalPoints]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsed, rawScoreColumn, totalPoints, itemColumns]);
+
+  // Noto'g'ri ustun tanlanib, kogorta buzilib ketmasligi uchun tekshiruvlar.
+  // "blocking" bo'lsa import tugmasi o'chiriladi.
+  const checks = useMemo(() => {
+    const blocking: string[] = [];
+    const warnings: string[] = [];
+    if (!parsed || validScores.length === 0) return { blocking, warnings };
+    const max = Math.max(...validScores);
+    if (totalPoints > 1 && max <= 1) {
+      blocking.push(
+        "Tanlangan ustunda faqat 0 va 1 bor — bu jami ball emas, bitta savolning javob ustuniga o'xshaydi.",
+      );
+    }
+    if (validScores.length > 3 && validScores.every((v, i) => v === validScores[0] + i)) {
+      blocking.push("Qiymatlar ketma-ket (1, 2, 3, …) — bu jami ball emas, qator raqamlari ustuniga o'xshaydi.");
+    }
+    if (itemColumns.length > 0 && totalPoints !== itemColumns.length) {
+      warnings.push(`Faylda ${itemColumns.length} ta savol ustuni bor, jami ball esa ${totalPoints}.`);
+    }
+    if (rawScoreColumn !== SUM_OF_ITEMS && itemColumns.length > 0) {
+      const mismatched = parsed.rows.filter((row) => {
+        const raw = toNumberOrNull(row[rawScoreColumn]);
+        return raw !== null && raw !== sumOfItems(row);
+      }).length;
+      if (mismatched > 0) {
+        warnings.push(`${mismatched} ta qatorda "${rawScoreColumn}" savol ustunlari yig'indisiga teng emas.`);
+      }
+    }
+    return { blocking, warnings };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parsed, validScores, totalPoints, rawScoreColumn, itemColumns]);
+
+  const scoreSummary = useMemo(() => {
+    if (validScores.length === 0) return null;
+    const sorted = [...validScores].sort((a, b) => a - b);
+    return { min: sorted[0], median: sorted[Math.floor(sorted.length / 2)], max: sorted[sorted.length - 1] };
+  }, [validScores]);
 
   const handleFile = async (file: File) => {
     setParseError("");
@@ -75,18 +136,22 @@ export function ImportHistoricalResultsModal({ testId, currentQuestionCount, onC
       const headers = Object.keys(rows[0]);
       setParsed({ fileName: file.name, headers, rows });
 
-      const guessedRawCol = headers.find((h) => RAW_SCORE_HEADER_RE.test(h));
-      setRawScoreColumn(guessedRawCol ?? headers[0]);
+      const items = detectItemColumns(headers, rows);
+      setItemColumns(items);
 
-      const itemColumnCount = headers.filter((h) => ITEM_COLUMN_RE.test(h)).length;
-      if (itemColumnCount > 0) setTotalPoints(itemColumnCount);
+      const guessedRawCol = headers.find((h) => RAW_SCORE_HEADER_RE.test(h.trim()));
+      setRawScoreColumn(guessedRawCol ?? (items.length > 0 ? SUM_OF_ITEMS : headers[0]));
+
+      // Jami ball = savol (item) ustunlari soni — Milliy Sertifikatda 55
+      // (TWO_PART savollar a/b ikki item), savollar soni (45) emas.
+      if (items.length > 0) setTotalPoints(items.length);
     } catch {
       setParseError("Fayl o'qib bo'lmadi. .xlsx formatida ekanligini tekshiring.");
     }
   };
 
   const handleImport = async () => {
-    if (validScores.length === 0) return;
+    if (validScores.length === 0 || checks.blocking.length > 0) return;
     try {
       const { data } = await importResults({
         variables: { input: { testId, totalPoints, rawScores: validScores } },
@@ -189,6 +254,11 @@ export function ImportHistoricalResultsModal({ testId, currentQuestionCount, onC
                   value={rawScoreColumn}
                   onChange={(e) => setRawScoreColumn(e.target.value)}
                 >
+                  {itemColumns.length > 0 && (
+                    <option value={SUM_OF_ITEMS}>
+                      Savol ustunlari yig&apos;indisi ({itemColumns.length} ta ustun)
+                    </option>
+                  )}
                   {parsed.headers.map((h) => (
                     <option key={h} value={h}>
                       {h || "(bo'sh sarlavha)"}
@@ -198,7 +268,7 @@ export function ImportHistoricalResultsModal({ testId, currentQuestionCount, onC
               </div>
 
               <div>
-                <label className="text-sm font-medium mb-1.5 block">Jami ball (savollar soni)</label>
+                <label className="text-sm font-medium mb-1.5 block">Jami ball (maksimal xom ball)</label>
                 <input
                   type="number"
                   min={1}
@@ -207,7 +277,9 @@ export function ImportHistoricalResultsModal({ testId, currentQuestionCount, onC
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Testdagi hozirgi savollar soni: {currentQuestionCount}. Eski test bilan mos kelishi kerak.
+                  Testning jami bali: {currentTotalPoints}
+                  {itemColumns.length > 0 && <> · faylda {itemColumns.length} ta savol ustuni</>}. Eski test bilan
+                  mos kelishi kerak.
                 </p>
               </div>
 
@@ -220,13 +292,31 @@ export function ImportHistoricalResultsModal({ testId, currentQuestionCount, onC
                     {parsed.rows.length - validScores.length} ta qator o&apos;tkazib yuborildi.
                   </span>
                 )}
+                {scoreSummary && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    min {scoreSummary.min} · median {scoreSummary.median} · max {scoreSummary.max}
+                  </div>
+                )}
               </div>
+
+              {checks.blocking.map((msg) => (
+                <div key={msg} className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  {msg}
+                </div>
+              ))}
+              {checks.warnings.map((msg) => (
+                <div key={msg} className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  {msg}
+                </div>
+              ))}
             </div>
           )}
 
           <button
             onClick={handleImport}
-            disabled={validScores.length === 0 || importing}
+            disabled={validScores.length === 0 || checks.blocking.length > 0 || importing}
             className="w-full flex items-center justify-center gap-2 bg-primary text-white py-2.5 rounded-xl font-medium hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
