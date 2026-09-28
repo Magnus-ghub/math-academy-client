@@ -202,7 +202,7 @@ function MilliySertifikatScoreBlock({ resultId }: { resultId: string }) {
         scoreResult.ready ? (
           <div className="flex items-center gap-3 mt-4">
             <div className="px-4 py-3 rounded-2xl text-center bg-primary/10 shrink-0">
-              <p className="text-2xl font-black text-primary">{scoreResult.finalScore.toFixed(1)}</p>
+              <p className="text-2xl font-black text-primary">{scoreResult.finalScore.toFixed(2)}</p>
               <p className="text-xs font-medium text-primary">ball</p>
             </div>
             <div>
@@ -244,6 +244,15 @@ export default function ResultDetailPage() {
   const isAttestatsiya = result?.testType === "ATTESTATSIYA";
   const isSat = result?.testType === "SAT";
   const isMilliySertifikat = result?.testType === "MILLIY_SERTIFIKAT";
+
+  // Milliy Sertifikatda to'g'ri/noto'g'ri savollar emas, itemlar (ballar)
+  // bo'yicha sanaladi — TWO_PART savolning a va b qismi alohida item, jami 55.
+  const useItems = isMilliySertifikat && result?.rawPoints != null && result?.totalPoints != null;
+  const correctItems: number = useItems ? result.rawPoints : result?.correctAnswers ?? 0;
+  const totalItems: number = useItems ? result.totalPoints : result?.totalQuestions ?? 0;
+  const progressPercent = useItems
+    ? (totalItems > 0 ? (correctItems / totalItems) * 100 : 0)
+    : result?.score ?? 0;
 
   const { data: questionsData, loading: questionsLoading } = useQuery<{ getQuestions: any[] }>(GET_QUESTIONS, {
     variables: { testId: result?.testId },
@@ -393,9 +402,10 @@ export default function ResultDetailPage() {
               <p className={`text-xs font-medium ${scoreColor}`}>ball / 800</p>
             </div>
           ) : isMilliySertifikat ? (
-            <div className={`px-4 py-3 rounded-2xl text-center ${scoreBg}`}>
-              <p className={`text-2xl font-black ${scoreColor}`}>{result.rawPoints ?? "-"}</p>
-              <p className={`text-xs font-medium ${scoreColor}`}>ball / {result.totalPoints ?? "-"}</p>
+            <div className={`px-4 py-3 rounded-2xl text-center whitespace-nowrap ${scoreBg}`}>
+              <p className={`text-2xl font-black ${scoreColor}`}>
+                {result.rawPoints ?? "-"}/{result.totalPoints ?? "-"}
+              </p>
             </div>
           ) : (
             <div className={`w-20 h-20 rounded-2xl flex flex-col items-center justify-center ${scoreBg}`}>
@@ -459,18 +469,18 @@ export default function ResultDetailPage() {
         )}
 
         <div className="h-2 bg-muted rounded-full overflow-hidden mb-4">
-          <div className={`h-full rounded-full transition-all ${scoreBar}`} style={{ width: `${result.score}%` }} />
+          <div className={`h-full rounded-full transition-all ${scoreBar}`} style={{ width: `${progressPercent}%` }} />
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center p-3 bg-green-50 rounded-xl">
             <CheckCircle className="w-5 h-5 text-green-600 mx-auto mb-1" />
-            <p className="text-lg font-bold text-green-600">{result.correctAnswers}</p>
+            <p className="text-lg font-bold text-green-600">{correctItems}</p>
             <p className="text-xs text-muted-foreground">To'g'ri</p>
           </div>
           <div className="text-center p-3 bg-red-50 rounded-xl">
             <XCircle className="w-5 h-5 text-red-500 mx-auto mb-1" />
-            <p className="text-lg font-bold text-red-500">{result.totalQuestions - result.correctAnswers}</p>
+            <p className="text-lg font-bold text-red-500">{totalItems - correctItems}</p>
             <p className="text-xs text-muted-foreground">Noto'g'ri</p>
           </div>
           <div className="text-center p-3 bg-primary/5 rounded-xl">

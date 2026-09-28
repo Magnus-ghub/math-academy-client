@@ -80,10 +80,6 @@ function earnedPoints(
 export function PracticeResultScreen({ questions, answers, answersB = {}, duration, testAnalysis, isSat = false, onClose }: Props) {
   const [testAnalysisOpen, setTestAnalysisOpen] = useState(false);
   const [openAnalysisId, setOpenAnalysisId] = useState<string | null>(null);
-  const total = questions.length;
-  const correctCount = questions.filter(
-    (q) => earnedPoints(q, answers, answersB) === questionPoints(q)
-  ).length;
   const totalPoints = questions.reduce((s, q) => s + questionPoints(q), 0);
   const gotPoints = questions.reduce((s, q) => s + earnedPoints(q, answers, answersB), 0);
   const score = totalPoints > 0 ? Math.round((gotPoints / totalPoints) * 100) : 0;
@@ -143,12 +139,12 @@ export function PracticeResultScreen({ questions, answers, answersB = {}, durati
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-3 bg-green-50 rounded-xl">
               <CheckCircle className="w-5 h-5 text-green-600 mx-auto mb-1" />
-              <p className="text-lg font-bold text-green-600">{correctCount}</p>
+              <p className="text-lg font-bold text-green-600">{gotPoints}</p>
               <p className="text-xs text-muted-foreground">To'g'ri</p>
             </div>
             <div className="text-center p-3 bg-red-50 rounded-xl">
               <XCircle className="w-5 h-5 text-red-500 mx-auto mb-1" />
-              <p className="text-lg font-bold text-red-500">{total - correctCount}</p>
+              <p className="text-lg font-bold text-red-500">{totalPoints - gotPoints}</p>
               <p className="text-xs text-muted-foreground">Noto'g'ri</p>
             </div>
             <div className="text-center p-3 bg-primary/5 rounded-xl">
