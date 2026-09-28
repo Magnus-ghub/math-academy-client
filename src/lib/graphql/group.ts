@@ -94,3 +94,17 @@ export const GET_GROUP_MEMBERS = gql`
     }
   }
 `;
+// Bot admin bo'lgan Telegram kanal/guruhlar (guruh yaratishda tanlash uchun)
+export const GET_TELEGRAM_CHATS = gql`
+  query GetTelegramChats {
+    getTelegramChats {
+      chatId
+      title
+      type
+      username
+      addedByName
+      linkedGroupName
+      updatedAt
+    }
+  }
+`;

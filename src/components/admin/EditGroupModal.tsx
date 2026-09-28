@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation } from "@apollo/client/react";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import TelegramChatPicker from "@/components/admin/TelegramChatPicker";
 import { UPDATE_GROUP } from "@/lib/graphql/group";
 import { toast } from "sonner";
 
@@ -33,8 +34,8 @@ export default function EditGroupModal({ group, onClose, onSuccess }: Props) {
       onClose();
       toast.success("Guruh yangilandi!");
     },
-    onError: () => {
-      toast.error("Xatolik yuz berdi");
+    onError: (e) => {
+      toast.error(e.message || "Xatolik yuz berdi");
     },
   });
 
@@ -70,11 +71,11 @@ export default function EditGroupModal({ group, onClose, onSuccess }: Props) {
             />
           </div>
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Telegram Chat ID *</label>
-            <Input
-              placeholder="-100xxxxxxxxx"
+            <label className="text-sm font-medium mb-1.5 block">Telegram kanal / guruh *</label>
+            <TelegramChatPicker
               value={form.telegramChatId}
-              onChange={(e) => setForm({ ...form, telegramChatId: e.target.value })}
+              currentChatId={group.telegramChatId}
+              onChange={(chatId) => setForm({ ...form, telegramChatId: chatId })}
             />
           </div>
           <div>
